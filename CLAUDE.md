@@ -63,6 +63,7 @@ The approved spec is the contract. Details in `docs/specs/README.md`; the essent
    - Decisions made and why.
    - Sources consulted, if the stage includes data or text.
    - Pending items or risks.
+   - Never include session links or session IDs (`claude.ai/code/session_…`) in PR titles or bodies. They are private to Hugo.
 6. **Review stages** (marked 🔍 for content and 🎨 for design in the plan): the PR contains only what is under review (lists, texts, sources, or the Figma design and `design.md`), not yet integrated into the site. Hugo approves by merging or asks for changes in comments.
 7. **If Hugo leaves comments on a PR**, address them on the same branch. Do not open another PR for the same thing.
 8. **If you get blocked** (a missing credential, a domain blocked by the network, a decision not covered in the prompt), do not improvise: open the PR as a draft with what you did achieve and explain exactly what you need from Hugo.

@@ -10,14 +10,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verificar si el proyecto ya existe
+      - name: Check whether the project exists
         id: project
         run: |
           if [ -f package.json ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "Todavía no hay package.json (Etapa 00). Se omite el build."
+            echo "No package.json yet (Stage 00). Skipping the build."
           fi
 
       - uses: actions/setup-node@v4
@@ -26,11 +26,11 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         if: steps.project.outputs.exists == 'true'
         run: npm ci
 
-      - name: Revisar tipos
+      - name: Type check
         if: steps.project.outputs.exists == 'true'
         run: npm run check --if-present
 

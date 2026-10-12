@@ -11,6 +11,10 @@ This project is built by cloud agents, one stage at a time. The project owner (H
 
 For that reason every stage must end in a PR that can be merged as is, with no hidden manual steps.
 
+## Language of the project
+
+Everything used to build the project is in English: Markdown docs, code, identifiers, file and folder names, branch names, PR titles, commit messages, and workflow terms ("stage", "pending", "in review", "approved"). Only the site's own content is bilingual (content collections, UI strings, localized URL slugs, alt text) and PR bodies stay in Spanish for the reviewer.
+
 ## Documentation language
 
 All Markdown files in this repo (`CLAUDE.md`, `PROMPT.md`, everything in `docs/`, `CURATION.md`, any new `.md`) are written in **English only**. They are the single source of truth. Never create Spanish or bilingual copies of Markdown files. This applies to documentation, not to the site's bilingual content (content collections, UI strings) nor to PR text, which stays in Spanish.
@@ -18,13 +22,13 @@ All Markdown files in this repo (`CLAUDE.md`, `PROMPT.md`, everything in `docs/`
 ## Rules for each stage
 
 1. **One stage per session and per PR.** Take only the next pending stage in `docs/PLAN.md`. Do not get ahead on future stages.
-2. **Never push to `main`.** Work on a branch `claude/etapa-NN-short-name` and open a PR against `main`.
-3. **If a stage PR is already open, do not start another.** Finish with no changes and explain why in the session summary.
+2. **Never push to `main`.** Work on a branch whose name starts with `claude/` and open a PR against `main`. If the session does not assign a branch name, use `claude/stage-NN-short-name`. Do not rely on the exact branch name anywhere: tooling matches the `claude/` prefix only.
+3. **If a stage PR is already open (any open PR from a `claude/` branch), do not start another.** Finish with no changes and explain why in the session summary.
 4. **Before opening the PR:**
    - Run `npm run build` (and `npm run check` once it exists) and make sure they pass.
    - Update `docs/PLAN.md`: mark the stage as `in review`, link the PR, and note what is pending or changed.
 5. **PR format**, in Spanish:
-   - Title: `Etapa NN: <name>`.
+   - Title: `Stage NN: <name>`.
    - What was done, in short bullets.
    - What to review: the concrete list of things Hugo must check in the Cloudflare preview (pages and what to look for on each).
    - Decisions made and why.

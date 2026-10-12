@@ -84,3 +84,4 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 
 - 2026-10-12 — Stage 00 — PR #1 — Detailed plan, project structure and site map.
 - 2026-10-12 — Intermediate step (requested by Hugo) — All Markdown docs are now English-only and are the single source of truth; the Spanish versions were removed.
+- 2026-10-12 — Naming unification — Branch pattern generalized to `claude/*`, English-only workflow naming (stage, PR titles, CI steps, chapter IDs), routine renamed to "next stage".

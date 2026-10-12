@@ -9,11 +9,11 @@ Every page exists at `/es/…` and `/en/…`; the language selector takes you to
 | The mission | `/es/mision/` | `/en/mission/` |
 | Why it matters | `/es/por-que-importa/` | `/en/why-it-matters/` |
 | Gallery | `/es/galeria/` | `/en/gallery/` |
-| Chapter | `/es/galeria/<capitulo>/` | `/en/gallery/<chapter>/` |
-| Photo | `/es/galeria/<capitulo>/<id-nasa>/` | `/en/gallery/<chapter>/<id-nasa>/` |
+| Chapter | `/es/galeria/<chapter-slug>/` | `/en/gallery/<chapter-slug>/` |
+| Photo | `/es/galeria/<chapter-slug>/<nasa-id>/` | `/en/gallery/<chapter-slug>/<nasa-id>/` |
 | About | `/es/acerca/` | `/en/about/` |
 
-Chapter identifiers (per language): despegue/launch, rumbo-a-la-luna/outbound, lado-oculto/far-side, eclipse/eclipse, regreso/return. The photo ID is the same in both languages.
+Internal chapter IDs are English and used in code and content collections: `launch`, `outbound`, `far-side`, `eclipse`, `return`. Public URL slugs are localized site content: `/en/` uses the ID as is; `/es/` uses `despegue`, `rumbo-a-la-luna`, `lado-oculto`, `eclipse`, `regreso`. The same applies to the Spanish section slugs in the table above. The NASA photo ID is the same in both languages.
 
 `/` redirects to `/es/` (and, from Stage 02, to `/en/` on the first visit if the browser is set to English).
 

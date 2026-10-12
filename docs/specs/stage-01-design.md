@@ -60,5 +60,5 @@ This stage creates them.
 
 - **Figma write access: verified on 2026-10-12.** The connector exposes `use_figma` (Plugin API: frames, components, variants, text, auto-layout, variables, styles), plus `get_metadata`, `get_screenshot` and `get_variable_defs` for checking. If a write call fails during the stage, the agent keeps what it built, opens a draft PR and explains the error (CLAUDE.md, rule 8).
 - **Tools not to use:** `html_to_figma` (produces plain layers without components or variables, which breaks `AC-3`), `create_new_file` (work only in `FIGMA_FILE_URL`), `generate_image` and `weave_*` (spend Figma AI credits), and the shader/plugin tools (they change Hugo's account library, not the file).
-- **Missing `FIGMA_FILE_URL`** or the Figma connector not enabled in the routine: draft PR asking for it (CLAUDE.md, rule 8).
+- **Verified on 2026-10-12:** `FIGMA_FILE_URL` is set and the Figma connector is in the routine. If either is missing when the stage runs, open a draft PR asking for it (CLAUDE.md, rule 8).
 - **Fonts:** only open-license fonts that can be self-hosted or loaded from Google Fonts.

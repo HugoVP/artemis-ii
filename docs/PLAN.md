@@ -2,23 +2,23 @@
 
 This file is maintained by the agents. Each stage ends in a PR, and Hugo approves it by merging.
 
-Possible statuses: `pendiente` (pending), `en revisión` (PR open), `aprobada` (PR merged).
+Possible statuses: `pending`, `in review` (PR open), `approved` (PR merged).
 🔍 = content review stage: the PR brings only the content to approve, without integrating it into the site.
 
 Project structure is in [`STRUCTURE.md`](STRUCTURE.md) and the site map in [`SITEMAP.md`](SITEMAP.md).
 
 | # | Stage | Status | PR |
 | --- | --- | --- | --- |
-| 00 | 🔍 Detailed plan, project structure and site map | en revisión | #1 |
-| 01 | Project base: Astro, Tailwind, es/en routes, layout, CI | pendiente | |
-| 02 | Preferences: theme, language, site density and gallery view | pendiente | |
-| 03 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | pendiente | |
-| 04 | Ingestion: download script, sharp variants and upload to R2 | pendiente | |
-| 05 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | pendiente | |
-| 06 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | pendiente | |
-| 07 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters | pendiente | |
-| 08 | About, AI notice, credits, Open Graph and hreflang | pendiente | |
-| 09 | Final review: accessibility, mobile performance and broken links | pendiente | |
+| 00 | 🔍 Detailed plan, project structure and site map | in review | #1 |
+| 01 | Project base: Astro, Tailwind, es/en routes, layout, CI | pending | |
+| 02 | Preferences: theme, language, site density and gallery view | pending | |
+| 03 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | pending | |
+| 04 | Ingestion: download script, sharp variants and upload to R2 | pending | |
+| 05 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | pending | |
+| 06 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | pending | |
+| 07 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters | pending | |
+| 08 | About, AI notice, credits, Open Graph and hreflang | pending | |
+| 09 | Final review: accessibility, mobile performance and broken links | pending | |
 
 Stage 00 keeps the suggested order and split. Adjustments decided:
 

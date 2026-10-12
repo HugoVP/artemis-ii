@@ -22,7 +22,7 @@ All Markdown files in this repo (`CLAUDE.md`, `PROMPT.md`, everything in `docs/`
 3. **If a stage PR is already open, do not start another.** Finish with no changes and explain why in the session summary.
 4. **Before opening the PR:**
    - Run `npm run build` (and `npm run check` once it exists) and make sure they pass.
-   - Update `docs/PLAN.md`: mark the stage as `en revisión` (in review), link the PR, and note what is pending or changed.
+   - Update `docs/PLAN.md`: mark the stage as `in review`, link the PR, and note what is pending or changed.
 5. **PR format**, in Spanish:
    - Title: `Etapa NN: <name>`.
    - What was done, in short bullets.

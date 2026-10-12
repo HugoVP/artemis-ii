@@ -10,7 +10,8 @@ Hugo can open one Figma file and see how every page of the site will look on a p
 
 ## Scope
 
-- **Foundations** page in the Figma file, built with Figma variables:
+- **One Figma file** (`FIGMA_FILE_URL`) with these pages: `Foundations`, `Components` and `Screens` (approved, source of truth for stage 02), plus `Exploration` (alternatives compared before choosing, e.g. two palettes or two top-bar layouts) and `Archive` (rejected options, so they are not proposed again by mistake). No other files.
+- **Foundations** page, built with Figma variables:
   - Color collection with modes `dark` (default) and `light`: background, surface, text, muted text, accent, focus ring, border.
   - Typography: one or two open-license fonts (Google Fonts), type scale for headings, body, captions, UI labels.
   - Spacing and layout collection with modes `compact`, `comfortable` (default), `spacious`: spacing scale, base text size, content max width.
@@ -47,7 +48,7 @@ This stage creates them.
 ## Tasks
 
 1. Read `FIGMA_FILE_URL` and run `get_metadata` on the file to see its current state (as of Stage 00 it has a single empty page, `Page 1`).
-2. Rename `Page 1` to `Foundations` and add the `Components` and `Screens` pages. Build the Foundations page with variables and modes using `use_figma`.
+2. Rename `Page 1` to `Foundations` and add the `Components`, `Screens`, `Exploration` and `Archive` pages. Build the Foundations page with variables and modes using `use_figma`. Use `Exploration` for any choice that has more than one option; move the rejected ones to `Archive` and keep only the chosen one in the approved pages.
 3. Build components using the variables (`use_figma`; components with variants, auto-layout, every fill, gap and font size bound to a variable).
 4. Build mobile screens first, then desktop, then the variations, as instances of the components.
 5. Check each frame with `get_screenshot` and fix overlaps, clipped text and broken auto-layout before moving on.

@@ -1,3 +1,5 @@
+**Agent:** <!-- the tool that did the work, e.g. "Claude Code" or "Codex" -->
+
 ## What was done
 
 -
@@ -10,11 +12,17 @@
 
 ## What to review
 
-<!-- Page in the Cloudflare preview → what to look for → matching Figma frame. -->
+<!-- Page in the preview deployment → what to look for → matching Figma frame. -->
 
 -
 
 ## Spec changes
+
+None.
+
+## Security-relevant changes
+
+<!-- Protected paths (AGENTS.md), new dependencies, new network calls or third-party resources. -->
 
 None.
 

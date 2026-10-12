@@ -8,10 +8,11 @@ Every piece of the site is described in a spec before it is built. Specs are the
 | --- | --- | --- | --- |
 | Brief | `PROMPT.md` | What Hugo wants, in his words | Hugo changes his mind |
 | Product spec | `docs/specs/product.md` | What the finished site must do, as numbered, testable requirements | A requirement is added, removed or reworded (always in a PR, called out) |
+| Delivery spec | `docs/DELIVERY.md` | How code reaches each environment and which checks it passes | Stage 03, or a stage that changes the pipeline |
 | Design spec | `docs/specs/design.md` + the Figma file | What the site looks like: tokens, components, screens | Stage 01, or a later stage that needs a design change |
 | Stage spec | `docs/specs/stage-NN-short-name.md` | What one stage delivers, and how we know it is done | Written one stage ahead; amended during its own stage if needed |
 
-If two layers disagree, the more specific approved one wins (stage spec > design spec > product spec > brief), and the agent must point out the conflict in the PR.
+If two layers disagree, the more specific approved one wins (stage spec > design or delivery spec > product spec > brief), and the agent must point out the conflict in the PR.
 
 ## Requirement IDs
 
@@ -41,4 +42,4 @@ Use [`_template.md`](_template.md). In short:
 
 ## Verification
 
-From Stage 02 on, acceptance criteria that can be automated are written as Playwright tests against the static build (`npm run test`), and CI runs them on every PR. Manual criteria are listed in the PR as a checklist for Hugo. Stage 10 (final review) checks the traceability table in `product.md`: every requirement must be delivered by a stage and verified by a test or a manual check.
+From Stage 02 on, acceptance criteria that can be automated are written as Playwright tests against the static build (`npm run test`), and the pipeline runs them on every PR together with the security checks in `docs/DELIVERY.md`. Manual criteria are listed in the PR as a checklist for Hugo. Stage 11 (final review) checks the traceability table in `product.md`: every requirement must be delivered by a stage and verified by a test or a manual check.

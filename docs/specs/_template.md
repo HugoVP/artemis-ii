@@ -33,4 +33,4 @@ One or two sentences: what changes for a visitor (or for Hugo) when this stage i
 
 ## Risks and open questions
 
-- Missing variables, blocked domains, decisions Hugo must take. If one of these blocks the stage, the PR is opened as a draft (CLAUDE.md, rule 8).
+- Missing variables, blocked domains, decisions Hugo must take. If one of these blocks the stage, the PR is opened as a draft (AGENTS.md, rule 8).

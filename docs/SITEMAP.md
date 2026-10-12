@@ -15,7 +15,7 @@ Every page exists at `/es/…` and `/en/…`; the language selector takes you to
 
 Internal chapter IDs are English and used in code and content collections: `launch`, `outbound`, `far-side`, `eclipse`, `return`. Public URL slugs are localized site content: `/en/` uses the ID as is; `/es/` uses `despegue`, `rumbo-a-la-luna`, `lado-oculto`, `eclipse`, `regreso`. The same applies to the Spanish section slugs in the table above. The NASA photo ID is the same in both languages.
 
-`/` redirects to `/es/` (and, from Stage 03, to `/en/` on the first visit if the browser is set to English).
+`/` redirects to `/es/` (and, from Stage 04, to `/en/` on the first visit if the browser is set to English).
 
 ## Content per page
 

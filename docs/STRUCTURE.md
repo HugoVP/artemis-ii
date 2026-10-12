@@ -2,17 +2,26 @@
 
 ```
 artemis-ii/
-├── CLAUDE.md  PROMPT.md  CURATION.md (Stage 04)
+├── AGENTS.md                  rules for every AI agent (single source)
+├── CLAUDE.md                  pointer to AGENTS.md for Claude Code
+├── PROMPT.md                  Hugo's original brief
+├── CURATION.md                photo selection (Stage 05)
 ├── astro.config.mjs  tailwind.config.*  tsconfig.json
 ├── package.json  package-lock.json
-├── .github/                 workflows/ci.yml, pull_request_template.md
-├── docs/                      PLAN, SETUP, ROUTINE, STRUCTURE, SITEMAP
+├── .github/
+│   ├── workflows/             ci, security, deploy-preview, deploy-staging, deploy-production, media, dast (Stage 03)
+│   ├── dependabot.yml         dependency updates (Stage 03)
+│   └── pull_request_template.md
+├── docs/
+│   ├── PLAN.md  DELIVERY.md  SETUP.md  STRUCTURE.md  SITEMAP.md
+│   ├── agents/                how to run stages with any agent
 │   ├── specs/                 product spec, design spec, one spec per stage
-│   └── content-review/        text drafts (Stage 07)
-├── tests/                     Playwright acceptance tests, named after spec criteria (Stage 02)
+│   └── content-review/        text drafts (Stage 08)
+├── tests/                     Playwright acceptance and smoke tests, named after spec criteria (Stage 02)
 ├── scripts/
-│   └── ingest.ts              download + sharp + upload to R2 (Stage 05)
-├── public/                    only favicon and very light thumbnails
+│   └── ingest.ts              local mode for agents, upload mode for the pipeline (Stage 06)
+├── public/
+│   └── _headers               security headers (Stage 03); plus favicon and very light thumbnails
 └── src/
     ├── content/
     │   ├── config.ts          Zod schemas
@@ -33,9 +42,10 @@ artemis-ii/
 
 ## Decisions
 
-- **Routes by language folder** (`pages/es`, `pages/en`) with Spanish as the default; the slugs are the same in both languages so you can switch language on the same page, except for section names (see `SITEMAP.md`).
+- **Routes by language folder** (`pages/es`, `pages/en`) with Spanish as the default; slugs are localized per `SITEMAP.md`, and the language selector maps each page to its equivalent.
 - **Bilingual Zod schemas:** each text field is `{ es, en }`; sources are linked by ID from photos and stories, and each fact carries `sourceIds`.
-- **Media outside the repo:** `MEDIA_BASE_URL` points to R2 (production) or to a local folder ignored by git (development). Path: `<MEDIA_BASE_URL>/<nasa-id>/{original.ext, 640.avif, 1280.webp, thumb.webp, og.jpg…}`.
+- **Media outside the repo:** `MEDIA_BASE_URL` points to the bucket of each environment (`docs/DELIVERY.md`) or to a git-ignored local folder. Path: `<MEDIA_BASE_URL>/<nasa-id>/{original.ext, 640.avif, 1280.webp, thumb.webp, og.jpg…}`.
+- **Configuration per environment** comes from build-time variables set by the pipeline; nothing environment-specific is committed.
 - **React islands** only for preferences and, if needed, the gallery viewer.
 - **No secrets in the repo;** `.env.example` only with variable names.
 - **Design tokens** come from the Figma variables documented in `docs/specs/design.md`, generated as CSS variables in `src/styles/tokens.css` with the same names, and exposed to Tailwind.

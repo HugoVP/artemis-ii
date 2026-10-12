@@ -2,7 +2,7 @@
 
 - **Status:** draft (approved when Stage 00 is merged)
 - **Requirements covered:** `DES-01`, `DES-02`, `DES-03`, `QA-02` (contrast part); visual definition of `NAV-*`, `PREF-*`, `GAL-*`
-- **Depends on:** Stage 00 (`SITEMAP.md`, `product.md`); a Figma file shared through `FIGMA_FILE_URL`; the Figma connector enabled in the routine
+- **Depends on:** Stage 00 (`SITEMAP.md`, `product.md`); a Figma file shared through `FIGMA_FILE_URL`; an agent with the `figma-write` capability (`docs/agents/README.md`)
 
 ## Goal
 
@@ -25,7 +25,7 @@ Hugo can open one Figma file and see how every page of the site will look on a p
 ## Out of scope
 
 - Site code (Stage 02 onward).
-- Final texts and photos: screens use realistic placeholder text and neutral image placeholders, not NASA images (curation is Stage 04).
+- Final texts and photos: screens use realistic placeholder text and neutral image placeholders, not NASA images (curation is Stage 05).
 - Logos: no NASA logo or insignia anywhere (`LEGAL-02`).
 
 ## Design references
@@ -58,7 +58,7 @@ This stage creates them.
 
 ## Risks and open questions
 
-- **Figma write access: verified on 2026-10-12.** The connector exposes `use_figma` (Plugin API: frames, components, variants, text, auto-layout, variables, styles), plus `get_metadata`, `get_screenshot` and `get_variable_defs` for checking. If a write call fails during the stage, the agent keeps what it built, opens a draft PR and explains the error (CLAUDE.md, rule 8).
+- **Figma write access: verified on 2026-10-12** with Claude Code's Figma connector. The Figma MCP server exposes `use_figma` (Plugin API: frames, components, variants, text, auto-layout, variables, styles), plus `get_metadata`, `get_screenshot` and `get_variable_defs` for checking. If a write call fails during the stage, the agent keeps what it built, opens a draft PR and explains the error (AGENTS.md, rule 8).
 - **Tools not to use:** `html_to_figma` (produces plain layers without components or variables, which breaks `AC-3`), `create_new_file` (work only in `FIGMA_FILE_URL`), `generate_image` and `weave_*` (spend Figma AI credits), and the shader/plugin tools (they change Hugo's account library, not the file).
-- **Verified on 2026-10-12:** `FIGMA_FILE_URL` is set and the Figma connector is in the routine. If either is missing when the stage runs, open a draft PR asking for it (CLAUDE.md, rule 8).
+- **Verified on 2026-10-12:** `FIGMA_FILE_URL` is set and the Figma connector is in the Claude Code routine. If the agent running the stage has no Figma access or no `FIGMA_FILE_URL`, it does not start the stage (`docs/agents/next-stage.md`, step 5).
 - **Fonts:** only open-license fonts that can be self-hosted or loaded from Google Fonts.

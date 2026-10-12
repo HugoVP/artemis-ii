@@ -1,92 +1,71 @@
-# Setup (Hugo, one time only)
+# Setup (Hugo)
 
-With this, the project is ready to advance on its own, stage by stage, with your approval at each one.
+What Hugo sets up outside the repo so agents and the pipeline can work. Steps marked **(Stage 03)** are only needed when the pipeline stage starts; that stage's spec will list them exactly.
 
 ## How it works
 
 ```
-Routine starts a stage ─► the agent works in the cloud ─► opens a PR
-        ▲                                                     │
-        │                                     you review the Cloudflare preview
-        │                                                     │
-        └──── you merge the PR (your approval) ◄──────────────┘
-                     │
-                     └─► Cloudflare deploys main to production
+agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─► staging ─► next stage starts
+                                                                     │
+                                              Hugo publishes a release ─► production
 ```
 
-- **Approve** = merge the PR.
-- **Request changes** = comment on the PR. With Auto-fix on, the agent handles them on the same branch.
-- **Pause the project** = turn off the routine with its switch.
+- **Approve a stage** = merge its PR (it goes to staging).
+- **Request changes** = comment on the PR.
+- **Go to production** = publish a GitHub Release (see `docs/DELIVERY.md`).
+- **Pause the project** = turn off the agent's trigger (for Claude Code, the routine's switch).
 
 ## 1. GitHub
 
-1. Create a private repo, for example `HugoVP/artemis-ii`.
-2. Upload all the files in this folder to `main` (including `.github/`).
-3. Install the Claude GitHub App on the repo: https://github.com/apps/claude
-4. In **Settings → Rules → Rulesets**, create a rule for `main`:
-   - Require a pull request before merging.
-   - Require the `CI / build` check to pass.
-   - Block force push and deletion.
+1. Private repo `HugoVP/artemis-ii` with these files on `main`. Install the GitHub App of each agent you use (for example https://github.com/apps/claude).
+2. **Settings → Rules → Rulesets**, a rule for `main`: require a pull request, block force pushes and deletion. Required checks: `CI / build` now; after Stage 03, the checks listed in `docs/DELIVERY.md`.
+3. **(Stage 03)** Actions secrets and variables from `docs/DELIVERY.md`, and environments if your plan allows them. Decide the open questions in `docs/DELIVERY.md` (repository visibility, a separate identity for agents).
 
 ## 2. Cloudflare
 
-1. Create the account at https://dash.cloudflare.com
-2. **R2:** create a bucket (for example, `artemis-ii-media`) and enable public access with an `r2.dev` subdomain or, better, a custom domain later.
-3. **R2 token:** in R2 → Manage API tokens, create a token with read and write permission **only on that bucket**. Save the Access Key ID and the Secret.
-4. **Pages:** Workers & Pages → Create → Pages → Connect to Git → choose the repo.
-   - Framework preset: Astro
-   - Build command: `npm run build`
-   - Output directory: `dist`
-   - Environment variables: `MEDIA_BASE_URL` and `CONTACT_URL`
-   - With this, every PR gets a preview URL and every merge to `main` deploys production.
+1. **Pages:** the project connected to the repo (already done). Until Stage 03 it deploys previews and `main` on its own; the production URL is not shared with anyone yet.
+2. **(Stage 03) R2:** two buckets, for example `artemis-ii-media-staging` and `artemis-ii-media`, each with public read access (an `r2.dev` subdomain or a custom domain).
+3. **(Stage 03) Tokens**, each with the minimum scope:
+   - An API token with "Cloudflare Pages: Edit" only, for deployments.
+   - One R2 token per bucket, read and write on that bucket only.
 
-   The first build will fail until the project exists (Stage 02). That is normal.
+   These go into GitHub Actions secrets, **never** into an agent environment.
 
-## 3. Claude Code cloud environment
+## 3. Figma
 
-At claude.ai/code, create an environment called `artemis-ii`:
+1. Connect Figma in claude.ai → Settings → Connectors (done).
+2. The design file "Artemis II - Site" exists and its URL is `FIGMA_FILE_URL` (done).
+3. To review the design: open the file, check the Foundations, Components and Screens pages, and leave comments on the PR. Merging the PR approves the design.
 
-- **Network access:** Custom, with "Also include default list of common package managers" turned on, and these domains:
+## 4. Agents
+
+Each agent runs in its own sandbox with the same rules (`AGENTS.md`). Setup per agent is in `docs/agents/`:
+
+- Claude Code: `docs/agents/claude-code.md` (environment `artemis-ii`, routine, Figma connector).
+- Other agents: `docs/agents/other-agents.md`.
+
+Every agent environment gets:
+
+- **Variables:** only `FIGMA_FILE_URL`, `MEDIA_BASE_URL` (staging value) and `CONTACT_URL`. If `R2_*` variables were added to the Claude Code environment earlier, remove them: storage credentials belong to the pipeline.
+- **Network domains**, on top of the package managers:
   - `eol.jsc.nasa.gov`
   - `pds-imaging.jpl.nasa.gov`
   - `www.nasa.gov`
   - `images.nasa.gov`
   - `images-api.nasa.gov`
   - `images-assets.nasa.gov`
-  - `<YOUR_ACCOUNT_ID>.r2.cloudflarestorage.com`
 
-  If a stage is blocked by a domain, the agent will say so in the PR and you add it here.
-- **Environment variables:** `MEDIA_BASE_URL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `CONTACT_URL`, `FIGMA_FILE_URL`.
-- **Setup script:**
-  ```
-  if [ -f package.json ]; then npm ci; fi
-  ```
+  If a stage is blocked by a domain, the agent says so in the PR and you add it.
 
-## 4. Figma
+## 5. Start
 
-The design stage (Stage 01) is done in Figma and approved like any other stage.
-
-1. Connect Figma in claude.ai → Settings → Connectors (sign in with the Figma account that owns the design).
-2. In Figma, create an empty design file for the project, for example "Artemis II — site", in a team or project where your account can edit.
-3. Copy the file URL and add it to the `artemis-ii` environment as `FIGMA_FILE_URL`.
-4. In the routine, add the **Figma** connector (see `docs/ROUTINE.md`).
-
-To review the design: open the file, check the Foundations, Components and Screens pages, and leave comments on the PR (or in Figma, mentioning them in the PR). Merging the PR approves the design.
-
-## 5. The routine
-
-Create it at claude.ai/code/routines with the configuration and prompt from `docs/ROUTINE.md`.
-
-## 6. Start
-
-1. In the routine, press **Run now**. This launches Stage 00 (the plan).
-2. When the PR arrives, turn on **Auto-fix** from the session.
-3. Review the plan, comment if you want changes, and merge when you like it.
-4. From then on, each merge starts the next stage on its own.
+1. Merge the open stage PR. With Claude Code, the routine starts the next stage on its own; with other agents, start it with the kickoff prompt in `docs/agents/README.md`.
+2. Review each stage in its preview, comment or merge.
+3. Publish a release when you want the current staging version in production.
 
 ## Keep in mind
 
-- Routines are in preview and use up your usage limit, just like a normal session.
-- A green status in the run list only means there was no infrastructure error. What counts is the PR and its preview.
-- Everything the agents do on GitHub appears under your user.
-- Anyone who uses that environment can see its variables. Keep the environment for this project only.
+- Agent runs use your usage limits on each platform.
+- A green status in an agent's run list only means there was no infrastructure error. What counts is the PR and its preview.
+- Everything agents do on GitHub currently appears under your user (see "Agent identity" in `docs/DELIVERY.md`).
+- Anyone who uses an agent environment can see its variables. Keep each environment for this project only.

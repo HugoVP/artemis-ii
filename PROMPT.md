@@ -95,7 +95,7 @@ In the footer (short, with a link) and in full in "About", in both languages:
 
 ## How we work
 
-The project advances in stages, and each stage ends in a pull request. My approval is merging that PR. The full workflow rules are in `CLAUDE.md` and the stage plan is in `docs/PLAN.md`.
+The project advances in stages, and each stage ends in a pull request. My approval is merging that PR. The full workflow rules are in `AGENTS.md`, the stage plan is in `docs/PLAN.md`, and delivery is described in `docs/DELIVERY.md`.
 
 The project follows spec-driven development: every stage is built against an approved spec (see `docs/specs/README.md`).
 
@@ -105,6 +105,12 @@ Mandatory review points, each in its own PR:
 2. The visual design in Figma, before any page is coded.
 3. The list of candidate photos with their IDs, before downloading images in bulk.
 4. The texts for The launch, The mission and Why it matters, with their sources, before integrating them into the site.
+
+## Delivery and agents
+
+- Real CI/CD with security built in: every change gets a preview, every approved stage goes to staging, and production only changes when I publish a release.
+- Agents never hold deployment or storage credentials, and never merge, release or change settings.
+- The process must not depend on one AI vendor: Claude Code today, and later OpenAI Codex or open models must be able to run the same stages with the same rules.
 
 In the end, the static build must work in both languages, with the three density modes and the three gallery views.
 

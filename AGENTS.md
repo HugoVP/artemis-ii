@@ -96,6 +96,17 @@ The approved spec is the contract. Details in `docs/specs/README.md`; the essent
 - **Dependencies:** add a package only when the spec needs it, prefer well-maintained ones, justify each one under "Decisions", and always update `package-lock.json` with npm.
 - **Privacy:** never put session links or session IDs (for example `claude.ai/code/session_…`) in commits, PRs, issues or files. Never commit personal data.
 
+## Code Review Rules
+
+Applies to any agent asked to review a pull request (for example Codex reviewing a PR on GitHub). Report findings, do not fix them, and never approve or merge.
+
+- **Check the spec first:** compare the diff with the stage spec in `docs/specs/` and the requirement IDs in `docs/specs/product.md`. Report every acceptance criterion that is not met, and any change outside the scope of the stage.
+- **Security:** flag any secret, token, private URL or session link; any new dependency, network call or third-party resource; any weakened check (skipped or disabled tests or scans, lowered thresholds, new ignore entries); and any change to the protected paths listed under "Security rules" that is not listed under "Security-relevant changes".
+- **Consistency:** flag contradictions between `AGENTS.md`, `docs/DELIVERY.md`, `docs/PLAN.md` and the specs, and any rule that depends on one AI vendor.
+- **Content:** flag facts without a source link, literal translations between Spanish and English, and NASA logos or wording that suggests NASA endorsement.
+- **Language:** all Markdown must be English; flag any Spanish or bilingual copy of a Markdown file.
+- **Format:** list findings with the file and line, ordered by severity. Leave style and formatting to the pipeline.
+
 ## Content rules
 
 - Every fact (dates, times, distances, records, firsts, names) is verified against official or reliable journalistic sources. Keep the link to each source next to the fact in the content collections. Do not write facts from memory.

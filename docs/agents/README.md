@@ -31,7 +31,7 @@ Each stage lists the capabilities it needs in the "Needs" column of `docs/PLAN.m
 | Agent | Instructions | Capabilities | Status in this project | Setup |
 | --- | --- | --- | --- | --- |
 | Claude Code (cloud, routine) | `CLAUDE.md` → `AGENTS.md` | All, Figma through the claude.ai Figma connector | Verified 2026-10-12 (Stage 00, Figma write access) | [`claude-code.md`](claude-code.md) |
-| OpenAI Codex (cloud) | `AGENTS.md` | `git`, `node`, `browser`, `web` depending on its environment settings; Figma depends on MCP support in that runner | Not yet tried | [`other-agents.md`](other-agents.md) |
+| OpenAI Codex (cloud, CLI) | `AGENTS.md` (including `## Code Review Rules`) | `git`, `node`, `browser`, `web` depending on its environment settings; Figma works through MCP in the CLI, cloud support to verify | Not yet tried; first use planned as PR reviewer (`/review`) | [`other-agents.md`](other-agents.md) |
 | GitHub Copilot coding agent | `AGENTS.md` | `git`, `node`, `browser`; no Figma (Figma's remote MCP only accepts approved OAuth clients) | Evaluated 2026-10-12, not used (see "Agent identity" in `docs/DELIVERY.md`) | — |
 | Open-source agents (for example OpenHands, Aider, Goose, Cline) with any model, including open-weight models | `AGENTS.md` (configure if not automatic) | Depends on the runner; Figma only if it is an MCP client | Not yet tried | [`other-agents.md`](other-agents.md) |
 
@@ -39,7 +39,7 @@ When an agent is tried for the first time, update its row with what was verified
 
 ## Reviewer agents (optional)
 
-Hugo can ask a second agent, different from the one that built the stage, to review a stage PR. The reviewer reads `AGENTS.md`, the stage spec and the diff, and comments on the PR: spec criteria not met, bugs, security issues. It never pushes to the PR or approves it. The builder (or any agent) answers each finding in the PR.
+Hugo can ask a second agent, different from the one that built the stage, to review a stage PR (for example Codex with `/review`, following the `## Code Review Rules` in `AGENTS.md`). The reviewer reads `AGENTS.md`, the stage spec and the diff, and comments on the PR: spec criteria not met, bugs, security issues. It never pushes to the PR or approves it. The builder (or any agent) answers each finding in the PR.
 
 ## Adding a new agent
 

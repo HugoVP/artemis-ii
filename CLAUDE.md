@@ -13,11 +13,11 @@ For that reason every stage must end in a PR that can be merged as is, with no h
 
 ## Language of the project
 
-Everything used to build the project is in English: Markdown docs, code, identifiers, file and folder names, branch names, PR titles, commit messages, and workflow terms ("stage", "pending", "in review", "approved"). Only the site's own content is bilingual (content collections, UI strings, localized URL slugs, alt text) and PR bodies stay in Spanish for the reviewer.
+Everything used to build the project is in English: Markdown docs, code, identifiers, file and folder names, branch names, PR titles, commit messages, and workflow terms ("stage", "pending", "in review", "approved"). Only the site's own content is bilingual (content collections, UI strings, localized URL slugs, alt text).
 
 ## Documentation language
 
-All Markdown files in this repo (`CLAUDE.md`, `PROMPT.md`, everything in `docs/`, `CURATION.md`, any new `.md`) are written in **English only**. They are the single source of truth. Never create Spanish or bilingual copies of Markdown files. This applies to documentation, not to the site's bilingual content (content collections, UI strings) nor to PR text, which stays in Spanish.
+All Markdown files in this repo (`CLAUDE.md`, `PROMPT.md`, everything in `docs/`, `CURATION.md`, any new `.md`) are written in **English only**. They are the single source of truth. Never create Spanish or bilingual copies of Markdown files. This applies to documentation, not to the site's bilingual content (content collections, UI strings).
 
 ## Rules for each stage
 
@@ -27,7 +27,7 @@ All Markdown files in this repo (`CLAUDE.md`, `PROMPT.md`, everything in `docs/`
 4. **Before opening the PR:**
    - Run `npm run build` (and `npm run check` once it exists) and make sure they pass.
    - Update `docs/PLAN.md`: mark the stage as `in review`, link the PR, and note what is pending or changed.
-5. **PR format**, in Spanish:
+5. **PR format**, in English:
    - Title: `Stage NN: <name>`.
    - What was done, in short bullets.
    - What to review: the concrete list of things Hugo must check in the Cloudflare preview (pages and what to look for on each).

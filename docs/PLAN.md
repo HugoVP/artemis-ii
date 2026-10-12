@@ -106,4 +106,5 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 - 2026-10-12 — Stage 00 update (requested by Hugo) — DevSecOps and agent-neutral restructure: four environments (local, preview, staging, production), production only through releases, new Stage 03 (delivery pipeline and security baseline, stages renumbered to 11), `AGENTS.md` as the single instruction file for any agent, `docs/DELIVERY.md`, `docs/agents/`.
 - 2026-10-12 — Stage 00 update — Repository confirmed public by Hugo; `DELIVERY.md` updated with public-repository rules, the agent identity setup and GitHub-native security checks (CodeQL, secret scanning with push protection, dependency review).
 - 2026-10-12 — Stage 00 update — Agent identity decided: limited fine-grained token plus approval clicks (merge and production). GitHub Copilot coding agent and a custom GitHub App evaluated and not used for now.
-\n- 2026-10-12 — Stage 00 update — Added `## Code Review Rules` to `AGENTS.md` and the OpenAI Codex setup, verified facts and open questions to `docs/agents/other-agents.md`.\n
+
+- 2026-10-12 — Stage 00 update — Added `## Code Review Rules` to `AGENTS.md` and the OpenAI Codex setup, verified facts and open questions to `docs/agents/other-agents.md`.

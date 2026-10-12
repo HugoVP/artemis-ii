@@ -17,9 +17,11 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
 
 ## 1. GitHub
 
-1. Private repo `HugoVP/artemis-ii` with these files on `main`. Install the GitHub App of each agent you use (for example https://github.com/apps/claude).
-2. **Settings → Rules → Rulesets**, a rule for `main`: require a pull request, block force pushes and deletion. Required checks: `CI / build` now; after Stage 03, the checks listed in `docs/DELIVERY.md`.
-3. **(Stage 03)** Actions secrets and variables from `docs/DELIVERY.md`, and environments if your plan allows them. Decide the open questions in `docs/DELIVERY.md` (repository visibility, a separate identity for agents).
+1. Public repo `HugoVP/artemis-ii` (see "Public repository" in `docs/DELIVERY.md`). Install the GitHub App of each agent you use (for example https://github.com/apps/claude).
+2. **Settings → Code security:** turn on Dependabot alerts, secret scanning and push protection. **Settings → Actions → General:** require approval for workflows from outside contributors.
+3. **Settings → Rules → Rulesets**, a rule for `main`: require a pull request, block force pushes and deletion. Required checks: `CI / build` now; after Stage 03, the checks listed in `docs/DELIVERY.md`.
+4. **(Stage 03)** Actions secrets, variables and environments from `docs/DELIVERY.md`.
+5. **Recommended:** a separate GitHub identity for agents, with the rulesets that make it a technical block ("Agent identity" in `docs/DELIVERY.md`).
 
 ## 2. Cloudflare
 

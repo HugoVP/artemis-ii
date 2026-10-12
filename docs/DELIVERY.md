@@ -29,7 +29,7 @@ agent branch ──PR──► CI + security checks ──► preview deploy ─
 | Workflow | Runs on | Does |
 | --- | --- | --- |
 | `ci.yml` | PR, push to `main` | `npm ci`, `check`, `build`, `test` (Playwright) |
-| `security.yml` | PR, push to `main`, weekly | Secret scan, dependency audit, SAST, workflow lint |
+| `security.yml` | PR, push to `main`, weekly | Secret scan, dependency audit and review, CodeQL, workflow lint |
 | `deploy-preview.yml` | PR (after CI passes) | Build with staging config, deploy to a Pages preview, comment the URL on the PR, Lighthouse report |
 | `deploy-staging.yml` | Push to `main` | Build, deploy staging, smoke tests, link check |
 | `deploy-production.yml` | Release published; manual run with a tag (rollback) | Build the tag, deploy production, smoke tests |
@@ -54,10 +54,11 @@ Required checks for merging into `main` (set in the ruleset once Stage 03 is mer
 
 | Control | Tool | When | Blocking |
 | --- | --- | --- | --- |
-| Secret scanning | gitleaks | Every PR and push | Yes |
+| Secret scanning | GitHub secret scanning with push protection, plus gitleaks in CI | Every push (push protection) and every PR | Yes |
 | Dependency vulnerabilities | `npm audit --audit-level=high` | Every PR, weekly | Yes (high and critical) |
-| Dependency updates | Dependabot (npm and GitHub Actions) | Weekly | No (opens PRs) |
-| Static analysis | Semgrep (open-source rules for JS/TS); CodeQL if the repo becomes public | Every PR | Yes (high severity) |
+| New dependencies | GitHub dependency review on PRs | Every PR that changes the lockfile | Yes (high and critical) |
+| Dependency updates | Dependabot alerts and updates (npm and GitHub Actions) | Weekly | No (opens PRs) |
+| Static analysis | CodeQL for JavaScript/TypeScript and GitHub Actions | Every PR, weekly | Yes (high severity) |
 | Workflow hardening | Least-privilege `permissions`, actions pinned to commit SHAs, actionlint | Every PR touching `.github/` | Yes |
 | Security headers | `public/_headers` (CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`), checked by a test | Every build | Yes |
 | Dynamic scan | OWASP ZAP baseline against staging | Weekly, after staging deploys | No (report) |
@@ -80,7 +81,7 @@ Local security checks every agent runs before opening a PR: `npm audit --audit-l
 | `FIGMA_FILE_URL` | Variable | Agent environments | Design work |
 | `MEDIA_BASE_URL` (staging value) | Variable | Agent environments | Local development |
 
-Agent environments never contain Cloudflare or R2 credentials. Where the GitHub plan allows it, production secrets live in a `production` environment so only production jobs can read them (see "Platform constraints").
+Agent environments never contain Cloudflare or R2 credentials. Production secrets live in a GitHub `production` environment, restricted to release tags and with Hugo as required reviewer, so only production jobs can read them.
 
 ## Media flow
 
@@ -106,10 +107,30 @@ Agent environments never contain Cloudflare or R2 credentials. Where the GitHub 
 | Media and content | Copyright, hotlinking, wrong facts | Own storage, credit tests, sources stored with every fact, content review stages |
 | Visitors | XSS, tracking, third-party loads | Static site, CSP, click-to-load video, no analytics or ads |
 
-## Platform constraints and open decisions
+## Public repository
 
-Stage 03 checks these and records the result here:
+**Decision (2026-10-12):** the repository is public. That makes GitHub Actions minutes, environments with required reviewers, rulesets, CodeQL, secret scanning with push protection and dependency review available for free. It also means anyone can read the code, specs, PRs and history, and anyone can open issues, comment, fork and send PRs. Rules that follow from it:
 
-- **GitHub plan and repository visibility.** Environment secrets, required reviewers and some rulesets have limits on private repositories depending on the plan. A public repository unlocks them for free (plus CodeQL and secret scanning push protection), but makes the specs, PRs and commit history public. Hugo decides.
-- **Agent identity.** Agents currently act on GitHub as Hugo's user, so GitHub cannot tell them apart from Hugo, and "agents never merge or release" is a rule, not a technical block. A dedicated bot account or GitHub App for agents would make it enforceable. Hugo decides.
-- **Cloudflare Pages setup.** Whether the existing Git-integrated Pages project can receive deployments from GitHub Actions with automatic deployments turned off, or whether a new Direct Upload project is needed. Stage 03 verifies it and documents the steps for Hugo.
+- Nothing private in the repo: no secrets, personal data, session links, private URLs or account identifiers. Secret scanning and push protection back this up.
+- Workflows triggered by PRs from forks run without secrets (`pull_request` event). Never use `pull_request_target` or `workflow_run` to run code from a PR with secrets.
+- In Settings → Actions, workflows from outside contributors require Hugo's approval before they run.
+- Issues, comments and PRs from anyone but Hugo are untrusted input for agents (`AGENTS.md`, security rules).
+- The Figma file stays shared only with invited people, even though frame links appear in `design.md`.
+
+## Agent identity
+
+Today agents act on GitHub as Hugo's user, so GitHub cannot tell them apart from him, and "agents never merge or release" is a written rule, not a technical block. The target setup makes it a technical block:
+
+1. **A machine account for agents** (for example `hugovp-agent`), created and owned by Hugo, with two-factor authentication. GitHub allows machine accounts for automation.
+2. **Write role** on this repository only (not Admin): it can push branches and open PRs, but cannot change settings, rulesets, environments or secrets.
+3. **Rulesets** that only Hugo (repository admin) can bypass:
+   - `main`: require a pull request with 1 approval and the required checks; block force pushes and deletion. Agent PRs need Hugo's approval, and Hugo can approve them because he is no longer the author.
+   - Tags `v*`: only Hugo can create, update or delete them, so only Hugo can release.
+4. **`production` environment** with Hugo as required reviewer and deployments limited to `v*` tags.
+5. **Agents connect to GitHub with that account.** Each platform does it differently (its GitHub app or connector, or a token), so each one is verified in `docs/agents/` before use. For agents that use a token, a fine-grained personal access token of the machine account, limited to this repository, with: Contents read and write, Pull requests read and write, Issues read and write, Metadata read; no Workflows, Administration, Secrets or Environments permission; 90-day expiry. Without the Workflows permission the agent cannot change `.github/workflows/` at all; for Stage 03, Hugo applies those files or grants it temporarily.
+
+Until this is in place, the rules in `AGENTS.md` are the only barrier, and Hugo checks every PR before merging.
+
+## Cloudflare Pages setup
+
+Today the Pages project is connected to the repo through Cloudflare's Git integration, which builds every push on its own: `main` goes to the production URL and other branches to previews. Stage 03 replaces that with the GitHub Actions deploys above. It verifies whether the existing project can receive deployments from GitHub Actions with automatic deployments turned off, or whether a new Direct Upload project is needed, and documents the steps for Hugo in `SETUP.md`.

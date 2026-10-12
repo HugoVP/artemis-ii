@@ -65,7 +65,7 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 
 ### 03 Delivery pipeline and security baseline
 - The workflows, gates and controls in `DELIVERY.md`: CI, security checks, preview, staging and production deploys, rollback, Dependabot, `public/_headers`, smoke tests.
-- Resolves the open decisions in `DELIVERY.md` (GitHub plan and visibility, agent identity, Pages setup) with Hugo, and documents the exact setup steps in `SETUP.md`.
+- Applies the decisions in `DELIVERY.md` (public repository, agent identity, Pages setup) and documents the exact setup steps in `SETUP.md`.
 - **Possible blocker:** Cloudflare API token, buckets or GitHub settings not ready; the stage opens as a draft with the steps Hugo must take.
 
 ### 04 Preferences
@@ -104,3 +104,4 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 - 2026-10-12 — Stage 00 update (requested by Hugo) — Added the Figma design stage (01, stages renumbered to 10) and spec-driven development: product spec with requirement IDs, stage specs written one stage ahead, PR template, acceptance tests in CI.
 - 2026-10-12 — Stage 00 update — Verified the Figma connector can write to the design file (`use_figma`); Stage 01 spec and design rules updated with the tools to use and avoid.
 - 2026-10-12 — Stage 00 update (requested by Hugo) — DevSecOps and agent-neutral restructure: four environments (local, preview, staging, production), production only through releases, new Stage 03 (delivery pipeline and security baseline, stages renumbered to 11), `AGENTS.md` as the single instruction file for any agent, `docs/DELIVERY.md`, `docs/agents/`.
+- 2026-10-12 — Stage 00 update — Repository confirmed public by Hugo; `DELIVERY.md` updated with public-repository rules, the agent identity setup and GitHub-native security checks (CodeQL, secret scanning with push protection, dependency review).

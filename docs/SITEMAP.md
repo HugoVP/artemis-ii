@@ -1,32 +1,32 @@
-# Mapa del sitio (propuesta)
+# Site map (proposal)
 
-Cada página existe en `/es/…` y `/en/…`; el selector de idioma lleva a la página equivalente. Slugs de sección:
+Every page exists at `/es/…` and `/en/…`; the language selector takes you to the equivalent page. Section slugs:
 
-| Sección | ES | EN |
+| Section | ES | EN |
 | --- | --- | --- |
-| Inicio | `/es/` | `/en/` |
-| El despegue | `/es/despegue/` | `/en/launch/` |
-| La misión | `/es/mision/` | `/en/mission/` |
-| Por qué importa | `/es/por-que-importa/` | `/en/why-it-matters/` |
-| Galería | `/es/galeria/` | `/en/gallery/` |
-| Capítulo | `/es/galeria/<capitulo>/` | `/en/gallery/<chapter>/` |
-| Foto | `/es/galeria/<capitulo>/<id-nasa>/` | `/en/gallery/<chapter>/<id-nasa>/` |
-| Acerca de | `/es/acerca/` | `/en/about/` |
+| Home | `/es/` | `/en/` |
+| The launch | `/es/despegue/` | `/en/launch/` |
+| The mission | `/es/mision/` | `/en/mission/` |
+| Why it matters | `/es/por-que-importa/` | `/en/why-it-matters/` |
+| Gallery | `/es/galeria/` | `/en/gallery/` |
+| Chapter | `/es/galeria/<capitulo>/` | `/en/gallery/<chapter>/` |
+| Photo | `/es/galeria/<capitulo>/<id-nasa>/` | `/en/gallery/<chapter>/<id-nasa>/` |
+| About | `/es/acerca/` | `/en/about/` |
 
-Los identificadores de capítulo (en cada idioma): despegue/launch, rumbo-a-la-luna/outbound, lado-oculto/far-side, eclipse/eclipse, regreso/return. El ID de la foto es el mismo en ambos idiomas.
+Chapter identifiers (per language): despegue/launch, rumbo-a-la-luna/outbound, lado-oculto/far-side, eclipse/eclipse, regreso/return. The photo ID is the same in both languages.
 
-`/` redirige a `/es/` (y, desde la Etapa 02, a `/en/` en la primera visita si el navegador está en inglés).
+`/` redirects to `/es/` (and, from Stage 02, to `/en/` on the first visit if the browser is set to English).
 
-## Contenido por página
+## Content per page
 
-- **Inicio:** foto o video destacado, frase de bienvenida, accesos a las demás secciones.
-- **El despegue:** resumen del lanzamiento (fecha y hora, cuenta regresiva, fases del ascenso, qué significó), fotos del despegue y video oficial (carga bajo demanda).
-- **La misión:** línea de tiempo (lanzamiento, inyección translunar, sobrevuelo del lado oculto, eclipse, regreso, amerizaje), tripulación (Wiseman, Glover, Koch, Hansen), hitos y récords.
-- **Por qué importa:** primer regreso humano a la Luna desde el Apolo 17 (1972), el programa Artemis y lo que sigue.
-- **Galería:** capítulos con las vistas Mosaico/Galería/Inmersiva; la vista se elige con el control de la barra superior (solo visible aquí).
-- **Foto:** imagen grande, historia o pie, fecha, cámara, ID NASA, enlace al original, descarga, crédito.
-- **Acerca de:** fuentes, créditos, pautas de uso de NASA, aviso completo de IA y contacto.
+- **Home:** featured photo or video, welcome line, links to the other sections.
+- **The launch:** summary of the liftoff (date and time, countdown, phases of ascent, what it meant), launch photos and the official video (loaded on demand).
+- **The mission:** timeline (launch, translunar injection, far-side flyby, eclipse, return, splashdown), crew (Wiseman, Glover, Koch, Hansen), milestones and records.
+- **Why it matters:** first human return to the Moon since Apollo 17 (1972), the Artemis program and what comes next.
+- **Gallery:** chapters with the Mosaic/Gallery/Immersive views; the view is chosen with the top-bar control (visible only here).
+- **Photo:** large image, story or caption, date, camera, NASA ID, link to the original, download, credit.
+- **About:** sources, credits, NASA usage guidelines, full AI notice and contact.
 
-## Todas las páginas
+## All pages
 
-Barra superior con navegación y preferencias (tema, idioma, densidad); pie con crédito a NASA (sin logotipo ni sugerir respaldo) y aviso corto de IA con enlace; hreflang y Open Graph por idioma. Sin publicidad.
+Top bar with navigation and preferences (theme, language, density); footer with NASA credit (no logo, no suggestion of endorsement) and short AI notice with a link; hreflang and Open Graph per language. No advertising.

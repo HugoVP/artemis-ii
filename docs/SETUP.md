@@ -1,81 +1,81 @@
-# Puesta en marcha (Hugo, una sola vez)
+# Setup (Hugo, one time only)
 
-Con esto el proyecto queda listo para avanzar solo, etapa por etapa, con tu aprobación en cada una.
+With this, the project is ready to advance on its own, stage by stage, with your approval at each one.
 
-## Cómo funciona
+## How it works
 
 ```
-Routine arranca una etapa ─► el agente trabaja en la nube ─► abre un PR
+Routine starts a stage ─► the agent works in the cloud ─► opens a PR
         ▲                                                     │
-        │                                     revisas la vista previa de Cloudflare
+        │                                     you review the Cloudflare preview
         │                                                     │
-        └──── fusionas el PR (tu aprobación) ◄────────────────┘
+        └──── you merge the PR (your approval) ◄──────────────┘
                      │
-                     └─► Cloudflare despliega main a producción
+                     └─► Cloudflare deploys main to production
 ```
 
-- **Aprobar** = fusionar el PR.
-- **Pedir cambios** = comentar en el PR. Con Auto-fix activo, el agente los atiende en la misma rama.
-- **Pausar el proyecto** = apagar la routine con su interruptor.
+- **Approve** = merge the PR.
+- **Request changes** = comment on the PR. With Auto-fix on, the agent handles them on the same branch.
+- **Pause the project** = turn off the routine with its switch.
 
 ## 1. GitHub
 
-1. Crea un repo privado, por ejemplo `HugoVP/artemis-ii`.
-2. Sube todos los archivos de esta carpeta a `main` (incluida `.github/`).
-3. Instala la Claude GitHub App en el repo: https://github.com/apps/claude
-4. En **Settings → Rules → Rulesets**, crea una regla para `main`:
-   - Exigir pull request antes de fusionar.
-   - Exigir que pase el check `CI / build`.
-   - Bloquear force push y borrado.
+1. Create a private repo, for example `HugoVP/artemis-ii`.
+2. Upload all the files in this folder to `main` (including `.github/`).
+3. Install the Claude GitHub App on the repo: https://github.com/apps/claude
+4. In **Settings → Rules → Rulesets**, create a rule for `main`:
+   - Require a pull request before merging.
+   - Require the `CI / build` check to pass.
+   - Block force push and deletion.
 
 ## 2. Cloudflare
 
-1. Crea la cuenta en https://dash.cloudflare.com
-2. **R2:** crea un bucket (por ejemplo, `artemis-ii-media`) y actívale acceso público con un subdominio `r2.dev` o, mejor, un dominio propio después.
-3. **Token de R2:** en R2 → Manage API tokens, crea un token con permiso de lectura y escritura **solo en ese bucket**. Guarda el Access Key ID y el Secret.
-4. **Pages:** Workers & Pages → Create → Pages → Connect to Git → elige el repo.
+1. Create the account at https://dash.cloudflare.com
+2. **R2:** create a bucket (for example, `artemis-ii-media`) and enable public access with an `r2.dev` subdomain or, better, a custom domain later.
+3. **R2 token:** in R2 → Manage API tokens, create a token with read and write permission **only on that bucket**. Save the Access Key ID and the Secret.
+4. **Pages:** Workers & Pages → Create → Pages → Connect to Git → choose the repo.
    - Framework preset: Astro
    - Build command: `npm run build`
    - Output directory: `dist`
-   - Variables de entorno: `MEDIA_BASE_URL` y `CONTACT_URL`
-   - Con esto, cada PR tiene su URL de vista previa y cada fusión a `main` despliega producción.
+   - Environment variables: `MEDIA_BASE_URL` and `CONTACT_URL`
+   - With this, every PR gets a preview URL and every merge to `main` deploys production.
 
-   El primer build fallará hasta que exista el proyecto (Etapa 01). Es normal.
+   The first build will fail until the project exists (Stage 01). That is normal.
 
-## 3. Entorno en la nube de Claude Code
+## 3. Claude Code cloud environment
 
-En claude.ai/code, crea un entorno llamado `artemis-ii`:
+At claude.ai/code, create an environment called `artemis-ii`:
 
-- **Network access:** Custom, con "Also include default list of common package managers" activado, y estos dominios:
+- **Network access:** Custom, with "Also include default list of common package managers" turned on, and these domains:
   - `eol.jsc.nasa.gov`
   - `pds-imaging.jpl.nasa.gov`
   - `www.nasa.gov`
   - `images.nasa.gov`
   - `images-api.nasa.gov`
   - `images-assets.nasa.gov`
-  - `<TU_ACCOUNT_ID>.r2.cloudflarestorage.com`
+  - `<YOUR_ACCOUNT_ID>.r2.cloudflarestorage.com`
 
-  Si una etapa se bloquea por un dominio, el agente lo dirá en el PR y lo agregas aquí.
+  If a stage is blocked by a domain, the agent will say so in the PR and you add it here.
 - **Environment variables:** `MEDIA_BASE_URL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `CONTACT_URL`.
 - **Setup script:**
   ```
   if [ -f package.json ]; then npm ci; fi
   ```
 
-## 4. La routine
+## 4. The routine
 
-Créala en claude.ai/code/routines con la configuración y el prompt de `docs/ROUTINE.md`.
+Create it at claude.ai/code/routines with the configuration and prompt from `docs/ROUTINE.md`.
 
-## 5. Arrancar
+## 5. Start
 
-1. En la routine, pulsa **Run now**. Esto lanza la Etapa 00 (el plan).
-2. Cuando llegue el PR, actívale **Auto-fix** desde la sesión.
-3. Revisa el plan, comenta si quieres cambios y fusiona cuando te guste.
-4. Desde ahí, cada fusión arranca la siguiente etapa sola.
+1. In the routine, press **Run now**. This launches Stage 00 (the plan).
+2. When the PR arrives, turn on **Auto-fix** from the session.
+3. Review the plan, comment if you want changes, and merge when you like it.
+4. From then on, each merge starts the next stage on its own.
 
-## Para tener en cuenta
+## Keep in mind
 
-- Las routines están en vista previa y consumen tu límite de uso, igual que una sesión normal.
-- Un estado verde en la lista de corridas solo significa que no hubo error de infraestructura. Lo que cuenta es el PR y su vista previa.
-- Todo lo que hacen los agentes en GitHub aparece con tu usuario.
-- Las variables del entorno las puede ver cualquiera que use ese entorno. Mantén el entorno solo para este proyecto.
+- Routines are in preview and use up your usage limit, just like a normal session.
+- A green status in the run list only means there was no infrastructure error. What counts is the PR and its preview.
+- Everything the agents do on GitHub appears under your user.
+- Anyone who uses that environment can see its variables. Keep the environment for this project only.

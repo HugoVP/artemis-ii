@@ -1,38 +1,38 @@
-# Estructura del proyecto (propuesta)
+# Project structure (proposal)
 
 ```
 artemis-ii/
-├── CLAUDE.md  PROMPT.md  CURATION.md (Etapa 03)
+├── CLAUDE.md  PROMPT.md  CURATION.md (Stage 03)
 ├── astro.config.mjs  tailwind.config.*  tsconfig.json
 ├── package.json  package-lock.json
 ├── .github/workflows/ci.yml
 ├── docs/                      PLAN, SETUP, ROUTINE, STRUCTURE, SITEMAP
-│   └── content-review/        borradores de textos (Etapa 06)
+│   └── content-review/        text drafts (Stage 06)
 ├── scripts/
-│   └── ingest.ts              descarga + sharp + subida a R2 (Etapa 04)
-├── public/                    solo favicon y miniaturas muy ligeras
+│   └── ingest.ts              download + sharp + upload to R2 (Stage 04)
+├── public/                    only favicon and very light thumbnails
 └── src/
     ├── content/
-    │   ├── config.ts          esquemas Zod
-    │   ├── photos/            un archivo por foto (metadatos, ES/EN)
-    │   ├── stories/           historias de fotos (ES/EN, con fuentes)
-    │   ├── chapters/          capítulos de la misión
-    │   └── sources/           fuentes con título, URL y fecha de consulta
-    ├── i18n/                  textos de interfaz es/en y utilidades de rutas
-    ├── lib/                   media.ts (MEDIA_BASE_URL), fechas, helpers
+    │   ├── config.ts          Zod schemas
+    │   ├── photos/            one file per photo (metadata, ES/EN)
+    │   ├── stories/           photo stories (ES/EN, with sources)
+    │   ├── chapters/          mission chapters
+    │   └── sources/           sources with title, URL and date accessed
+    ├── i18n/                  UI texts es/en and route utilities
+    ├── lib/                   media.ts (MEDIA_BASE_URL), dates, helpers
     ├── layouts/               Base.astro
-    ├── components/            .astro estáticos; islas React en components/islands/
-    ├── styles/                global.css, variables de tema y densidad
+    ├── components/            static .astro; React islands in components/islands/
+    ├── styles/                global.css, theme and density variables
     └── pages/
-        ├── index.astro        redirige a /es/
-        ├── es/  …             páginas en español
-        └── en/  …             páginas en inglés
+        ├── index.astro        redirects to /es/
+        ├── es/  …             pages in Spanish
+        └── en/  …             pages in English
 ```
 
-## Decisiones
+## Decisions
 
-- **Rutas por carpeta de idioma** (`pages/es`, `pages/en`) con español por defecto; los slugs son iguales en ambos idiomas para poder cambiar de idioma a la misma página, salvo los nombres de sección (ver `SITEMAP.md`).
-- **Esquemas Zod bilingües:** cada campo de texto es `{ es, en }`; las fuentes se enlazan por ID desde fotos e historias, y cada dato lleva `sourceIds`.
-- **Medios fuera del repo:** `MEDIA_BASE_URL` apunta a R2 (producción) o a una carpeta local ignorada por git (desarrollo). Ruta: `<MEDIA_BASE_URL>/<id-nasa>/{original.ext, 640.avif, 1280.webp, thumb.webp, og.jpg…}`.
-- **Islas React** solo para preferencias y, si hace falta, el visor de galería.
-- **Sin secretos en el repo;** `.env.example` solo con nombres de variables.
+- **Routes by language folder** (`pages/es`, `pages/en`) with Spanish as the default; the slugs are the same in both languages so you can switch language on the same page, except for section names (see `SITEMAP.md`).
+- **Bilingual Zod schemas:** each text field is `{ es, en }`; sources are linked by ID from photos and stories, and each fact carries `sourceIds`.
+- **Media outside the repo:** `MEDIA_BASE_URL` points to R2 (production) or to a local folder ignored by git (development). Path: `<MEDIA_BASE_URL>/<nasa-id>/{original.ext, 640.avif, 1280.webp, thumb.webp, og.jpg…}`.
+- **React islands** only for preferences and, if needed, the gallery viewer.
+- **No secrets in the repo;** `.env.example` only with variable names.

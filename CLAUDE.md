@@ -1,64 +1,68 @@
-# CLAUDE.md — Sitio bilingüe Artemis II
+# CLAUDE.md — Artemis II bilingual site
 
-Lee este archivo completo antes de hacer cualquier cosa. Después lee `PROMPT.md` (qué se construye) y `docs/PLAN.md` (en qué etapa vamos).
+Read this file in full before doing anything. Then read `PROMPT.md` (what is being built) and `docs/PLAN.md` (which stage we are on).
 
-## El flujo de trabajo
+## Workflow
 
-Este proyecto lo construyen agentes en la nube, una etapa a la vez. El dueño del proyecto (Hugo) aprueba cada etapa fusionando su pull request. Esa fusión hace dos cosas solas:
+This project is built by cloud agents, one stage at a time. The project owner (Hugo) approves each stage by merging its pull request. That merge does two things on its own:
 
-1. Cloudflare Pages despliega `main` a producción.
-2. Una routine de Claude Code arranca la siguiente etapa.
+1. Cloudflare Pages deploys `main` to production.
+2. A Claude Code routine starts the next stage.
 
-Por eso cada etapa debe terminar en un PR que se pueda fusionar tal cual, sin pasos manuales escondidos.
+For that reason every stage must end in a PR that can be merged as is, with no hidden manual steps.
 
-## Reglas de cada etapa
+## Documentation language
 
-1. **Una etapa por sesión y por PR.** Toma solo la siguiente etapa pendiente de `docs/PLAN.md`. No adelantes trabajo de etapas futuras.
-2. **Nunca hagas push a `main`.** Trabaja en una rama `claude/etapa-NN-nombre-corto` y abre un PR contra `main`.
-3. **Si ya hay un PR de etapa abierto, no empieces otra.** Termina sin cambios y explica por qué en el resumen de la sesión.
-4. **Antes de abrir el PR:**
-   - Corre `npm run build` (y `npm run check` cuando exista) y asegúrate de que pasen.
-   - Actualiza `docs/PLAN.md`: marca la etapa como `en revisión`, enlaza el PR y anota lo que quedó pendiente o cambió.
-5. **Formato del PR**, en español:
-   - Título: `Etapa NN: <nombre>`.
-   - Qué se hizo, en viñetas cortas.
-   - Qué revisar: la lista concreta de cosas que Hugo debe ver en la vista previa de Cloudflare (páginas y qué buscar en cada una).
-   - Decisiones tomadas y por qué.
-   - Fuentes consultadas, si la etapa incluye datos o textos.
-   - Pendientes o riesgos.
-6. **Etapas de revisión de contenido** (marcadas con 🔍 en el plan): el PR contiene solo el contenido a revisar (listas, textos, fuentes), sin integrarlo todavía al sitio. Hugo lo aprueba fusionando o pide cambios en comentarios.
-7. **Si Hugo deja comentarios en un PR**, atiéndelos en la misma rama. No abras otro PR para lo mismo.
-8. **Si te bloqueas** (falta una credencial, un dominio bloqueado por la red, una decisión que no está en el prompt), no improvises: abre el PR como borrador con lo que sí lograste y explica exactamente qué necesitas de Hugo.
+All Markdown files in this repo (`CLAUDE.md`, `PROMPT.md`, everything in `docs/`, `CURATION.md`, any new `.md`) are written in **English only**. They are the single source of truth. Never create Spanish or bilingual copies of Markdown files. This applies to documentation, not to the site's bilingual content (content collections, UI strings) nor to PR text, which stays in Spanish.
 
-## Reglas de contenido
+## Rules for each stage
 
-- Todo dato (fechas, horas, distancias, récords, primeras veces, nombres) se verifica en fuentes oficiales o periodísticas confiables. Guarda el enlace de cada fuente junto al dato en las content collections. No escribas datos de memoria.
-- Si algo no se puede verificar, déjalo fuera y anótalo en el PR.
-- Español e inglés escritos de forma natural, nunca traducción literal.
-- Historias sensibles (por ejemplo, el cráter Carroll) con respeto y sin dramatizar.
-- Créditos: "Crédito: NASA" / "Credit: NASA" con enlace al original. Sin logotipos ni insignias de NASA, sin sugerir respaldo de NASA, sin publicidad.
+1. **One stage per session and per PR.** Take only the next pending stage in `docs/PLAN.md`. Do not get ahead on future stages.
+2. **Never push to `main`.** Work on a branch `claude/etapa-NN-short-name` and open a PR against `main`.
+3. **If a stage PR is already open, do not start another.** Finish with no changes and explain why in the session summary.
+4. **Before opening the PR:**
+   - Run `npm run build` (and `npm run check` once it exists) and make sure they pass.
+   - Update `docs/PLAN.md`: mark the stage as `en revisión` (in review), link the PR, and note what is pending or changed.
+5. **PR format**, in Spanish:
+   - Title: `Etapa NN: <name>`.
+   - What was done, in short bullets.
+   - What to review: the concrete list of things Hugo must check in the Cloudflare preview (pages and what to look for on each).
+   - Decisions made and why.
+   - Sources consulted, if the stage includes data or text.
+   - Pending items or risks.
+6. **Content review stages** (marked 🔍 in the plan): the PR contains only the content to review (lists, texts, sources), not yet integrated into the site. Hugo approves by merging or asks for changes in comments.
+7. **If Hugo leaves comments on a PR**, address them on the same branch. Do not open another PR for the same thing.
+8. **If you get blocked** (a missing credential, a domain blocked by the network, a decision not covered in the prompt), do not improvise: open the PR as a draft with what you did achieve and explain exactly what you need from Hugo.
 
-## Reglas técnicas
+## Content rules
 
-- Astro + TypeScript + Tailwind, sitio 100% estático. React solo para islas interactivas.
-- Gestor de paquetes: npm, con `package-lock.json` en el repo. Scripts `build` y `check` en `package.json` (la CI los usa).
-- Content collections con esquema Zod para fotos, historias, capítulos y fuentes.
-- Medios desde almacenamiento propio vía `MEDIA_BASE_URL`. Nunca enlaces directo a imágenes en servidores de NASA (solo enlaces de "ver original").
-- Imágenes y binarios pesados fuera del repo: van a R2. En el repo solo quedan los metadatos y, si acaso, miniaturas muy ligeras.
-- Secretos solo en variables de entorno. Nunca escribas llaves, tokens ni endpoints privados en archivos del repo, en commits ni en PRs.
-- `localStorage` siempre dentro de try/catch.
-- Accesibilidad: contraste suficiente en ambos temas, foco visible, textos alternativos en ambos idiomas.
-- Móvil primero.
+- Every fact (dates, times, distances, records, firsts, names) is verified against official or reliable journalistic sources. Keep the link to each source next to the fact in the content collections. Do not write facts from memory.
+- If something cannot be verified, leave it out and note it in the PR.
+- Spanish and English written naturally, never as a literal translation.
+- Sensitive stories (for example, Carroll crater) are told with respect and without dramatizing.
+- Credits: "Crédito: NASA" / "Credit: NASA" with a link to the original. No NASA logos or insignia, no suggestion of NASA endorsement, no advertising.
 
-## Variables de entorno esperadas
+## Technical rules
 
-| Variable | Uso |
+- Astro + TypeScript + Tailwind, 100% static site. React only for interactive islands.
+- Package manager: npm, with `package-lock.json` in the repo. `build` and `check` scripts in `package.json` (CI uses them).
+- Content collections with Zod schemas for photos, stories, chapters and sources.
+- Media served from our own storage via `MEDIA_BASE_URL`. Never hotlink images on NASA servers (only "view original" links).
+- Heavy images and binaries stay out of the repo: they go to R2. The repo only keeps metadata and, at most, very light thumbnails.
+- Secrets only in environment variables. Never write keys, tokens or private endpoints in repo files, commits or PRs.
+- `localStorage` always inside try/catch.
+- Accessibility: sufficient contrast in both themes, visible focus, alt text in both languages.
+- Mobile first.
+
+## Expected environment variables
+
+| Variable | Use |
 | --- | --- |
-| `MEDIA_BASE_URL` | URL pública de los medios en R2 |
-| `R2_ACCOUNT_ID` | Cuenta de Cloudflare para subir a R2 |
-| `R2_ACCESS_KEY_ID` | Llave de acceso de R2 (solo el bucket del proyecto) |
-| `R2_SECRET_ACCESS_KEY` | Secreto de R2 |
-| `R2_BUCKET` | Nombre del bucket |
-| `CONTACT_URL` | Enlace o correo para el aviso de IA |
+| `MEDIA_BASE_URL` | Public URL of the media in R2 |
+| `R2_ACCOUNT_ID` | Cloudflare account used to upload to R2 |
+| `R2_ACCESS_KEY_ID` | R2 access key (project bucket only) |
+| `R2_SECRET_ACCESS_KEY` | R2 secret |
+| `R2_BUCKET` | Bucket name |
+| `CONTACT_URL` | Link or email for the AI notice |
 
-Si una etapa necesita una variable que no está definida, deténte y pídela en el PR (regla 8).
+If a stage needs a variable that is not defined, stop and ask for it in the PR (rule 8).

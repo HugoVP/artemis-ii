@@ -1,85 +1,86 @@
-# Plan de etapas
+# Stage plan
 
-Este archivo lo mantienen los agentes. Cada etapa termina en un PR, y Hugo la aprueba fusionándolo.
+This file is maintained by the agents. Each stage ends in a PR, and Hugo approves it by merging.
 
-Estados posibles: `pendiente`, `en revisión` (PR abierto), `aprobada` (PR fusionado).
-🔍 = etapa de revisión de contenido: el PR trae solo el contenido para aprobar, sin integrarlo al sitio.
+Possible statuses: `pendiente` (pending), `en revisión` (PR open), `aprobada` (PR merged).
+🔍 = content review stage: the PR brings only the content to approve, without integrating it into the site.
 
-La estructura del proyecto está en [`STRUCTURE.md`](STRUCTURE.md) y el mapa del sitio en [`SITEMAP.md`](SITEMAP.md).
+Project structure is in [`STRUCTURE.md`](STRUCTURE.md) and the site map in [`SITEMAP.md`](SITEMAP.md).
 
-| # | Etapa | Estado | PR |
+| # | Stage | Status | PR |
 | --- | --- | --- | --- |
-| 00 | 🔍 Plan detallado, estructura del proyecto y mapa del sitio | en revisión | (ver bitácora) |
-| 01 | Base del proyecto: Astro, Tailwind, rutas es/en, layout, CI | pendiente | |
-| 02 | Preferencias: tema, idioma, densidad del sitio y vista de galería | pendiente | |
-| 03 | 🔍 Curación: fotos candidatas con IDs en `CURATION.md` (sin descargar) | pendiente | |
-| 04 | Ingesta: script de descarga, variantes con sharp y subida a R2 | pendiente | |
-| 05 | Galería: capítulos, vistas Mosaico/Galería/Inmersiva y página por foto | pendiente | |
-| 06 | 🔍 Textos: El despegue, La misión y Por qué importa, en ambos idiomas, con fuentes | pendiente | |
-| 07 | Secciones: Inicio, El despegue (con video), La misión (línea de tiempo) y Por qué importa | pendiente | |
-| 08 | Acerca de, aviso de IA, créditos, Open Graph y hreflang | pendiente | |
-| 09 | Revisión final: accesibilidad, rendimiento móvil y enlaces rotos | pendiente | |
+| 00 | 🔍 Detailed plan, project structure and site map | en revisión | #1 |
+| 01 | Project base: Astro, Tailwind, es/en routes, layout, CI | pendiente | |
+| 02 | Preferences: theme, language, site density and gallery view | pendiente | |
+| 03 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | pendiente | |
+| 04 | Ingestion: download script, sharp variants and upload to R2 | pendiente | |
+| 05 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | pendiente | |
+| 06 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | pendiente | |
+| 07 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters | pendiente | |
+| 08 | About, AI notice, credits, Open Graph and hreflang | pendiente | |
+| 09 | Final review: accessibility, mobile performance and broken links | pendiente | |
 
-La Etapa 00 conserva el orden y la división sugeridos. Ajustes decididos:
+Stage 00 keeps the suggested order and split. Adjustments decided:
 
-- Los tres puntos de revisión obligatorios de `PROMPT.md` quedan cubiertos por las etapas 00, 03 y 06.
-- Las etapas 05 y 07 se pueden construir con datos de prueba mínimos si sus etapas de contenido (03/06) aún no se fusionan, pero no integran contenido sin aprobar. El orden actual evita ese caso: 05 va después de 04, y 07 después de 06.
-- La Etapa 08 incluye el pie de página con el aviso corto de IA; el layout de la Etapa 01 deja el espacio reservado.
+- The three mandatory review points in `PROMPT.md` are covered by stages 00, 03 and 06.
+- Stages 05 and 07 could be built with minimal test data if their content stages (03/06) were not yet merged, but they do not integrate unapproved content. The current order avoids that case: 05 comes after 04, and 07 after 06.
+- Stage 08 includes the footer with the short AI notice; the Stage 01 layout reserves the space.
 
-## Detalle por etapa
+## Detail by stage
 
-### 00 🔍 Plan, estructura y mapa del sitio
-- **Entrega:** este archivo, `STRUCTURE.md`, `SITEMAP.md`. Sin código.
-- **Aprobación:** Hugo fusiona.
+### 00 🔍 Plan, structure and site map
+- **Deliverable:** this file, `STRUCTURE.md`, `SITEMAP.md`. No code.
+- **Approval:** Hugo merges.
 
-### 01 Base del proyecto
-- Astro + TypeScript estricto + Tailwind; `@astrojs/react` instalado para islas; `@astrojs/sitemap`.
-- `package.json` con scripts `dev`, `build`, `check` (`astro check`), `package-lock.json`.
-- Rutas `src/pages/es/*` y `src/pages/en/*`; `/` redirige a `/es/` (la detección de idioma del navegador llega en la Etapa 02).
-- Layout base, barra superior y pie de página (con espacio para el aviso de IA), diccionario de textos de interfaz (`src/i18n/`).
-- Content collections con esquema Zod: `photos`, `stories`, `chapters`, `sources` (con datos mínimos de ejemplo, sin contenido real).
-- `src/lib/media.ts`: construye URLs a partir de `MEDIA_BASE_URL`.
-- Páginas de cada sección como cascarones sin texto final.
-- **Revisar:** `/es/` y `/en/` cargan, navegación entre secciones, vista móvil.
+### 01 Project base
+- Astro + strict TypeScript + Tailwind; `@astrojs/react` installed for islands; `@astrojs/sitemap`.
+- `package.json` with `dev`, `build`, `check` (`astro check`) scripts, `package-lock.json`.
+- Routes `src/pages/es/*` and `src/pages/en/*`; `/` redirects to `/es/` (browser language detection arrives in Stage 02).
+- Base layout, top bar and footer (with room for the AI notice), UI text dictionary (`src/i18n/`).
+- Content collections with Zod schema: `photos`, `stories`, `chapters`, `sources` (with minimal sample data, no real content).
+- `src/lib/media.ts`: builds URLs from `MEDIA_BASE_URL`.
+- Pages for each section as shells without final text.
+- **Review:** `/es/` and `/en/` load, navigation between sections, mobile view.
 
-### 02 Preferencias
-- Isla React en la barra superior: tema (claro/oscuro/sistema, oscuro por defecto), idioma, densidad (compacta/cómoda/amplia) y, solo en galerías, vista (mosaico/galería/inmersiva).
-- Script en línea en `<head>` que aplica tema y densidad antes de pintar (sin parpadeo). `localStorage` siempre en try/catch.
-- Densidad por variables CSS (espaciado, tamaño de texto, ancho de contenido). Detección de idioma del navegador solo en la primera visita.
-- El selector de idioma lleva a la misma página en el otro idioma.
-- **Revisar:** cada combinación de preferencias, persistencia al recargar, foco visible y contraste en ambos temas.
+### 02 Preferences
+- React island in the top bar: theme (light/dark/system, dark by default), language, density (compact/comfortable/spacious) and, only in galleries, view (mosaic/gallery/immersive).
+- Inline script in `<head>` that applies theme and density before painting (no flash). `localStorage` always in try/catch.
+- Density through CSS variables (spacing, text size, content width). Browser language detection only on the first visit.
+- The language selector takes you to the same page in the other language.
+- **Review:** every combination of preferences, persistence on reload, visible focus and contrast in both themes.
 
-### 03 🔍 Curación
-- `CURATION.md` con 20–30 fotos de la misión y 5–8 del despegue: ID de NASA, enlace al original, capítulo, justificación, licencia/derechos verificados, y notas de historias candidatas. Sin descargar imágenes.
-- Fuentes: Gateway to Astronaut Photography, PDS, galerías oficiales de NASA.
-- **Posible bloqueo:** dominios de NASA bloqueados por la red del entorno; se reporta en el PR.
+### 03 🔍 Curation
+- `CURATION.md` with 20–30 mission photos and 5–8 launch photos: NASA ID, link to the original, chapter, justification, verified license/rights, and notes on candidate stories. No images downloaded.
+- Sources: Gateway to Astronaut Photography, PDS, official NASA galleries.
+- **Possible blocker:** NASA domains blocked by the environment's network; reported in the PR.
 
-### 04 Ingesta
-- `scripts/ingest.ts`: lee la lista aprobada, descarga originales, genera AVIF/WebP en varios anchos, miniatura y Open Graph 1200×630, guarda por ID de NASA, idempotente.
-- Destino local (desarrollo) o R2 (producción) según variables de entorno; sin secretos en el repo.
-- Metadatos de las fotos pasan a `src/content/photos/`.
-- **Posible bloqueo:** variables `R2_*` y `MEDIA_BASE_URL` no definidas, o dominios sin acceso.
+### 04 Ingestion
+- `scripts/ingest.ts`: reads the approved list, downloads originals, generates AVIF/WebP at several widths, thumbnail and 1200×630 Open Graph, stores by NASA ID, idempotent.
+- Local destination (development) or R2 (production) depending on environment variables; no secrets in the repo.
+- Photo metadata moves to `src/content/photos/`.
+- **Possible blocker:** `R2_*` and `MEDIA_BASE_URL` variables not defined, or domains without access.
 
-### 05 Galería
-- Capítulos: el despegue, rumbo a la Luna, el lado oculto, el eclipse, el regreso.
-- Tres vistas (mosaico, galería, inmersiva) independientes de la densidad, página por foto (imagen, historia o pie, fecha, cámara, ID NASA, enlace al original, descarga desde almacenamiento propio, crédito).
-- Open Graph por foto.
+### 05 Gallery
+- Chapters: the launch, toward the Moon, the far side, the eclipse, the return.
+- Three views (mosaic, gallery, immersive) independent of density, page per photo (image, story or caption, date, camera, NASA ID, link to the original, download from own storage, credit).
+- Open Graph per photo.
 
-### 06 🔍 Textos
-- Borradores ES/EN de El despegue, La misión y Por qué importa, más historias de fotos, cada dato con su enlace de fuente. Lo no verificable se deja fuera y se anota.
-- Van en `docs/content-review/` sin integrarse al sitio.
+### 06 🔍 Texts
+- ES/EN drafts of The launch, The mission and Why it matters, plus photo stories, each fact with its source link. Anything unverifiable is left out and noted.
+- They go in `docs/content-review/` without being integrated into the site.
 
-### 07 Secciones
-- Inicio, El despegue (reproductor ligero que no carga nada de terceros hasta el clic), La misión (línea de tiempo, tripulación, hitos y récords) y Por qué importa, con los textos aprobados.
+### 07 Sections
+- Home, The launch (lightweight player that loads nothing from third parties until clicked), The mission (timeline, crew, milestones and records) and Why it matters, with the approved texts.
 
-### 08 Acerca de, IA, créditos, OG y hreflang
-- Aviso de IA corto en el pie y completo en Acerca de (ES/EN), `CONTACT_URL`, pautas de uso de NASA, créditos, hreflang y Open Graph por idioma.
+### 08 About, AI, credits, OG and hreflang
+- Short AI notice in the footer and full in About (ES/EN), `CONTACT_URL`, NASA usage guidelines, credits, hreflang and Open Graph per language.
 
-### 09 Revisión final
-- Accesibilidad (contraste, foco, alt en ambos idiomas), rendimiento móvil, enlaces rotos, build en ambos idiomas con las 3 densidades y las 3 vistas.
+### 09 Final review
+- Accessibility (contrast, focus, alt text in both languages), mobile performance, broken links, build in both languages with the 3 densities and the 3 views.
 
-## Bitácora
+## Log
 
-Cada etapa agrega aquí una línea al abrir su PR: fecha, etapa, enlace al PR y una frase de lo que hizo.
+Each stage adds a line here when opening its PR: date, stage, PR link and one sentence on what it did.
 
-- 2026-10-12 — Etapa 00 — PR: ver el PR de la rama `claude/quirky-sagan-r8903l` — Plan detallado, estructura del proyecto y mapa del sitio.
+- 2026-10-12 — Stage 00 — PR #1 — Detailed plan, project structure and site map.
+- 2026-10-12 — Intermediate step (requested by Hugo) — All Markdown docs are now English-only and are the single source of truth; the Spanish versions were removed.

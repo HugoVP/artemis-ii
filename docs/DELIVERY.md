@@ -32,11 +32,12 @@ agent branch ──PR──► CI + security checks ──► preview deploy ─
 | `security.yml` | PR, push to `main`, weekly | Secret scan, dependency audit and review, CodeQL, workflow lint |
 | `deploy-preview.yml` | PR (after CI passes) | Build with staging config, deploy to a Pages preview, comment the URL on the PR, Lighthouse report |
 | `deploy-staging.yml` | Push to `main` | Build, deploy staging, smoke tests, link check |
-| `deploy-production.yml` | Release published; manual run with a tag (rollback) | Build the tag, deploy production, smoke tests |
+| `approval.yml` | PR | A job in the `approval` environment that waits until Hugo approves it; this is the click that allows the merge |
+| `deploy-production.yml` | Release published; manual run with a tag (rollback) | Waits for Hugo's approval in the `production` environment, builds the tag, deploys production, smoke tests |
 | `media.yml` | PR or `main` when the photo manifest changes; release | Generate variants and upload to the staging bucket; on release, promote that release's media to the production bucket |
 | `dast.yml` | Weekly and after staging deploys | OWASP ZAP baseline scan of staging (report, non-blocking) |
 
-Required checks for merging into `main` (set in the ruleset once Stage 03 is merged): `ci`, `security`, `deploy-preview`.
+Required checks for merging into `main` (set in the ruleset once Stage 03 is merged): `ci`, `security`, `deploy-preview`, `approval`.
 
 ## Gates
 
@@ -46,8 +47,8 @@ Required checks for merging into `main` (set in the ruleset once Stage 03 is mer
 | CI + security checks | Automated | Merge |
 | Spec acceptance criteria | Automated tests + Hugo's manual checklist | Merge |
 | Optional reviewer agent | AI, advisory | Nothing; findings are answered in the PR |
-| Hugo's review of the preview | Human | Merge (merge = approval) |
-| Release | Human (Hugo publishes it) | Production |
+| Hugo's review of the preview, approved with one click in the `approval` environment | Human | Merge (the `approval` check stays pending until Hugo approves) |
+| Release, approved with one click in the `production` environment | Human | Production |
 | Post-deploy smoke tests | Automated | Marks the deployment failed; Hugo rolls back |
 
 ## Security controls
@@ -119,17 +120,28 @@ Agent environments never contain Cloudflare or R2 credentials. Production secret
 
 ## Agent identity
 
-Today agents act on GitHub as Hugo's user, so GitHub cannot tell them apart from him, and "agents never merge or release" is a written rule, not a technical block. The target setup makes it a technical block:
+**Today:** Claude Code cloud sessions and routines act on GitHub as the account connected to claude.ai, which is Hugo's. Commits and PRs carry Hugo's user. A separate identity would need a second GitHub account and a second claude.ai account (cost and administration Hugo does not want), or running agents inside GitHub Actions (losing the cloud environment, the routine and the Figma connector).
 
-1. **A machine account for agents** (for example `hugovp-agent`), created and owned by Hugo, with two-factor authentication. GitHub allows machine accounts for automation.
-2. **Write role** on this repository only (not Admin): it can push branches and open PRs, but cannot change settings, rulesets, environments or secrets.
-3. **Rulesets** that only Hugo (repository admin) can bypass:
-   - `main`: require a pull request with 1 approval and the required checks; block force pushes and deletion. Agent PRs need Hugo's approval, and Hugo can approve them because he is no longer the author.
-   - Tags `v*`: only Hugo can create, update or delete them, so only Hugo can release.
-4. **`production` environment** with Hugo as required reviewer and deployments limited to `v*` tags.
-5. **Agents connect to GitHub with that account.** Each platform does it differently (its GitHub app or connector, or a token), so each one is verified in `docs/agents/` before use. For agents that use a token, a fine-grained personal access token of the machine account, limited to this repository, with: Contents read and write, Pull requests read and write, Issues read and write, Metadata read; no Workflows, Administration, Secrets or Environments permission; 90-day expiry. Without the Workflows permission the agent cannot change `.github/workflows/` at all; for Stage 03, Hugo applies those files or grants it temporarily.
+**Decision (2026-10-12): limited token plus approval clicks.** Agents keep acting as Hugo, but with a token that cannot do anything dangerous, and every dangerous step waits for a click only Hugo can give:
 
-Until this is in place, the rules in `AGENTS.md` are the only barrier, and Hugo checks every PR before merging.
+1. **Limited token.** Hugo connects Claude Code to GitHub through `/web-setup` with a fine-grained personal access token instead of his full access: only this repository; Contents, Pull requests and Issues read and write; Metadata read; no Administration, Workflows, Actions, Secrets, Environments or Deployments; 90-day expiry. The agent cannot change settings, rulesets, secrets or workflows.
+2. **Merge needs Hugo's click.** The required `approval` check is a job in the `approval` environment with Hugo as required reviewer. It stays pending until Hugo clicks "Approve" on the PR, so a PR cannot be merged before that, by anyone.
+3. **Production needs Hugo's click.** `deploy-production.yml` runs in the `production` environment, with Hugo as required reviewer and deployments limited to `v*` tags.
+4. **No shortcuts.** Rulesets on `main` (pull request required, required checks, no force push, no deletion) and on `v*` tags (no updates or deletions) with an empty bypass list, so they apply to Hugo's account too.
+5. **Transparency.** Every agent PR names the agent in its body and gets the `agent-authored` label; commits carry the agent's `Co-Authored-By` trailer.
+
+**Verified in Stage 03** (each test recorded in that stage's PR; anything that fails is reported to Hugo with an alternative):
+
+- `/web-setup` accepts the fine-grained token, and the agent can still push branches and open PRs with it.
+- With that token, the agent cannot approve the `approval` or `production` deployments, change settings or push workflow files.
+- A PR cannot be merged while the `approval` check is pending.
+
+Because the token cannot touch `.github/workflows/`, Stage 03 delivers the workflow files in its PR and Hugo applies them (or grants the Workflows permission for that stage only and removes it afterwards).
+
+**Evaluated and not used (2026-10-12):**
+
+- **GitHub Copilot coding agent.** It opens PRs as the `Copilot` bot, which would solve identity, but: it needs a paid Copilot plan (from $10/month) plus usage-based AI credits with no fixed cost per run; Figma's remote MCP server only accepts OAuth from approved clients, so it could not do design work; and the approval of the person who assigned the task does not count toward required reviews, which blocks merging in a one-person repository. It can be revisited as an optional agent for stages without Figma.
+- **A GitHub App for agents.** Cloud sessions and routines cannot use a custom app as their identity (only the Claude Code GitHub Action can). The app is kept for later, if a pipeline step ever needs to open PRs that trigger other workflows. Its private key would live only in GitHub Actions secrets (`APP_ID`, `APP_PRIVATE_KEY`), used through `actions/create-github-app-token` (one-hour tokens), with a copy in Hugo's password manager and never on disk, in the repo or in an agent environment.
 
 ## Cloudflare Pages setup
 

@@ -32,6 +32,7 @@ Each stage lists the capabilities it needs in the "Needs" column of `docs/PLAN.m
 | --- | --- | --- | --- | --- |
 | Claude Code (cloud, routine) | `CLAUDE.md` → `AGENTS.md` | All, Figma through the claude.ai Figma connector | Verified 2026-10-12 (Stage 00, Figma write access) | [`claude-code.md`](claude-code.md) |
 | OpenAI Codex (cloud) | `AGENTS.md` | `git`, `node`, `browser`, `web` depending on its environment settings; Figma depends on MCP support in that runner | Not yet tried | [`other-agents.md`](other-agents.md) |
+| GitHub Copilot coding agent | `AGENTS.md` | `git`, `node`, `browser`; no Figma (Figma's remote MCP only accepts approved OAuth clients) | Evaluated 2026-10-12, not used (see "Agent identity" in `docs/DELIVERY.md`) | — |
 | Open-source agents (for example OpenHands, Aider, Goose, Cline) with any model, including open-weight models | `AGENTS.md` (configure if not automatic) | Depends on the runner; Figma only if it is an MCP client | Not yet tried | [`other-agents.md`](other-agents.md) |
 
 When an agent is tried for the first time, update its row with what was verified and the date.

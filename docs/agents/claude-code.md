@@ -32,6 +32,10 @@ Created at claude.ai/code/routines:
   Read AGENTS.md and follow docs/agents/next-stage.md.
   ```
 
+## GitHub access
+
+Claude Code acts on GitHub as the account connected to claude.ai. From Stage 03 on, that connection is a limited fine-grained token set with `/web-setup` (see "Agent identity" in `docs/DELIVERY.md`), so Claude Code can push branches and open PRs but cannot change settings, workflows or approve deployments.
+
 ## Notes
 
 - Claude Code branches start with `claude/`. Nothing in the project depends on that.

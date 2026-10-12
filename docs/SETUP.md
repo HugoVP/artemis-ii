@@ -21,7 +21,7 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
 2. **Settings → Code security:** turn on Dependabot alerts, secret scanning and push protection. **Settings → Actions → General:** require approval for workflows from outside contributors.
 3. **Settings → Rules → Rulesets**, a rule for `main`: require a pull request, block force pushes and deletion. Required checks: `CI / build` now; after Stage 03, the checks listed in `docs/DELIVERY.md`.
 4. **(Stage 03)** Actions secrets, variables and environments from `docs/DELIVERY.md`.
-5. **Recommended:** a separate GitHub identity for agents, with the rulesets that make it a technical block ("Agent identity" in `docs/DELIVERY.md`).
+5. **(Stage 03) Agent permissions:** a fine-grained token for the agents, the `approval` and `production` environments and the rulesets without bypass ("Agent identity" in `docs/DELIVERY.md`). Stage 03 lists the exact steps.
 
 ## 2. Cloudflare
 

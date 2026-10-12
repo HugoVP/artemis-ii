@@ -39,6 +39,7 @@ The approved spec is the contract. Details in `docs/specs/README.md`; the essent
 
 - The approved Figma file (`FIGMA_FILE_URL`) and `docs/specs/design.md` define the look of the site. Implement against them; use the Figma connector to read frames and variables.
 - Design tokens are Figma variables and CSS variables with the same names (`design.md` keeps the mapping). No hard-coded colors, spacing or font sizes in components.
+- Edit the Figma file only through the connector's `use_figma` tool, and only the file in `FIGMA_FILE_URL`. Do not create new Figma files, do not use tools that spend Figma AI credits (`generate_image`, `weave_*`), do not touch Hugo's account library (shaders, generative plugins), and do not upload NASA images to Figma (use placeholders).
 - If implementation needs a design change, update the Figma file and `design.md` in the same PR and list it under "Spec changes", with links to the changed frames.
 - In "What to review", link each changed page to its Figma frame so Hugo can compare side by side.
 

@@ -46,16 +46,18 @@ This stage creates them.
 
 ## Tasks
 
-1. Read `FIGMA_FILE_URL`; confirm the Figma connector can read and write that file. If not, stop and open a draft PR (see Risks).
-2. Build the Foundations page with variables and modes.
-3. Build components using the variables.
-4. Build mobile screens first, then desktop, then the variations.
-5. Compute contrast ratios and write `docs/specs/design.md`.
-6. Write the Stage 02 spec.
-7. Open the PR with links to each Figma page and frame in "What to review".
+1. Read `FIGMA_FILE_URL` and run `get_metadata` on the file to see its current state (as of Stage 00 it has a single empty page, `Page 1`).
+2. Rename `Page 1` to `Foundations` and add the `Components` and `Screens` pages. Build the Foundations page with variables and modes using `use_figma`.
+3. Build components using the variables (`use_figma`; components with variants, auto-layout, every fill, gap and font size bound to a variable).
+4. Build mobile screens first, then desktop, then the variations, as instances of the components.
+5. Check each frame with `get_screenshot` and fix overlaps, clipped text and broken auto-layout before moving on.
+6. Compute contrast ratios and write `docs/specs/design.md`, with a link (`?node-id=`) to every page and frame.
+7. Write the Stage 02 spec.
+8. Open the PR with links to each Figma page and frame in "What to review".
 
 ## Risks and open questions
 
-- **Figma write access.** The agent must be able to create pages, variables, components and frames through the Figma connector. If the connector only allows reading, the stage cannot be completed automatically: the agent opens a draft PR with `design.md` (tokens, components and layout described in text) and asks Hugo how to proceed (for example, Hugo lays out the frames and the agent reviews and documents them).
+- **Figma write access: verified on 2026-10-12.** The connector exposes `use_figma` (Plugin API: frames, components, variants, text, auto-layout, variables, styles), plus `get_metadata`, `get_screenshot` and `get_variable_defs` for checking. If a write call fails during the stage, the agent keeps what it built, opens a draft PR and explains the error (CLAUDE.md, rule 8).
+- **Tools not to use:** `html_to_figma` (produces plain layers without components or variables, which breaks `AC-3`), `create_new_file` (work only in `FIGMA_FILE_URL`), `generate_image` and `weave_*` (spend Figma AI credits), and the shader/plugin tools (they change Hugo's account library, not the file).
 - **Missing `FIGMA_FILE_URL`** or the Figma connector not enabled in the routine: draft PR asking for it (CLAUDE.md, rule 8).
 - **Fonts:** only open-license fonts that can be self-hosted or loaded from Google Fonts.

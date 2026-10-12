@@ -40,7 +40,8 @@ The detailed scope, acceptance criteria and tasks of each stage live in its spec
 ### 01 🎨 Design in Figma
 - Figma file (from `FIGMA_FILE_URL`) with Foundations (variables with theme and density modes), Components and Screens (mobile and desktop for every page in `SITEMAP.md`).
 - `docs/specs/design.md` with tokens, CSS variable names, frame links and contrast ratios.
-- **Possible blocker:** Figma connector without write access, or `FIGMA_FILE_URL` missing.
+- Figma write access verified on 2026-10-12 (`use_figma`); the file currently has one empty page.
+- **Possible blocker:** a write call failing during the stage.
 
 ### 02 Project base
 - Astro + strict TypeScript + Tailwind; `@astrojs/react` for islands; `@astrojs/sitemap`.
@@ -87,3 +88,4 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 - 2026-10-12 — Intermediate step (requested by Hugo) — All Markdown docs are now English-only and are the single source of truth; the Spanish versions were removed.
 - 2026-10-12 — Naming unification — Branch pattern generalized to `claude/*`, English-only workflow naming (stage, PR titles, CI steps, chapter IDs), routine renamed to "next stage".
 - 2026-10-12 — Stage 00 update (requested by Hugo) — Added the Figma design stage (01, stages renumbered to 10) and spec-driven development: product spec with requirement IDs, stage specs written one stage ahead, PR template, acceptance tests in CI.
+- 2026-10-12 — Stage 00 update — Verified the Figma connector can write to the design file (`use_figma`); Stage 01 spec and design rules updated with the tools to use and avoid.

@@ -71,7 +71,7 @@ The approved spec is the contract. Details in `docs/specs/README.md`; the essent
    - Write the next stage's spec.
    - Update `docs/PLAN.md`: mark the stage as `in review`, link the PR, add a log line.
 5. **PR format**, in English, following `.github/pull_request_template.md`:
-   - Title: `Stage NN: <name>`.
+   - Title: `Stage NN: <name>`, and the label `agent-authored`.
    - Agent: the tool that did the work (for example "Claude Code" or "Codex").
    - What was done, in short bullets.
    - Acceptance criteria: every criterion of the stage spec, checked, with how it was verified (test name or manual).

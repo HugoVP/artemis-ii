@@ -2,14 +2,16 @@
 
 ```
 artemis-ii/
-├── CLAUDE.md  PROMPT.md  CURATION.md (Stage 03)
+├── CLAUDE.md  PROMPT.md  CURATION.md (Stage 04)
 ├── astro.config.mjs  tailwind.config.*  tsconfig.json
 ├── package.json  package-lock.json
-├── .github/workflows/ci.yml
+├── .github/                 workflows/ci.yml, pull_request_template.md
 ├── docs/                      PLAN, SETUP, ROUTINE, STRUCTURE, SITEMAP
-│   └── content-review/        text drafts (Stage 06)
+│   ├── specs/                 product spec, design spec, one spec per stage
+│   └── content-review/        text drafts (Stage 07)
+├── tests/                     Playwright acceptance tests, named after spec criteria (Stage 02)
 ├── scripts/
-│   └── ingest.ts              download + sharp + upload to R2 (Stage 04)
+│   └── ingest.ts              download + sharp + upload to R2 (Stage 05)
 ├── public/                    only favicon and very light thumbnails
 └── src/
     ├── content/
@@ -22,7 +24,7 @@ artemis-ii/
     ├── lib/                   media.ts (MEDIA_BASE_URL), dates, helpers
     ├── layouts/               Base.astro
     ├── components/            static .astro; React islands in components/islands/
-    ├── styles/                global.css, theme and density variables
+    ├── styles/                tokens.css (from Figma variables), global.css
     └── pages/
         ├── index.astro        redirects to /es/
         ├── es/  …             pages in Spanish
@@ -36,3 +38,5 @@ artemis-ii/
 - **Media outside the repo:** `MEDIA_BASE_URL` points to R2 (production) or to a local folder ignored by git (development). Path: `<MEDIA_BASE_URL>/<nasa-id>/{original.ext, 640.avif, 1280.webp, thumb.webp, og.jpg…}`.
 - **React islands** only for preferences and, if needed, the gallery viewer.
 - **No secrets in the repo;** `.env.example` only with variable names.
+- **Design tokens** come from the Figma variables documented in `docs/specs/design.md`, generated as CSS variables in `src/styles/tokens.css` with the same names, and exposed to Tailwind.
+- **Specs and tests side by side:** each acceptance criterion `AC-n` of `stage-NN` has its test in `tests/stage-NN.spec.ts`, so a failing test points straight at the requirement it protects.

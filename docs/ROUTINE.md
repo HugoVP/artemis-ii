@@ -7,13 +7,12 @@ This file documents the routine that moves the project forward. No agent reads i
 - **Name:** Artemis II — next stage
 - **Repository:** this project's repo
 - **Environment:** `artemis-ii` (see `docs/SETUP.md`)
-- **Result branch:** the general pattern `claude/*` (not a specific name such as `claude/clever-volta`). Agents choose their own branch names, so the routine must not be tied to one.
-- **Connectors:** remove all of them; this routine needs none
+- **Connectors:** only **Figma** (used from Stage 01 on to create and read the design). Remove all others.
 - **Triggers:**
   1. **GitHub event:** Pull request → `closed`, with the filters:
      - Is merged = `true`
      - Base branch = `main`
-     - Head branch starts with `claude/`
+     - Head branch starts with `claude/` (this filter is what ties the routine to agent branches; the agent picks the rest of the name)
   2. **Run now**, to start Stage 00 the first time or to retry a stage.
 
 ## Routine prompt

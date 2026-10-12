@@ -97,11 +97,14 @@ In the footer (short, with a link) and in full in "About", in both languages:
 
 The project advances in stages, and each stage ends in a pull request. My approval is merging that PR. The full workflow rules are in `CLAUDE.md` and the stage plan is in `docs/PLAN.md`.
 
+The project follows spec-driven development: every stage is built against an approved spec (see `docs/specs/README.md`).
+
 Mandatory review points, each in its own PR:
 
 1. The plan, the project structure and the site map.
-2. The list of candidate photos with their IDs, before downloading images in bulk.
-3. The texts for The launch, The mission and Why it matters, with their sources, before integrating them into the site.
+2. The visual design in Figma, before any page is coded.
+3. The list of candidate photos with their IDs, before downloading images in bulk.
+4. The texts for The launch, The mission and Why it matters, with their sources, before integrating them into the site.
 
 In the end, the static build must work in both languages, with the three density modes and the three gallery views.
 

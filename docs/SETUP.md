@@ -40,7 +40,7 @@ Routine starts a stage ─► the agent works in the cloud ─► opens a PR
    - Environment variables: `MEDIA_BASE_URL` and `CONTACT_URL`
    - With this, every PR gets a preview URL and every merge to `main` deploys production.
 
-   The first build will fail until the project exists (Stage 01). That is normal.
+   The first build will fail until the project exists (Stage 02). That is normal.
 
 ## 3. Claude Code cloud environment
 
@@ -56,17 +56,28 @@ At claude.ai/code, create an environment called `artemis-ii`:
   - `<YOUR_ACCOUNT_ID>.r2.cloudflarestorage.com`
 
   If a stage is blocked by a domain, the agent will say so in the PR and you add it here.
-- **Environment variables:** `MEDIA_BASE_URL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `CONTACT_URL`.
+- **Environment variables:** `MEDIA_BASE_URL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `CONTACT_URL`, `FIGMA_FILE_URL`.
 - **Setup script:**
   ```
   if [ -f package.json ]; then npm ci; fi
   ```
 
-## 4. The routine
+## 4. Figma
+
+The design stage (Stage 01) is done in Figma and approved like any other stage.
+
+1. Connect Figma in claude.ai → Settings → Connectors (sign in with the Figma account that owns the design).
+2. In Figma, create an empty design file for the project, for example "Artemis II — site", in a team or project where your account can edit.
+3. Copy the file URL and add it to the `artemis-ii` environment as `FIGMA_FILE_URL`.
+4. In the routine, add the **Figma** connector (see `docs/ROUTINE.md`).
+
+To review the design: open the file, check the Foundations, Components and Screens pages, and leave comments on the PR (or in Figma, mentioning them in the PR). Merging the PR approves the design.
+
+## 5. The routine
 
 Create it at claude.ai/code/routines with the configuration and prompt from `docs/ROUTINE.md`.
 
-## 5. Start
+## 6. Start
 
 1. In the routine, press **Run now**. This launches Stage 00 (the plan).
 2. When the PR arrives, turn on **Auto-fix** from the session.

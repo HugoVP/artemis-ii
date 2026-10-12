@@ -37,3 +37,7 @@ jobs:
       - name: Build
         if: steps.project.outputs.exists == 'true'
         run: npm run build
+
+      - name: Acceptance tests
+        if: steps.project.outputs.exists == 'true'
+        run: npm run test --if-present

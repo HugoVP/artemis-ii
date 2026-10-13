@@ -28,7 +28,7 @@ agent branch ──PR──► CI + security checks ──► preview deploy ─
 
 | Workflow | Runs on | Does |
 | --- | --- | --- |
-| `ci.yml` | PR, push to `main` | `npm ci`, `check`, `build`, `test` (Playwright) |
+| `ci.yml` | PR, push to `main` | `npm ci`, `check`, `build`, `test` (Playwright). Until Stage 02 adds `package.json`, a guard skips the build; Stage 02 removes the guard so the steps are unconditional afterwards |
 | `security.yml` | PR, push to `main`, weekly | Secret scan, dependency audit and review, CodeQL, workflow lint |
 | `deploy-preview.yml` | PR (after CI passes) | Two jobs. **Build** (unprivileged, no secrets, read-only token): generates the PR's media variants, builds the PR code with `MEDIA_BASE_URL=/media`, copies the generated media into `dist/media/` and uploads `dist/` as one artifact, so the preview serves its own media from its own URL. **Deploy** (privileged, runs only for same-repository PRs): downloads that artifact, never runs code from the PR, uploads it to a Pages preview and comments the URL. Lighthouse report from the build job |
 | `deploy-staging.yml` | Push to `main` | Build, deploy staging, smoke tests, link check |

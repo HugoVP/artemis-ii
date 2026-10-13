@@ -61,6 +61,7 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 - `package.json` with `dev`, `build`, `check`, `test` scripts and `package-lock.json`; Playwright acceptance tests against the static build.
 - Routes `src/pages/es/*` and `src/pages/en/*`; `/` redirects to `/es/`. Base layout, top bar and footer per Figma; UI text dictionary.
 - Content collections with Zod schema (minimal sample data). `src/lib/media.ts` builds URLs from `MEDIA_BASE_URL`. Section pages as shells.
+- **Removes the `package.json` existence guard** from `.github/workflows/ci.yml` in the same PR that adds `package.json`, so `npm ci`, `check`, `build` and `test` are unconditional from then on and deleting `package.json` can never make CI skip everything. The agent token cannot push workflow files, so Hugo applies this edit to the Stage 02 branch (the spec and the PR description say so).
 - Until Stage 03, Cloudflare Pages' Git integration still deploys; the production URL is not announced.
 
 ### 03 Delivery pipeline and security baseline
@@ -111,3 +112,4 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 - 2026-10-13 — Stage 00 update — Addressed Copilot code review on `docs/DELIVERY.md`: PR code never runs with credentials (build and deploy split), fork policy with a `preview` check that always reports, media namespaced per PR and promoted from manifests only.
 - 2026-10-13 — Stage 00 update — Second Copilot review addressed: release gate (tag on `main` with a successful staging deployment), CI no longer skips missing `check`/`test` scripts, one preview layout (media bundled under `/media/`), OPS-02 scoped to same-repository PRs.
 - 2026-10-13 — Stage 00 update — Third Copilot review: media is immutable and content-addressed, one media path in `STRUCTURE.md` and `DELIVERY.md`.
+- 2026-10-13 — Stage 00 update — Fourth Copilot review: the CI `package.json` guard is temporary and Stage 02 must remove it atomically (applied by Hugo, since agent tokens cannot push workflows).

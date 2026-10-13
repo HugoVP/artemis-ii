@@ -54,7 +54,7 @@ The approved spec is the contract. Details in `docs/specs/README.md`; the essent
 
 - The approved Figma file (`FIGMA_FILE_URL`) and `docs/specs/design.md` define the look of the site. Implement against them, reading frames and variables through the Figma MCP server.
 - Design tokens are Figma variables and CSS variables with the same names (`design.md` keeps the mapping). No hard-coded colors, spacing or font sizes in components.
-- Edit the Figma file only with the Figma MCP `use_figma` tool, and only the file in `FIGMA_FILE_URL`. Do not create new Figma files. Inside the file you may create pages only in two cases: `Exploration` (alternatives compared before one is chosen) and `Archive` (rejected options). The approved pages are `Foundations`, `Components` and `Screens`; any change to them is listed under "Spec changes" in the PR.
+- Edit the Figma file only with the Figma MCP `use_figma` tool, and only the file in `FIGMA_FILE_URL`. Do not create new Figma files. The file has exactly five pages, and no others may be created: `Foundations`, `Components` and `Screens` (the approved design, created in Stage 01), `Exploration` (alternatives compared before one is chosen) and `Archive` (rejected options). After Stage 01, any change to `Foundations`, `Components` or `Screens` is listed under "Spec changes" in the PR.
 - Do not use tools that spend Figma AI credits (`generate_image`, `weave_*`), do not use `html_to_figma` (no components or variables), do not touch Hugo's account library (shaders, generative plugins), and do not upload NASA images to Figma (use placeholders).
 - If implementation needs a design change, update the Figma file and `design.md` in the same PR and list it under "Spec changes", with links to the changed frames.
 - In "What to review", link each changed page to its Figma frame so Hugo can compare side by side.
@@ -69,7 +69,7 @@ The approved spec is the contract. Details in `docs/specs/README.md`; the essent
    - Run `npm run check`, `npm run build` and `npm run test` once they exist, plus the local security checks listed in `docs/DELIVERY.md`, and make sure they pass.
    - Check every acceptance criterion of the stage spec and mark it in the PR.
    - Write the next stage's spec.
-   - Update `docs/PLAN.md`: mark the stage as `in review`, link the PR, add a log line.
+   - Update `docs/PLAN.md`: mark the stage as `in review` and add a log line. The PR number does not exist yet, so right after opening the PR push one follow-up commit to the same branch that adds the PR link to the stage's row and to that log line.
 5. **PR format**, in English, following `.github/pull_request_template.md`:
    - Title: `Stage NN: <name>`, and the label `agent-authored`.
    - Agent: the tool that did the work (for example "Claude Code" or "Codex").

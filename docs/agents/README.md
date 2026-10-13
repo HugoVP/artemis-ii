@@ -15,7 +15,7 @@ This project is built by AI agents, but it does not depend on any one of them. A
 
 ## Capabilities
 
-Each stage lists the capabilities it needs in the "Needs" column of `docs/PLAN.md`. An agent that lacks one must not start that stage (see `next-stage.md`).
+Each stage lists the capabilities it needs in the "Needs" column of `docs/PLAN.md`. An agent that lacks one must not do that stage's work; it opens a draft PR saying which capability is missing (rule 8, see `next-stage.md`).
 
 | ID | Capability | Needed for |
 | --- | --- | --- |

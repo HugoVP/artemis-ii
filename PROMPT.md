@@ -108,7 +108,7 @@ Mandatory review points, each in its own PR:
 
 ## Delivery and agents
 
-- Real CI/CD with security built in: every change gets a preview, every approved stage goes to staging, and production only changes when I publish a release.
+- Real CI/CD with security built in: every pull request from this repository gets a preview (pull requests from forks are only built and checked), every approved stage goes to staging, and production only changes when I publish a release.
 - Agents never hold deployment or storage credentials, and never merge, release or change settings.
 - The process must not depend on one AI vendor: Claude Code today, and later OpenAI Codex or open models must be able to run the same stages with the same rules.
 

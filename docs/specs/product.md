@@ -53,8 +53,8 @@ Normative, testable version of the brief in `PROMPT.md`. Each requirement has a 
 | CONT-01 | 20–30 mission photos and 5–8 launch photos, each justified in `CURATION.md`. | 05 | review |
 | CONT-02 | Every fact (date, time, distance, record, first, name) has a source link stored with it in the content collections. | 05, 08 | auto (schema) + review |
 | CONT-03 | Unverifiable facts are left out and noted in the PR. | all | review |
-| CONT-04 | Stories are written only when worth it, from official or reliable journalistic sources, without invented facts or quotes; sensitive stories with respect. | 08 | review |
-| CONT-05 | Photos without a story have a short caption and descriptive alt text in both languages. | 08 | review |
+| CONT-04 | Stories are written only when worth it, from official or reliable journalistic sources, without invented facts or quotes; sensitive stories with respect. | 08, 09 | review |
+| CONT-05 | Photos without a story have a short caption and descriptive alt text in both languages. | 08, 09 | review |
 | CONT-06 | Photos marked with third-party rights are excluded. | 05 | review |
 
 ## Media (MEDIA)
@@ -84,6 +84,15 @@ Normative, testable version of the brief in `PROMPT.md`. Each requirement has a 
 | LEGAL-02 | No NASA logo or insignia, no suggestion of endorsement, no advertising or sales. | all | manual |
 | LEGAL-03 | Short AI notice with link in the footer; full notice in About, with the exact texts from `PROMPT.md`, in both languages. | 10 | auto |
 | LEGAL-04 | The contact link comes from `CONTACT_URL`. | 10 | auto |
+
+## Technology (TECH)
+
+| ID | Requirement | Stage | Check |
+| --- | --- | --- | --- |
+| TECH-01 | The site is built with Astro, strict TypeScript and Tailwind, as a 100% static build. | 02 | auto (CI) |
+| TECH-02 | No database: all content lives in Astro content collections with typed Zod schemas (photos, stories, chapters, sources). | 02, all | auto (schema) |
+| TECH-03 | React is used only for interactive islands (such as the preference controls); everything else renders without React. | 02, 04 | review |
+| TECH-04 | The site is deployed on Cloudflare Pages and the media is stored in Cloudflare R2. | 03 | manual |
 
 ## Quality (QA)
 

@@ -20,7 +20,7 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | 06 | Ingestion: script, variants with sharp, upload through the pipeline | `node`, `web` | written in 05 | pending | |
 | 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | written in 06 | pending | |
 | 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | written in 07 | pending | |
-| 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters | `node`, `browser`, `figma-read` | written in 08 | pending | |
+| 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | |
 | 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser` | written in 09 | pending | |
 | 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web` | written in 10 | pending | |
 
@@ -88,6 +88,7 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 
 ### 09 Sections
 - Home, The launch (click-to-load player), The mission (timeline, crew, milestones) and Why it matters, with the approved texts, per Figma.
+- The approved photo stories, captions and alt text from Stage 08 go into the content collections (`stories` and photo entries, with their sources), so the gallery views and per-photo pages from Stage 07 show them in both languages.
 
 ### 10 About, AI notice, credits, OG and hreflang
 - Short AI notice in the footer and full in About, `CONTACT_URL`, NASA usage guidelines, credits, hreflang and Open Graph per language.
@@ -97,7 +98,7 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 
 ## Log
 
-Each stage adds a line here when opening its PR: date, stage, PR link and one sentence on what it did.
+Each stage adds a line here before opening its PR (date, stage and one sentence on what it did) and fills in the PR link in a follow-up commit right after opening it.
 
 - 2026-10-12 — Stage 00 — PR #1 — Detailed plan, project structure and site map.
 - 2026-10-12 — Intermediate step (requested by Hugo) — All Markdown docs are now English-only and are the single source of truth; the Spanish versions were removed.
@@ -115,3 +116,4 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 - 2026-10-13 — Stage 00 update — Fourth Copilot review: the CI `package.json` guard is temporary and Stage 02 must remove it atomically (applied by Hugo, since agent tokens cannot push workflows).
 - 2026-10-13 — Stage 00 update — Fifth Copilot review: production build runs in a no-secrets job; only the deploy job (artifact download and upload, no project code) is in the `production` environment.
 - 2026-10-13 — Stage 00 update — Sixth Copilot review: release media promotion is a credential-only job in the `production` environment behind Hugo's approval, next to the Pages deploy; neither runs project code.
+- 2026-10-13 — Stage 00 update — Copilot findings from review bodies: complete Figma page set, PR link added to `PLAN.md` after opening the PR, previews scoped to same-repository PRs in `PROMPT.md`, media upload and promotion ordered before site deploys and smoke tests, `TECH` requirements in `product.md`, `npm audit` from Stage 02, photo stories integrated in Stage 09, missing capability opens a draft PR.

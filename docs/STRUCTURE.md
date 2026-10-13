@@ -45,7 +45,7 @@ artemis-ii/
 
 - **Routes by language folder** (`pages/es`, `pages/en`) with Spanish as the default; slugs are localized per `SITEMAP.md`, and the language selector maps each page to its equivalent.
 - **Bilingual Zod schemas:** each text field is `{ es, en }`; sources are linked by ID from photos and stories, and each fact carries `sourceIds`.
-- **Media outside the repo:** `MEDIA_BASE_URL` points to the bucket of each environment (`docs/DELIVERY.md`) or to a git-ignored local folder. Path: `<MEDIA_BASE_URL>/<nasa-id>/{original.ext, 640.avif, 1280.webp, thumb.webp, og.jpg…}`.
+- **Media outside the repo:** `MEDIA_BASE_URL` points to the bucket of each environment (`docs/DELIVERY.md`) or to a git-ignored local folder. Path: `<MEDIA_BASE_URL>/photos/<nasa-id>/<hash>/{original.ext, 640.avif, 1280.webp, thumb.webp, og.jpg…}`, where `<hash>` identifies the content (see "Media flow" in `docs/DELIVERY.md`); `media.ts` reads the hash from the photo's metadata.
 - **Configuration per environment** comes from build-time variables set by the pipeline; nothing environment-specific is committed.
 - **React islands** only for preferences and, if needed, the gallery viewer.
 - **No secrets in the repo;** `.env.example` only with variable names.

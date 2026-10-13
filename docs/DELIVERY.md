@@ -92,9 +92,9 @@ Agent environments never contain Cloudflare or R2 credentials. Production secret
 
 1. An agent adds approved photos to the manifest and runs `npm run ingest -- --local`: it downloads the originals from NASA in its sandbox, generates variants into a git-ignored folder and writes the photo metadata (dimensions, camera, date) into the content collections. No credentials needed.
 2. On a PR, `media.yml` generates the variants without credentials and keeps them as a workflow artifact, so the preview can show them. It uploads nothing.
-3. When the PR is merged to `main`, `media.yml` uploads the variants of the approved manifest to the staging bucket, under `photos/<nasa-id>/` (keys are NASA IDs, so uploads are idempotent).
+3. When the PR is merged to `main`, `media.yml` uploads the variants of the approved manifest to the staging bucket as **immutable, write-once objects** under `photos/<nasa-id>/<hash>/`, where `<hash>` is the SHA-256 (first 12 hex characters) of the source file plus the variant settings. Uploading the same content again is a no-op; changed content gets a new path, so existing objects are never overwritten. The manifest records, for every photo, its NASA ID, hash and variant files.
 4. Previews never write to any bucket. `deploy-preview.yml` bundles the PR's generated media into the preview under `/media/` and builds with `MEDIA_BASE_URL=/media`, so a preview serves its own media from its own URL and two PRs that process the same photo cannot overwrite each other's files.
-5. On release, `media.yml` copies only the photos listed in that release's manifest from the staging bucket to the production bucket. Staging can contain media that production does not serve yet.
+5. On release, `media.yml` copies exactly the objects (NASA ID plus hash) listed in the manifest of the release's commit from the staging bucket to the production bucket. Because objects are immutable, a later change to a photo on `main` cannot alter what an older tag promotes or what a rollback restores. Staging can contain media that production does not serve yet; objects no manifest references are cleaned up manually, never automatically.
 
 ## Releases and rollback
 

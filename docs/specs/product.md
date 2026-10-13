@@ -64,7 +64,7 @@ Normative, testable version of the brief in `PROMPT.md`. Each requirement has a 
 | MEDIA-01 | Images are served from own storage at `MEDIA_BASE_URL`, never hotlinked from NASA. | 06 | auto |
 | MEDIA-02 | `scripts/ingest.ts` downloads approved originals and generates AVIF and WebP at several widths, a thumbnail and a 1200×630 OG image, organized by NASA ID. | 06 | auto |
 | MEDIA-03 | Ingestion is idempotent. | 06 | auto |
-| MEDIA-04 | Media storage is separate per environment: local folder (local), staging bucket (preview and staging), production bucket (production). Only the pipeline writes to buckets. | 03, 06 | auto |
+| MEDIA-04 | Media storage is separate per environment: local folder (local), staging bucket (staging, written only on merge to `main`), production bucket (production, written only from a release manifest). Previews serve their media from the PR's artifact and never write to a bucket. Only the pipeline writes to buckets. | 03, 06 | auto |
 | MEDIA-05 | The high-resolution original is kept for download. | 06 | auto |
 | MEDIA-06 | The launch video loads nothing from third parties until the visitor clicks. | 09 | auto |
 

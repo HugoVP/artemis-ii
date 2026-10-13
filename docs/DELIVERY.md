@@ -30,14 +30,18 @@ agent branch ──PR──► CI + security checks ──► preview deploy ─
 | --- | --- | --- |
 | `ci.yml` | PR, push to `main` | `npm ci`, `check`, `build`, `test` (Playwright) |
 | `security.yml` | PR, push to `main`, weekly | Secret scan, dependency audit and review, CodeQL, workflow lint |
-| `deploy-preview.yml` | PR (after CI passes) | Build with staging config, deploy to a Pages preview, comment the URL on the PR, Lighthouse report |
+| `deploy-preview.yml` | PR (after CI passes) | Two jobs. **Build** (unprivileged, no secrets, read-only token): builds the PR code with the staging configuration and uploads the `dist/` folder as an artifact. **Deploy** (privileged, runs only for same-repository PRs): downloads that artifact, never runs code from the PR, uploads it to a Pages preview and comments the URL. Lighthouse report from the build job |
 | `deploy-staging.yml` | Push to `main` | Build, deploy staging, smoke tests, link check |
 | `approval.yml` | PR | A job in the `approval` environment that waits until Hugo approves it; this is the click that allows the merge |
 | `deploy-production.yml` | Release published; manual run with a tag (rollback) | Waits for Hugo's approval in the `production` environment, builds the tag, deploys production, smoke tests |
-| `media.yml` | PR or `main` when the photo manifest changes; release | Generate variants and upload to the staging bucket; on release, promote that release's media to the production bucket |
+| `media.yml` | PR (build only, no credentials); `main` (upload to staging); release (promote to production) | PRs: generate variants as an artifact, no upload. `main`: upload the variants of the approved manifest to the staging bucket. Release: copy only the media listed in that release's manifest to the production bucket |
 | `dast.yml` | Weekly and after staging deploys | OWASP ZAP baseline scan of staging (report, non-blocking) |
 
-Required checks for merging into `main` (set in the ruleset once Stage 03 is merged): `ci`, `security`, `deploy-preview`, `approval`.
+Required checks for merging into `main` (set in the ruleset once Stage 03 is merged): `ci`, `security`, `approval`, and `preview` (a check the deploy-preview workflow always reports, so it can be required).
+
+**Fork policy.** Pull requests from forks get no secrets, so the build job runs (CI and security checks still apply) but the deploy job is skipped and `preview` reports success with the note "preview not available for fork PRs". Hugo reviews fork PRs locally before merging, and fork PRs never reach staging or production without his approval.
+
+**Code from a PR never runs with credentials.** Build, test and ingest jobs for a PR run with read-only tokens and no secrets. Anything that uses a credential (deploying, uploading media) runs in a separate job that downloads an artifact and does not execute code from the PR. Changes to `package.json` scripts or `scripts/` in a PR therefore cannot read deployment or storage keys.
 
 ## Gates
 
@@ -87,8 +91,10 @@ Agent environments never contain Cloudflare or R2 credentials. Production secret
 ## Media flow
 
 1. An agent adds approved photos to the manifest and runs `npm run ingest -- --local`: it downloads the originals from NASA in its sandbox, generates variants into a git-ignored folder and writes the photo metadata (dimensions, camera, date) into the content collections. No credentials needed.
-2. `media.yml` runs the same script in upload mode in the pipeline, which generates the same variants and uploads them to the staging bucket. Keys are NASA IDs, so uploads are idempotent and previews of different PRs do not collide.
-3. On release, `media.yml` copies the media of the photos in that release from the staging bucket to the production bucket.
+2. On a PR, `media.yml` generates the variants without credentials and keeps them as a workflow artifact, so the preview can show them. It uploads nothing.
+3. When the PR is merged to `main`, `media.yml` uploads the variants of the approved manifest to the staging bucket, under `photos/<nasa-id>/` (keys are NASA IDs, so uploads are idempotent).
+4. Previews never write to the buckets they share with staging. A preview serves its media from the PR's own artifact, so two PRs that process the same photo cannot overwrite each other's files.
+5. On release, `media.yml` copies only the photos listed in that release's manifest from the staging bucket to the production bucket. Staging can contain media that production does not serve yet.
 
 ## Releases and rollback
 

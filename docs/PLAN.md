@@ -114,3 +114,4 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 - 2026-10-13 — Stage 00 update — Third Copilot review: media is immutable and content-addressed, one media path in `STRUCTURE.md` and `DELIVERY.md`.
 - 2026-10-13 — Stage 00 update — Fourth Copilot review: the CI `package.json` guard is temporary and Stage 02 must remove it atomically (applied by Hugo, since agent tokens cannot push workflows).
 - 2026-10-13 — Stage 00 update — Fifth Copilot review: production build runs in a no-secrets job; only the deploy job (artifact download and upload, no project code) is in the `production` environment.
+- 2026-10-13 — Stage 00 update — Sixth Copilot review: release media promotion is a credential-only job in the `production` environment behind Hugo's approval, next to the Pages deploy; neither runs project code.

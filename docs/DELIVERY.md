@@ -33,7 +33,7 @@ agent branch ──PR──► CI + security checks ──► preview deploy ─
 | `deploy-preview.yml` | PR (after CI passes) | Two jobs. **Build** (unprivileged, no secrets, read-only token): generates the PR's media variants, builds the PR code with `MEDIA_BASE_URL=/media`, copies the generated media into `dist/media/` and uploads `dist/` as one artifact, so the preview serves its own media from its own URL. **Deploy** (privileged, runs only for same-repository PRs): downloads that artifact, never runs code from the PR, uploads it to a Pages preview and comments the URL. Lighthouse report from the build job |
 | `deploy-staging.yml` | Push to `main` | Build, deploy staging, smoke tests, link check |
 | `approval.yml` | PR | A job in the `approval` environment that waits until Hugo approves it; this is the click that allows the merge |
-| `deploy-production.yml` | Release published; manual run with a tag (rollback) | First a **release gate** job (no secrets) that fails unless the tag's commit is on `main` and has a successful staging deployment (looked up through the GitHub deployments API for that SHA); then waits for Hugo's approval in the `production` environment, builds the tag, deploys production, smoke tests. Media promotion (`media.yml`, release) only runs after the same gate passes. A rollback to an older tag passes the gate because that commit was on staging when it was released |
+| `deploy-production.yml` | Release published; manual run with a tag (rollback) | Four jobs, in order. **Release gate** (no secrets): fails unless the tag's commit is on `main` and has a successful staging deployment (looked up through the GitHub deployments API for that SHA). **Build** (no secrets, read-only token): installs, builds the tag with the production configuration and uploads `dist/` as an artifact; project scripts run only here. **Deploy** (the only job in the `production` environment, so it waits for Hugo's approval): downloads that artifact and uploads it to Cloudflare Pages with the pinned deploy tool, running no project code. **Smoke tests** (no secrets): check the live URL. Media promotion (`media.yml`, release) runs only after the same gate and copies objects without running project code. A rollback to an older tag passes the gate because that commit was on staging when it was released |
 | `media.yml` | PR (build only, no credentials); `main` (upload to staging); release (promote to production) | PRs: generate variants as an artifact, no upload. `main`: upload the variants of the approved manifest to the staging bucket. Release: copy only the media listed in that release's manifest to the production bucket |
 | `dast.yml` | Weekly and after staging deploys | OWASP ZAP baseline scan of staging (report, non-blocking) |
 
@@ -86,7 +86,7 @@ Local security checks every agent runs before opening a PR: `npm audit --audit-l
 | `FIGMA_FILE_URL` | Variable | Agent environments | Design work |
 | `MEDIA_BASE_URL` (staging value) | Variable | Agent environments | Local development |
 
-Agent environments never contain Cloudflare or R2 credentials. Production secrets live in a GitHub `production` environment, restricted to release tags and with Hugo as required reviewer, so only production jobs can read them.
+Agent environments never contain Cloudflare or R2 credentials. Production secrets live in a GitHub `production` environment, restricted to release tags and with Hugo as required reviewer, so only the deploy job (which runs no project code) can read them.
 
 ## Media flow
 
@@ -132,7 +132,7 @@ Agent environments never contain Cloudflare or R2 credentials. Production secret
 
 1. **Limited token.** Hugo connects Claude Code to GitHub through `/web-setup` with a fine-grained personal access token instead of his full access: only this repository; Contents, Pull requests and Issues read and write; Metadata read; no Administration, Workflows, Actions, Secrets, Environments or Deployments; 90-day expiry. The agent cannot change settings, rulesets, secrets or workflows.
 2. **Merge needs Hugo's click.** The required `approval` check is a job in the `approval` environment with Hugo as required reviewer. It stays pending until Hugo clicks "Approve" on the PR, so a PR cannot be merged before that, by anyone.
-3. **Production needs Hugo's click.** `deploy-production.yml` runs in the `production` environment, with Hugo as required reviewer and deployments limited to `v*` tags.
+3. **Production needs Hugo's click.** Only the deploy job of `deploy-production.yml` runs in the `production` environment, with Hugo as required reviewer and deployments limited to `v*` tags. The build job has no secrets, so project scripts never run where production secrets exist.
 4. **No shortcuts.** Rulesets on `main` (pull request required, required checks, no force push, no deletion) and on `v*` tags (no updates or deletions) with an empty bypass list, so they apply to Hugo's account too.
 5. **Transparency.** Every agent PR names the agent in its body and gets the `agent-authored` label; commits carry the agent's `Co-Authored-By` trailer.
 

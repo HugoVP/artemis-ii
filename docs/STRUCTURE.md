@@ -4,6 +4,7 @@
 artemis-ii/
 ├── AGENTS.md                  rules for every AI agent (single source)
 ├── CLAUDE.md                  pointer to AGENTS.md for Claude Code
+├── REVIEW.md                  short copy of the code review rules (read by Copilot code review)
 ├── PROMPT.md                  Hugo's original brief
 ├── CURATION.md                photo selection (Stage 05)
 ├── astro.config.mjs  tailwind.config.*  tsconfig.json

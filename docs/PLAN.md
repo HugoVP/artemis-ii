@@ -107,3 +107,4 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 - 2026-10-12 — Stage 00 update — Repository confirmed public by Hugo; `DELIVERY.md` updated with public-repository rules, the agent identity setup and GitHub-native security checks (CodeQL, secret scanning with push protection, dependency review).
 - 2026-10-12 — Stage 00 update — Agent identity decided: limited fine-grained token plus approval clicks (merge and production). GitHub Copilot coding agent and a custom GitHub App evaluated and not used for now.
 - 2026-10-12 — Stage 00 update — Added `## Code Review Rules` to `AGENTS.md` and the OpenAI Codex setup, verified facts and open questions to `docs/agents/other-agents.md`.
+- 2026-10-13 — Stage 00 update — Added `REVIEW.md` (short copy of the review rules for GitHub Copilot code review) and listed it as a protected path.

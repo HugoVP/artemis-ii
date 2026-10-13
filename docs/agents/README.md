@@ -39,7 +39,7 @@ When an agent is tried for the first time, update its row with what was verified
 
 ## Reviewer agents (optional)
 
-Hugo can ask a second agent, different from the one that built the stage, to review a stage PR (for example Codex with `/review`, following the `## Code Review Rules` in `AGENTS.md`). The reviewer reads `AGENTS.md`, the stage spec and the diff, and comments on the PR: spec criteria not met, bugs, security issues. It never pushes to the PR or approves it. The builder (or any agent) answers each finding in the PR.
+Hugo can ask a second agent, different from the one that built the stage, to review a stage PR (for example Codex with `/review`, following the `## Code Review Rules` in `AGENTS.md`, or GitHub Copilot code review, which reads `REVIEW.md`). The reviewer reads `AGENTS.md`, the stage spec and the diff, and comments on the PR: spec criteria not met, bugs, security issues. It never pushes to the PR or approves it. The builder (or any agent) answers each finding in the PR.
 
 ## Adding a new agent
 

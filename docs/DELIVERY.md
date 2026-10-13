@@ -7,7 +7,7 @@ How code goes from an agent's sandbox to production, which checks it passes on t
 | Environment | Built from | Triggered by | URL | Media | Approval |
 | --- | --- | --- | --- | --- | --- |
 | Local | Agent's working branch | The agent | `localhost` in the sandbox | Local folder, or staging media (read-only) | Local checks pass |
-| Preview | PR head commit | Every push to a PR | Per-PR Cloudflare Pages URL, posted on the PR | Staging bucket | Hugo reviews the stage here |
+| Preview | PR head commit (same-repository PRs; fork PRs are build-only) | Every push to a same-repository PR | Per-PR Cloudflare Pages URL, posted on the PR | Bundled into the preview itself under `/media/` from the PR's media artifact; no bucket | Hugo reviews the stage here |
 | Staging | `main` | Every merge to `main` | Stable staging URL | Staging bucket | Hugo merged the PR |
 | Production | Release tag `vX.Y.Z` | Hugo publishes a GitHub Release | Public URL | Production bucket | Hugo published the release |
 
@@ -30,10 +30,10 @@ agent branch ──PR──► CI + security checks ──► preview deploy ─
 | --- | --- | --- |
 | `ci.yml` | PR, push to `main` | `npm ci`, `check`, `build`, `test` (Playwright) |
 | `security.yml` | PR, push to `main`, weekly | Secret scan, dependency audit and review, CodeQL, workflow lint |
-| `deploy-preview.yml` | PR (after CI passes) | Two jobs. **Build** (unprivileged, no secrets, read-only token): builds the PR code with the staging configuration and uploads the `dist/` folder as an artifact. **Deploy** (privileged, runs only for same-repository PRs): downloads that artifact, never runs code from the PR, uploads it to a Pages preview and comments the URL. Lighthouse report from the build job |
+| `deploy-preview.yml` | PR (after CI passes) | Two jobs. **Build** (unprivileged, no secrets, read-only token): generates the PR's media variants, builds the PR code with `MEDIA_BASE_URL=/media`, copies the generated media into `dist/media/` and uploads `dist/` as one artifact, so the preview serves its own media from its own URL. **Deploy** (privileged, runs only for same-repository PRs): downloads that artifact, never runs code from the PR, uploads it to a Pages preview and comments the URL. Lighthouse report from the build job |
 | `deploy-staging.yml` | Push to `main` | Build, deploy staging, smoke tests, link check |
 | `approval.yml` | PR | A job in the `approval` environment that waits until Hugo approves it; this is the click that allows the merge |
-| `deploy-production.yml` | Release published; manual run with a tag (rollback) | Waits for Hugo's approval in the `production` environment, builds the tag, deploys production, smoke tests |
+| `deploy-production.yml` | Release published; manual run with a tag (rollback) | First a **release gate** job (no secrets) that fails unless the tag's commit is on `main` and has a successful staging deployment (looked up through the GitHub deployments API for that SHA); then waits for Hugo's approval in the `production` environment, builds the tag, deploys production, smoke tests. Media promotion (`media.yml`, release) only runs after the same gate passes. A rollback to an older tag passes the gate because that commit was on staging when it was released |
 | `media.yml` | PR (build only, no credentials); `main` (upload to staging); release (promote to production) | PRs: generate variants as an artifact, no upload. `main`: upload the variants of the approved manifest to the staging bucket. Release: copy only the media listed in that release's manifest to the production bucket |
 | `dast.yml` | Weekly and after staging deploys | OWASP ZAP baseline scan of staging (report, non-blocking) |
 
@@ -93,7 +93,7 @@ Agent environments never contain Cloudflare or R2 credentials. Production secret
 1. An agent adds approved photos to the manifest and runs `npm run ingest -- --local`: it downloads the originals from NASA in its sandbox, generates variants into a git-ignored folder and writes the photo metadata (dimensions, camera, date) into the content collections. No credentials needed.
 2. On a PR, `media.yml` generates the variants without credentials and keeps them as a workflow artifact, so the preview can show them. It uploads nothing.
 3. When the PR is merged to `main`, `media.yml` uploads the variants of the approved manifest to the staging bucket, under `photos/<nasa-id>/` (keys are NASA IDs, so uploads are idempotent).
-4. Previews never write to the buckets they share with staging. A preview serves its media from the PR's own artifact, so two PRs that process the same photo cannot overwrite each other's files.
+4. Previews never write to any bucket. `deploy-preview.yml` bundles the PR's generated media into the preview under `/media/` and builds with `MEDIA_BASE_URL=/media`, so a preview serves its own media from its own URL and two PRs that process the same photo cannot overwrite each other's files.
 5. On release, `media.yml` copies only the photos listed in that release's manifest from the staging bucket to the production bucket. Staging can contain media that production does not serve yet.
 
 ## Releases and rollback

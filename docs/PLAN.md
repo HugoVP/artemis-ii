@@ -109,3 +109,4 @@ Each stage adds a line here when opening its PR: date, stage, PR link and one se
 - 2026-10-12 — Stage 00 update — Added `## Code Review Rules` to `AGENTS.md` and the OpenAI Codex setup, verified facts and open questions to `docs/agents/other-agents.md`.
 - 2026-10-13 — Stage 00 update — Added `REVIEW.md` (short copy of the review rules for GitHub Copilot code review) and listed it as a protected path.
 - 2026-10-13 — Stage 00 update — Addressed Copilot code review on `docs/DELIVERY.md`: PR code never runs with credentials (build and deploy split), fork policy with a `preview` check that always reports, media namespaced per PR and promoted from manifests only.
+- 2026-10-13 — Stage 00 update — Second Copilot review addressed: release gate (tag on `main` with a successful staging deployment), CI no longer skips missing `check`/`test` scripts, one preview layout (media bundled under `/media/`), OPS-02 scoped to same-repository PRs.

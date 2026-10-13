@@ -42,4 +42,4 @@ Use [`_template.md`](_template.md). In short:
 
 ## Verification
 
-From Stage 02 on, acceptance criteria that can be automated are written as Playwright tests against the static build (`npm run test`), and the pipeline runs them on every PR together with the security checks in `docs/DELIVERY.md`. Manual criteria are listed in the PR as a checklist for Hugo. Stage 11 (final review) checks the traceability table in `product.md`: every requirement must be delivered by a stage and verified by a test or a manual check.
+From Stage 02 on, acceptance criteria that can be automated are written as Playwright tests against the static build (`npm run test`), and the pipeline runs them on every PR together with the security checks in `docs/DELIVERY.md`. Manual criteria are listed in the PR as a checklist for Hugo. CI fails if the `check`, `build` or `test` script is missing, so tests cannot be bypassed by deleting the script. Stage 11 (final review) checks the traceability table in `product.md`: every requirement must be delivered by a stage and verified by a test or a manual check.

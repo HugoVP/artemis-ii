@@ -28,7 +28,7 @@ Only the pipeline holds deployment and storage credentials. Agents never do.
 The project is built one stage at a time and delivered through four environments (details in `docs/DELIVERY.md`):
 
 1. **Local**: the agent's sandbox. Build, tests and checks run here before any PR.
-2. **Preview**: every PR gets its own deployment. Hugo reviews the stage there.
+2. **Preview**: every PR from this repository gets its own deployment (fork PRs are build-only). Hugo reviews the stage there.
 3. **Staging**: every merge to `main` deploys here. Merging is Hugo's approval of the stage, and it starts the next stage.
 4. **Production**: deployed only when Hugo publishes a release. Production never changes because of a merge.
 

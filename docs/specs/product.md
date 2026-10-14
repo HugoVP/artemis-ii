@@ -114,7 +114,7 @@ Stage 07 delivers the layout and the story and caption slots, filled with placeh
 | OPS-01 | Four environments as described in `docs/DELIVERY.md`: local, preview, staging and production. | 03 | manual |
 | OPS-02 | Every PR from this repository gets a preview deployment, with its URL posted on the PR. Fork PRs run build, CI and security checks without secrets and get no deployment; the `preview` check reports success with a note. | 03 | auto |
 | OPS-03 | Every merge to `main` deploys staging automatically. | 03 | auto |
-| OPS-04 | Production is deployed only from a release tag published by Hugo, and only if the tag belongs to a published (non-draft) GitHub Release and its commit is on `main` and has a successful staging deployment. A release gate job verifies this before deployment and before media promotion, including on manual rollback runs. | 03 | auto + manual |
+| OPS-04 | Production is deployed only from a release tag published by Hugo, and only if the tag belongs to a published (non-draft) GitHub Release and its commit is on `main` and has a successful staging pipeline run for that exact SHA (media upload, site deploy and smoke tests). A release gate job verifies this before deployment and before media promotion, including on manual rollback runs. | 03 | auto + manual |
 | OPS-05 | Any previous release can be restored to production with one manual workflow run. | 03 | manual |
 | OPS-06 | The pipeline, not agents, holds deployment and storage credentials, each scoped to one service or bucket. | 03 | review |
 | OPS-07 | Smoke tests run after every staging and production deployment. | 03 | auto |

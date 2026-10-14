@@ -7,9 +7,9 @@ How code goes from an agent's sandbox to production, which checks it passes on t
 | Environment | Built from | Triggered by | URL | Media | Approval |
 | --- | --- | --- | --- | --- | --- |
 | Local | Agent's working branch | The agent | `localhost` in the sandbox | Local folder, or staging media (read-only) | Local checks pass |
-| Preview | PR head commit (same-repository PRs; fork PRs are build-only) | Every push to a same-repository PR | Per-PR Cloudflare Pages URL, posted on the PR | Bundled into the preview itself under `/media/` from the PR's media artifact; no bucket | Hugo reviews the stage here |
-| Staging | `main` | Every merge to `main` | Stable staging URL | Staging bucket | Hugo merged the PR |
-| Production | Release tag `vX.Y.Z` | Hugo publishes a GitHub Release | Public URL | Production bucket | Hugo published the release |
+| Preview | PR head commit (same-repository PRs; fork PRs are build-only) | Every push to a same-repository PR | Per-PR URL in the staging Pages project, posted on the PR | Bundled into the preview itself under `/media/` from the PR's media artifact; no bucket | Hugo reviews the stage here |
+| Staging | `main` | Every merge to `main` | Stable URL of the staging Pages project | Staging bucket | Hugo merged the PR |
+| Production | Release tag `vX.Y.Z` | Hugo publishes a GitHub Release | Public URL (production Pages project) | Production bucket | Hugo published the release |
 
 Static sites bake URLs into the HTML, so each environment is a separate build of the **same commit** with its own configuration (`MEDIA_BASE_URL`, site URL). Builds are reproducible from `package-lock.json`; production always builds the exact commit that was already on staging.
 
@@ -158,5 +158,7 @@ Because the token cannot touch `.github/workflows/`, Stage 03 delivers the workf
 - **A GitHub App for agents.** Cloud sessions and routines cannot use a custom app as their identity (only the Claude Code GitHub Action can). The app is kept for later, if a pipeline step ever needs to open PRs that trigger other workflows. Its private key would live only in GitHub Actions secrets (`APP_ID`, `APP_PRIVATE_KEY`), used through `actions/create-github-app-token` (one-hour tokens), with a copy in Hugo's password manager and never on disk, in the repo or in an agent environment.
 
 ## Cloudflare Pages setup
+
+**Accounts and projects (decision 2026-10-14, Hugo):** one Cloudflare account, with two Pages projects and two R2 buckets. `artemis-ii` is production and is deployed only by `deploy-production.yml`. `artemis-ii-staging` hosts the staging site and the PR previews. Every deploy workflow sets the project name explicitly, so a preview or staging job cannot target production by mistake. This prevents mistakes; it is not a security boundary, because the Pages token is scoped to the account (see "Secrets and configuration"). A separate Cloudflare account for production would add that boundary (its own token, zone and R2 endpoint, with a cross-account media copy at promotion). Revisit it if more people get access, if the site becomes critical, or if Hugo wants the pattern for another project. Direct Upload deployments are not built by Cloudflare, so they should not count against its build limits; Stage 03 verifies this.
 
 Today the Pages project is connected to the repo through Cloudflare's Git integration, which builds every push on its own: `main` goes to the production URL and other branches to previews. Stage 03 replaces that with the GitHub Actions deploys above. It verifies whether the existing project can receive deployments from GitHub Actions with automatic deployments turned off, or whether a new Direct Upload project is needed, and documents the steps for Hugo in `SETUP.md`.

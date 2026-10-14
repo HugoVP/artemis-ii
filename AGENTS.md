@@ -64,7 +64,7 @@ The approved spec is the contract. Details in `docs/specs/README.md`; the essent
 
 1. **One stage per session and per PR.** Take only the next pending stage in `docs/PLAN.md`. Do not get ahead on future stages, except for writing the next stage's spec.
 2. **Never push to `main`.** Work on a branch with your agent's usual prefix (`claude/`, `codex/`, …) or `agent/stage-NN-short-name`, and open a PR against `main`. Nothing depends on the branch name.
-3. **A stage PR is any PR whose title starts with `Stage `.** If one is open (draft or not), do not start another stage. Finish with no changes and explain why in your session summary.
+3. **A stage PR is any PR from a branch of this repository (not a fork) whose title starts with `Stage `.** PRs from forks never count, so an outside contributor cannot block the next stage by naming a PR `Stage …`. If a stage PR is open (draft or not), do not start another stage. Finish with no changes and explain why in your session summary.
 4. **Before opening the PR:**
    - Run `npm run check`, `npm run build` and `npm run test` once they exist, plus the local security checks listed in `docs/DELIVERY.md`, and make sure they pass.
    - Check every acceptance criterion of the stage spec and mark it in the PR.

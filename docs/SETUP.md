@@ -25,7 +25,7 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
 
 ## 2. Cloudflare
 
-1. **Pages:** the project connected to the repo (already done). Until Stage 03 it deploys previews and `main` on its own; the production URL is not shared with anyone yet.
+1. **Pages:** the project connected to the repo (already done). Until Stage 03 it deploys previews and `main` on its own; the production URL is not shared with anyone yet. **(Stage 03)** Two projects in the same Cloudflare account: `artemis-ii` for production and `artemis-ii-staging` for staging and previews (see "Cloudflare Pages setup" in `docs/DELIVERY.md`).
 2. **(Stage 03) R2:** two buckets, for example `artemis-ii-media-staging` and `artemis-ii-media`, each with public read access (an `r2.dev` subdomain or a custom domain).
 3. **(Stage 03) Tokens**, each with the minimum scope:
    - An API token with "Cloudflare Pages: Edit" only, for deployments. Cloudflare scopes it to the account, not to one Pages project; see "Secrets and configuration" in `docs/DELIVERY.md` for how it is protected.

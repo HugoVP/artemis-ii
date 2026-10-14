@@ -46,6 +46,8 @@ Normative, testable version of the brief in `PROMPT.md`. Each requirement has a 
 | GAL-05 | Each photo has its own page with large image, story or caption, date, camera if known, NASA ID, link to the original, download of the original from own storage, and credit. | 07 | auto |
 | GAL-06 | Each photo page has its own 1200×630 Open Graph image. | 07 | auto |
 
+Stage 07 delivers the layout and the story and caption slots, filled with placeholder text; the approved stories, captions and alt text arrive in Stage 09 (`CONT-04`, `CONT-05`). `GAL-03`–`GAL-05` are verified in Stage 07 with placeholder content and re-checked with the approved content in Stage 09.
+
 ## Curation and content (CONT)
 
 | ID | Requirement | Stage | Check |

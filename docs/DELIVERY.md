@@ -76,9 +76,9 @@ Local security checks every agent runs before opening a PR: `npm audit --audit-l
 
 | Name | Kind | Lives in | Used by |
 | --- | --- | --- | --- |
-| `CLOUDFLARE_API_TOKEN` (Pages edit only; Cloudflare scopes it to the account, not to one Pages project) | Secret | GitHub Actions | Credential-only deploy jobs of the preview, staging and production workflows, all defined on the default branch |
+| `CLOUDFLARE_API_TOKEN` (Pages edit only; Cloudflare scopes it to the account, not to one Pages project) | Secret | GitHub environments `preview` and `staging` (deployment branch policy: `main` only) and `production` (release tags only), never repository-level | Credential-only deploy jobs of the preview, staging and production workflows, all defined on the default branch |
 | `CLOUDFLARE_ACCOUNT_ID` | Variable | GitHub Actions | Deploy and media workflows |
-| `R2_STAGING_ACCESS_KEY_ID`, `R2_STAGING_SECRET_ACCESS_KEY` (staging bucket only) | Secret | GitHub Actions | `media.yml` |
+| `R2_STAGING_ACCESS_KEY_ID`, `R2_STAGING_SECRET_ACCESS_KEY` (staging bucket only) | Secret | GitHub environment `staging` (`main` only), never repository-level | `media.yml`, called by `deploy-staging.yml` |
 | `R2_PRODUCTION_ACCESS_KEY_ID`, `R2_PRODUCTION_SECRET_ACCESS_KEY` (production bucket only) | Secret | GitHub Actions, `production` environment (media promotion job only) | `media.yml`, called by `deploy-production.yml` |
 | `R2_STAGING_BUCKET`, `R2_PRODUCTION_BUCKET` | Variable | GitHub Actions | `media.yml` |
 | `MEDIA_BASE_URL_STAGING`, `MEDIA_BASE_URL_PRODUCTION` | Variable | GitHub Actions | Builds |
@@ -87,7 +87,7 @@ Local security checks every agent runs before opening a PR: `npm audit --audit-l
 | `FIGMA_FILE_URL` | Variable | Agent environments | Design work |
 | `MEDIA_BASE_URL` (staging value) | Variable | Agent environments | Local development |
 
-Agent environments never contain Cloudflare or R2 credentials.
+Agent environments never contain Cloudflare or R2 credentials. **No credential is a repository-level secret:** a workflow in a same-repository PR can read repository-level secrets, but not environment secrets whose deployment policy allows only `main` or release tags. Each credential lives in the environment of the jobs that use it.
 
 - **R2 production keys** live in a GitHub `production` environment, restricted to release tags and with Hugo as required reviewer, so only the media promotion job can read them. R2 tokens are scoped per bucket, so this is real isolation.
 - **The Cloudflare Pages token** cannot be limited to one Pages project, so the `production` environment does not isolate it, and this design does not claim it does. Its boundary is the code allowed to read it: only credential-only deploy jobs in workflows defined on the default branch hold it; they run no project code, never execute, source or read configuration from the artifact they deploy, use a Pages project name and target branch fixed in the workflow, and receive the PR number (the only PR-derived value) through an environment variable, never interpolated into a shell command. The `production` environment approval and the release gate control what reaches production, not who can read the token. Changing those workflows takes a PR to a protected path that Hugo approves. If Cloudflare offers per-project token scopes, Stage 03 splits it into a preview and staging token and a production token held only in the `production` environment, and verifies the current behavior when it builds the pipeline.
@@ -145,8 +145,12 @@ Agent environments never contain Cloudflare or R2 credentials.
 - `/web-setup` accepts the fine-grained token, and the agent can still push branches and open PRs with it.
 - With that token, the agent cannot approve the `approval` or `production` deployments, change settings or push workflow files.
 - A PR cannot be merged while the `approval` check is pending.
+- Environment secrets (`preview`, `staging`, `production`) are not readable from a workflow on a PR branch, and a push of a workflow file with the agent token is rejected.
+- A workflow in a fork PR cannot write statuses (read-only token).
 
-Because the token cannot touch `.github/workflows/`, Stage 03 delivers the workflow files in its PR and Hugo applies them (or grants the Workflows permission for that stage only and removes it afterwards).
+**Trust assumption for the `approval` status.** The status is reported by GitHub Actions, so any workflow that can run on a branch of this repository with `statuses: write` could post it without Hugo's click. Doing that takes a workflow change, and workflow changes are not available to the agents (no Workflows permission) or to forks (read-only token), and they fall in the protected path `.github/**` that Hugo reviews before approving. If Hugo wants to remove the assumption, Stage 03 can move the reporter to a dedicated GitHub App, set as the only accepted source of `approval` in the ruleset, with its key only in the `approval` environment (restricted to `main`); that is a decision for Hugo, listed in the Stage 03 spec.
+
+Because the token cannot touch `.github/workflows/`, Stage 03 delivers the workflow files in its PR and Hugo applies them himself. The agent token never gets the Workflows permission, not even temporarily: a workflow added in a same-repository PR can read repository-level secrets, so that permission would break the boundary described above.
 
 **Evaluated and not used (2026-10-12):**
 

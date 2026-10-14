@@ -20,8 +20,8 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
 1. Public repo `HugoVP/artemis-ii` (see "Public repository" in `docs/DELIVERY.md`). Install the GitHub App of each agent you use (for example https://github.com/apps/claude).
 2. **Settings → Code security:** turn on Dependabot alerts, secret scanning and push protection. **Settings → Actions → General:** require approval for workflows from outside contributors.
 3. **Settings → Rules → Rulesets**, a rule for `main`: require a pull request, block force pushes and deletion. Required checks: `CI / build` now; after Stage 03, the checks listed in `docs/DELIVERY.md`.
-4. **(Stage 03)** Actions secrets, variables and environments from `docs/DELIVERY.md`.
-5. **(Stage 03) Agent permissions:** a fine-grained token for the agents, the `approval` and `production` environments and the rulesets without bypass ("Agent identity" in `docs/DELIVERY.md`). Stage 03 lists the exact steps.
+4. **(Stage 03)** Variables and environments from `docs/DELIVERY.md`. Credentials go into the environment of the jobs that use them (`preview`, `staging`, `production`), never into repository-level secrets.
+5. **(Stage 03) Agent permissions:** a fine-grained token for the agents, the `approval`, `preview`, `staging` and `production` environments and the rulesets without bypass ("Agent identity" in `docs/DELIVERY.md`). Stage 03 lists the exact steps.
 
 ## 2. Cloudflare
 
@@ -31,7 +31,7 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
    - An API token with "Cloudflare Pages: Edit" only, for deployments. Cloudflare scopes it to the account, not to one Pages project; see "Secrets and configuration" in `docs/DELIVERY.md` for how it is protected.
    - One R2 token per bucket, read and write on that bucket only.
 
-   These go into GitHub Actions secrets, **never** into an agent environment.
+   These go into GitHub environment secrets (see "Secrets and configuration" in `docs/DELIVERY.md`), **never** into an agent environment or a repository-level secret.
 
 ## 3. Figma
 

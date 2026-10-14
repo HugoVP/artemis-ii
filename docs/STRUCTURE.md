@@ -10,7 +10,7 @@ artemis-ii/
 ├── astro.config.mjs  tailwind.config.*  tsconfig.json
 ├── package.json  package-lock.json
 ├── .github/
-│   ├── workflows/             ci, security, deploy-preview, deploy-staging, deploy-production, media, dast (Stage 03)
+│   ├── workflows/             ci, security, preview-build, deploy-preview, deploy-staging, deploy-production, media, dast (Stage 03)
 │   ├── dependabot.yml         dependency updates (Stage 03)
 │   └── pull_request_template.md
 ├── docs/
@@ -50,4 +50,4 @@ artemis-ii/
 - **React islands** only for preferences and, if needed, the gallery viewer.
 - **No secrets in the repo;** `.env.example` only with variable names.
 - **Design tokens** come from the Figma variables documented in `docs/specs/design.md`, generated as CSS variables in `src/styles/tokens.css` with the same names, and exposed to Tailwind.
-- **Specs and tests side by side:** each acceptance criterion `AC-n` of `stage-NN` has its test in `tests/stage-NN.spec.ts`, so a failing test points straight at the requirement it protects.
+- **Specs and tests side by side:** each acceptance criterion `AC-n` of `stage-NN` that can be automated has its test in `tests/stage-NN.spec.ts`, so a failing test points straight at the requirement it protects. Criteria checked by a person (for example the Figma design in Stage 01) are marked `manual` in the spec and listed in the PR checklist instead.

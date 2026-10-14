@@ -78,7 +78,7 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 - `CURATION.md` with 20–30 mission photos and 5–8 launch photos: NASA ID, link to the original, chapter, justification, verified rights, candidate stories. No downloads.
 
 ### 06 Ingestion
-- `scripts/ingest.ts` with a local mode (agents: download, variants, metadata into content collections) and an upload mode (pipeline: same variants into the staging bucket; promotion to production on release). Idempotent, keyed by NASA ID.
+- `scripts/ingest.ts` with a local mode (agents: download, variants, metadata into content collections) and an upload mode (pipeline: same variants into the staging bucket; promotion to production on release). Idempotent, keyed by NASA ID plus content hash (same source bytes and variant settings: no-op; changed content: a new immutable path, per `MEDIA-03`).
 
 ### 07 Gallery
 - Chapters, three views (mosaic, gallery, immersive) and the per-photo page, per Figma; Open Graph image per photo.

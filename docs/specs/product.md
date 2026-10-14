@@ -53,7 +53,7 @@ Stage 07 delivers the layout and the story and caption slots, filled with placeh
 | ID | Requirement | Stage | Check |
 | --- | --- | --- | --- |
 | CONT-01 | 20–30 mission photos and 5–8 launch photos, each justified in `CURATION.md`. | 05 | review |
-| CONT-02 | Every fact (date, time, distance, record, first, name) has a source link stored with it in the content collections. | 05, 08 | auto (schema) + review |
+| CONT-02 | Every fact (date, time, distance, record, first, name) has a source link stored with it in the content collections. Stages 05 and 08 only review the content; the schema check runs when the collections are populated: photo metadata and sources in Stage 06, approved texts in Stage 09. | 05, 06, 08, 09 | auto (schema) + review |
 | CONT-03 | Unverifiable facts are left out and noted in the PR. | all | review |
 | CONT-04 | Stories are written only when worth it, from official or reliable journalistic sources, without invented facts or quotes; sensitive stories with respect. | 08, 09 | review |
 | CONT-05 | Photos without a story have a short caption and descriptive alt text in both languages. | 08, 09 | review |

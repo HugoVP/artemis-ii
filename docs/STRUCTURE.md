@@ -20,7 +20,7 @@ artemis-ii/
 │   └── content-review/        text drafts (Stage 08)
 ├── tests/                     Playwright acceptance and smoke tests, named after spec criteria (Stage 02)
 ├── scripts/
-│   └── ingest.ts              local mode for agents, upload mode for the pipeline (Stage 06)
+│   └── ingest.ts              local mode for agents, credential-free build mode for the pipeline; uploads are done by `media.yml` (Stage 06)
 ├── public/
 │   └── _headers               security headers (Stage 03); plus favicon and very light thumbnails
 └── src/

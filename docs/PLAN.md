@@ -21,7 +21,7 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | written in 06 | pending | |
 | 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | written in 07 | pending | |
 | 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | |
-| 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser` | written in 09 | pending | |
+| 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser`, `figma-read` | written in 09 | pending | |
 | 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web` | written in 10 | pending | |
 
 ## Releases
@@ -78,7 +78,7 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 - `CURATION.md` with 20–30 mission photos and 5–8 launch photos: NASA ID, link to the original, chapter, justification, verified rights, candidate stories. No downloads.
 
 ### 06 Ingestion
-- `scripts/ingest.ts` with a local mode (agents: download, variants, metadata into content collections) and an upload mode (pipeline: same variants into the staging bucket; promotion to production on release). Idempotent, keyed by NASA ID plus content hash (same source bytes and variant settings: no-op; changed content: a new immutable path, per `MEDIA-03`).
+- `scripts/ingest.ts` only generates media and manifests, and never holds credentials: a local mode (agents: download, variants, metadata into content collections) and a build mode (pipeline, no secrets: the same variants and the manifest as an artifact). Uploading to the staging bucket and promoting to production on release is done by `media.yml` with a pinned storage tool that consumes that artifact and runs no project code (`docs/DELIVERY.md`). Idempotent, keyed by NASA ID plus content hash (same source bytes and variant settings: no-op; changed content: a new immutable path, per `MEDIA-03`).
 
 ### 07 Gallery
 - Chapters, three views (mosaic, gallery, immersive) and the per-photo page, per Figma; Open Graph image per photo.

@@ -29,7 +29,7 @@ All data (dates, times, distances, records, firsts) is verified against official
   4. Is idempotent: if a photo is already processed, it is not downloaded again.
 - Storage configurable with an environment variable (for example, `MEDIA_BASE_URL`):
   - Development: local file system, outside the bundle if it is heavy.
-  - Production: Cloudflare R2. The script must be able to upload to R2.
+  - Production: Cloudflare R2. The script produces what gets uploaded; the upload itself is done by the pipeline (a trusted workflow with a pinned storage tool), so no project code ever runs with storage credentials.
 - Keep the high-resolution original in our own storage so it can be offered as a download from the site.
 - Each photo also stores the link to the original NASA resource, and it is shown on the page.
 - Launch video: embed NASA's official video with a lightweight player that loads nothing from third parties until the user clicks. If useful, keep a few short clips or frames in our own storage to use as covers.

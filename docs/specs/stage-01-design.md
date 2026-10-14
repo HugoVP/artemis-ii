@@ -40,7 +40,7 @@ This stage creates them.
 | AC-2 | The three gallery views are shown for the same chapter. | `GAL-02`–`GAL-04` | manual: Figma, chapter frames |
 | AC-3 | Colors, spacing and type are Figma variables with the modes listed in Scope, and every variable has a CSS name in `design.md`. | `DES-02` | manual: Figma variables panel + `design.md` |
 | AC-4 | Switching a frame between `dark`/`light` and between densities in Figma updates it without broken layouts. | `PREF-01`, `PREF-03` | manual: Figma, mode switcher |
-| AC-5 | Every text/background pair meets WCAG AA (4.5:1 body, 3:1 large text and UI) in both themes; ratios listed in `design.md`. | `QA-02` | manual: `design.md` table |
+| AC-5 | Every text/background pair meets WCAG AA (4.5:1 for normal text, including navigation links, buttons and preference labels; 3:1 only for large text and non-text UI such as icons, borders and focus rings) in both themes; ratios listed in `design.md`. | `QA-02` | manual: `design.md` table |
 | AC-6 | The top bar shows all preference controls on mobile without crowding (menu or sheet allowed). | `PREF-*`, `DES-03` | manual: Figma, mobile top bar |
 | AC-7 | No NASA logo, insignia or endorsement wording appears in any frame. | `LEGAL-02` | manual |
 | AC-8 | `docs/specs/stage-02-base.md` exists and follows the template. | — | manual: PR diff |

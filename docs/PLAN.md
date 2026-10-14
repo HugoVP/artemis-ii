@@ -5,7 +5,7 @@ This file is maintained by the agents. Each stage ends in a PR, and Hugo approve
 Possible statuses: `pending`, `in review` (PR open), `approved` (PR merged, deployed to staging). Production is released separately (see "Releases").
 🔍 = content review stage: the PR brings only the content to approve, without integrating it into the site.
 🎨 = design review stage: the PR brings the Figma design and its spec, without site code.
-"Needs" = capabilities the agent must have to run the stage (see [`agents/README.md`](agents/README.md)). Every stage also needs `git`.
+"Needs" = capabilities the agent must have to run the stage (see [`agents/README.md`](agents/README.md)). Every stage also needs `git`, and from Stage 02 on also `node` and `browser`, because the local checks (`check`, `build`, `test`) must pass before any PR, even for stages whose Needs column does not list them.
 
 The project follows spec-driven development (see [`specs/README.md`](specs/README.md)): requirements live in [`specs/product.md`](specs/product.md), and each stage is built against its own spec in `docs/specs/stage-NN-*.md`, written and approved one stage ahead. Delivery (environments, pipeline, security) is described in [`DELIVERY.md`](DELIVERY.md). Project structure is in [`STRUCTURE.md`](STRUCTURE.md) and the site map in [`SITEMAP.md`](SITEMAP.md).
 

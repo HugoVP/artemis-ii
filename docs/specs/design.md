@@ -1,6 +1,6 @@
 # Design (Stage 01)
 
-Source of truth for the look of the site, with the Figma file ([`FIGMA_FILE_URL`](https://www.figma.com/design/7b6W4tsb9Ia0J0KhyvBWCX/Artemis-II---Site)). Tokens are Figma variables and CSS variables with the same names. Screens use placeholders, not NASA photos, and no NASA logo (`LEGAL-02`). Texts are placeholders and not final content.
+Source of truth for the look of the site, with the Figma file ([`FIGMA_FILE_URL`](https://www.figma.com/design/7b6W4tsb9Ia0J0KhyvBWCX/Artemis-II---Site)). Tokens are Figma variables and CSS variables with the same names. Screens use placeholders, not NASA photos, and no NASA logo (`LEGAL-02`). Texts are placeholders and not final content. The Figma text is in English (the base language of the design); one Spanish screen checks that the layout holds in Spanish.
 
 ## Figma pages
 
@@ -98,7 +98,7 @@ All pairs pass. The dark `color/border` was raised from `#5A6478` during this st
 
 Top bar behavior: one "Settings" (desktop) or "Menu" (mobile) button opens a panel with theme, language and density, so the controls never crowd the bar on a phone (`AC-6`). The gallery view control is a strip under the bar, shown only on gallery pages.
 
-## Screens (page Screens, Spanish, dark, comfortable; mobile 390 px and desktop 1440 px)
+## Screens (page Screens, English, dark, comfortable; mobile 390 px and desktop 1440 px)
 
 | Page | Mobile | Desktop |
 | --- | --- | --- |
@@ -120,7 +120,7 @@ Variations:
 | Photo, light theme | 11:1011 (mobile), 11:1045 (desktop) |
 | Home, light theme | 11:1087 (mobile), 11:1125 (desktop) |
 | The mission, compact and spacious density (desktop) | 11:1168, 11:1258 |
-| Home in English, desktop (text length check) | 11:1349 |
+| Home in Spanish, desktop (text length check) | 11:1349 |
 
 Open a node with `https://www.figma.com/design/7b6W4tsb9Ia0J0KhyvBWCX/Artemis-II---Site?node-id=<id with : replaced by ->`.
 

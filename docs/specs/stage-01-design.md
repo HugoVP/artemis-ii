@@ -16,9 +16,9 @@ Hugo can open one Figma file and see how every page of the site will look on a p
   - Typography: one or two open-license fonts (Google Fonts), type scale for headings, body, captions, UI labels.
   - Spacing and layout collection with modes `compact`, `comfortable` (default), `spacious`: spacing scale, base text size, content max width.
 - **Components** page: top bar (navigation + theme, language, density controls + gallery view control), footer with credit and short AI notice, buttons and links, photo card (mosaic, gallery, immersive variants), timeline item, crew card, lightweight video placeholder (before click), source/credit line.
-- **Screens** page, mobile (390 px wide) and desktop (1440 px wide), dark theme, comfortable density, in Spanish:
+- **Screens** page, mobile (390 px wide) and desktop (1440 px wide), dark theme, comfortable density, in English (the base language of the design; changed from Spanish at Hugo's request):
   Home, The launch, The mission, Why it matters, Gallery index, a chapter in each of the three views, a photo page, About.
-- Variations: the photo page and Home in light theme; the mission page in compact and spacious density; one English screen to check text length.
+- Variations: the photo page and Home in light theme; the mission page in compact and spacious density; one Spanish screen to check text length.
 - `docs/specs/design.md` in the repo: token tables (name, value per mode, CSS variable name), component inventory, link to every Figma frame, and contrast ratios of each text/background pair in both themes.
 - The spec for Stage 02 (`docs/specs/stage-02-base.md`), per the look-ahead cycle.
 

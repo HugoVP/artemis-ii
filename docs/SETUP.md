@@ -65,6 +65,13 @@ Every agent environment gets:
 2. Review each stage in its preview, comment or merge.
 3. Publish a release when you want the current staging version in production.
 
+## 6. Task tracking and notes (optional)
+
+- **Linear:** a team `HUG` and a project "Artemis II", one issue per stage in the order of `docs/PLAN.md`, and the GitHub integration turned on so a PR that says `Closes HUG-N` moves its issue. Keep Linear's own statuses; the mapping is in `AGENTS.md`.
+- **Notion:** a page "Artemis II" with a decision log. It may be public, so write only what is safe to publish (see `AGENTS.md`).
+- **Obsidian:** open the `docs/` folder as a vault. Use relative paths for links and turn wikilinks off, so links keep working on GitHub. `docs/.obsidian/` is git-ignored.
+- **Slack:** a private channel with the GitHub app subscribed to this repository (`pulls`, `reviews`, `issues`, `releases`, `deployments`) and Linear's team notifications. Do not add Slack to the routine.
+
 ## Keep in mind
 
 - Agent runs use your usage limits on each platform.

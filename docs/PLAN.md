@@ -2,27 +2,27 @@
 
 This file is maintained by the agents. Each stage ends in a PR, and Hugo approves it by merging.
 
-Possible statuses: `pending`, `in review` (PR open), `approved` (PR merged, deployed to staging). Production is released separately (see "Releases").
+Possible statuses: `pending`, `in review` (PR open), `approved` (PR merged, deployed to staging). Production is released separately (see "Releases"). Linear mirrors them: `pending` = Backlog or Todo, `in review` = In Review, `approved` = Done.
 🔍 = content review stage: the PR brings only the content to approve, without integrating it into the site.
 🎨 = design review stage: the PR brings the Figma design and its spec, without site code.
 "Needs" = capabilities the agent must have to run the stage (see [`agents/README.md`](agents/README.md)). Every stage also needs `git`, and from Stage 02 on also `node` and `browser`, because the local checks (`check`, `build`, `test`) must pass before any PR, even for stages whose Needs column does not list them.
 
 The project follows spec-driven development (see [`specs/README.md`](specs/README.md)): requirements live in [`specs/product.md`](specs/product.md), and each stage is built against its own spec in `docs/specs/stage-NN-*.md`, written and approved one stage ahead. Delivery (environments, pipeline, security) is described in [`DELIVERY.md`](DELIVERY.md). Project structure is in [`STRUCTURE.md`](STRUCTURE.md) and the site map in [`SITEMAP.md`](SITEMAP.md).
 
-| # | Stage | Needs | Spec | Status | PR |
-| --- | --- | --- | --- | --- | --- |
-| 00 | 🔍 Plan, structure, site map, product spec and delivery design | — | — | in review | #1 |
-| 01 | 🎨 Design in Figma: tokens, components and screens | `figma-write` | [stage-01-design](specs/stage-01-design.md) | pending | |
-| 02 | Project base: Astro, Tailwind with design tokens, es/en routes, layout, tests | `node`, `browser`, `figma-read` | written in 01 | pending | |
-| 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | written in 02 | pending | |
-| 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | written in 03 | pending | |
-| 05 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | `web` | written in 04 | pending | |
-| 06 | Ingestion: script, variants with sharp, upload through the pipeline | `node`, `web` | written in 05 | pending | |
-| 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | written in 06 | pending | |
-| 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | written in 07 | pending | |
-| 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | |
-| 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser`, `figma-read` | written in 09 | pending | |
-| 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web`, `figma-read` | written in 10 | pending | |
+| # | Stage | Needs | Spec | Status | PR | Issue |
+| --- | --- | --- | --- | --- | --- | --- |
+| 00 | 🔍 Plan, structure, site map, product spec and delivery design | — | — | in review | #1 | — |
+| 01 | 🎨 Design in Figma: tokens, components and screens | `figma-write` | [stage-01-design](specs/stage-01-design.md) | pending | | `HUG-5` |
+| 02 | Project base: Astro, Tailwind with design tokens, es/en routes, layout, tests | `node`, `browser`, `figma-read` | written in 01 | pending | | `HUG-6` |
+| 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | written in 02 | pending | | `HUG-7` |
+| 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | written in 03 | pending | | |
+| 05 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | `web` | written in 04 | pending | | |
+| 06 | Ingestion: script, variants with sharp, upload through the pipeline | `node`, `web` | written in 05 | pending | | |
+| 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | written in 06 | pending | | |
+| 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | written in 07 | pending | | |
+| 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | | |
+| 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser`, `figma-read` | written in 09 | pending | | |
+| 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web`, `figma-read` | written in 10 | pending | | |
 
 ## Releases
 
@@ -43,6 +43,7 @@ Production changes only when Hugo publishes a GitHub Release (see `DELIVERY.md`)
 - Every PR carries the spec of the next stage (look-ahead cycle), so merging a PR approves both the result and the next plan.
 - Stages 07 and 09 do not integrate unapproved content: 07 comes after 05–06, and 09 after 08.
 - Stage 10 includes the footer with the short AI notice; the Stage 02 layout reserves the space.
+- Work is tracked in Linear (one issue per stage, in the "Issue" column), the decision log and notes live in Notion and Obsidian is a personal reader over `docs/` (Hugo, 2026-10-15). The repo stays the source of truth; see "Task tracking and knowledge tools" in `AGENTS.md`.
 - Production keeps two credential-only jobs in the `production` environment, media promotion and then the Pages deploy (Hugo's decision, 2026-10-15); Stage 03 confirms how many approvals GitHub asks for.
 - Until Stage 03 is merged, Cloudflare Pages' Git integration keeps deploying every merge to `main` straight to production (Hugo's decision, 2026-10-15); the production URL is not announced.
 - Cloudflare: one account, two Pages projects (`artemis-ii` for production, `artemis-ii-staging` for staging and previews) and two R2 buckets (Hugo's decision, 2026-10-14); a separate account for production is a possible later change, described in `DELIVERY.md`.
@@ -121,3 +122,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-13 — Stage 00 update — Fifth Copilot review: production build runs in a no-secrets job; only the deploy job (artifact download and upload, no project code) is in the `production` environment.
 - 2026-10-13 — Stage 00 update — Sixth Copilot review: release media promotion is a credential-only job in the `production` environment behind Hugo's approval, next to the Pages deploy; neither runs project code.
 - 2026-10-13 — Stage 00 update — Copilot findings from review bodies: complete Figma page set, PR link added to `PLAN.md` after opening the PR, previews scoped to same-repository PRs in `PROMPT.md`, media upload and promotion ordered before site deploys and smoke tests, `TECH` requirements in `product.md`, `npm audit` from Stage 02, photo stories integrated in Stage 09, missing capability opens a draft PR.
+- 2026-10-15 — Process (requested by Hugo) — Task tracking and knowledge tools: Linear issues per stage ("Issue" column), status mapping, Notion as a public-safe readable layer and Obsidian as a personal reader, documented in `AGENTS.md`, `docs/agents/` and `docs/SETUP.md`.

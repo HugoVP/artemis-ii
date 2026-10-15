@@ -1,6 +1,6 @@
 # Stage 01: Design in Figma
 
-- **Status:** draft (approved when Stage 00 is merged)
+- **Status:** approved (Stage 00 merged)
 - **Requirements covered:** `DES-01`, `DES-02`, `DES-03`, `QA-02` (contrast part); visual definition of `NAV-*`, `PREF-*`, `GAL-*`
 - **Depends on:** Stage 00 (`SITEMAP.md`, `product.md`); a Figma file shared through `FIGMA_FILE_URL`; an agent with the `figma-write` capability (`docs/agents/README.md`)
 

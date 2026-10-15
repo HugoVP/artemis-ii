@@ -43,6 +43,8 @@ Production changes only when Hugo publishes a GitHub Release (see `DELIVERY.md`)
 - Every PR carries the spec of the next stage (look-ahead cycle), so merging a PR approves both the result and the next plan.
 - Stages 07 and 09 do not integrate unapproved content: 07 comes after 05–06, and 09 after 08.
 - Stage 10 includes the footer with the short AI notice; the Stage 02 layout reserves the space.
+- Production keeps two credential-only jobs in the `production` environment, media promotion and then the Pages deploy (Hugo's decision, 2026-10-15); Stage 03 confirms how many approvals GitHub asks for.
+- Until Stage 03 is merged, Cloudflare Pages' Git integration keeps deploying every merge to `main` straight to production (Hugo's decision, 2026-10-15); the production URL is not announced.
 - Cloudflare: one account, two Pages projects (`artemis-ii` for production, `artemis-ii-staging` for staging and previews) and two R2 buckets (Hugo's decision, 2026-10-14); a separate account for production is a possible later change, described in `DELIVERY.md`.
 - The `approval` status is reported by a GitHub Actions workflow defined on `main` (Hugo's decision, 2026-10-14); moving it to a dedicated GitHub App is a planned future change, described under "Trust assumption for the `approval` status" in `DELIVERY.md`.
 

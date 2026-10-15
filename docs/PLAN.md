@@ -22,7 +22,7 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | written in 07 | pending | |
 | 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | |
 | 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser`, `figma-read` | written in 09 | pending | |
-| 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web` | written in 10 | pending | |
+| 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web`, `figma-read` | written in 10 | pending | |
 
 ## Releases
 

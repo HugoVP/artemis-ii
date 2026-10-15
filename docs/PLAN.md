@@ -1,25 +1,123 @@
-# Plan de etapas
+# Stage plan
 
-Este archivo lo mantienen los agentes. Cada etapa termina en un PR, y Hugo la aprueba fusionándolo.
+This file is maintained by the agents. Each stage ends in a PR, and Hugo approves it by merging.
 
-Estados posibles: `pendiente`, `en revisión` (PR abierto), `aprobada` (PR fusionado).
-🔍 = etapa de revisión de contenido: el PR trae solo el contenido para aprobar, sin integrarlo al sitio.
+Possible statuses: `pending`, `in review` (PR open), `approved` (PR merged, deployed to staging). Production is released separately (see "Releases").
+🔍 = content review stage: the PR brings only the content to approve, without integrating it into the site.
+🎨 = design review stage: the PR brings the Figma design and its spec, without site code.
+"Needs" = capabilities the agent must have to run the stage (see [`agents/README.md`](agents/README.md)). Every stage also needs `git`, and from Stage 02 on also `node` and `browser`, because the local checks (`check`, `build`, `test`) must pass before any PR, even for stages whose Needs column does not list them.
 
-La Etapa 00 reescribe este archivo con el plan detallado. Las etapas de abajo son el punto de partida sugerido; la Etapa 00 puede dividirlas, unirlas o reordenarlas si lo justifica.
+The project follows spec-driven development (see [`specs/README.md`](specs/README.md)): requirements live in [`specs/product.md`](specs/product.md), and each stage is built against its own spec in `docs/specs/stage-NN-*.md`, written and approved one stage ahead. Delivery (environments, pipeline, security) is described in [`DELIVERY.md`](DELIVERY.md). Project structure is in [`STRUCTURE.md`](STRUCTURE.md) and the site map in [`SITEMAP.md`](SITEMAP.md).
 
-| # | Etapa | Estado | PR |
-| --- | --- | --- | --- |
-| 00 | 🔍 Plan detallado, estructura del proyecto y mapa del sitio | pendiente | |
-| 01 | Base del proyecto: Astro, Tailwind, rutas es/en, layout, CI | pendiente | |
-| 02 | Preferencias: tema, idioma, densidad del sitio y vista de galería | pendiente | |
-| 03 | 🔍 Curación: fotos candidatas con IDs en `CURATION.md` (sin descargar) | pendiente | |
-| 04 | Ingesta: script de descarga, variantes con sharp y subida a R2 | pendiente | |
-| 05 | Galería: capítulos, vistas Mosaico/Galería/Inmersiva y página por foto | pendiente | |
-| 06 | 🔍 Textos: El despegue, La misión y Por qué importa, en ambos idiomas, con fuentes | pendiente | |
-| 07 | Secciones: Inicio, El despegue (con video), La misión (línea de tiempo) y Por qué importa | pendiente | |
-| 08 | Acerca de, aviso de IA, créditos, Open Graph y hreflang | pendiente | |
-| 09 | Revisión final: accesibilidad, rendimiento móvil y enlaces rotos | pendiente | |
+| # | Stage | Needs | Spec | Status | PR |
+| --- | --- | --- | --- | --- | --- |
+| 00 | 🔍 Plan, structure, site map, product spec and delivery design | — | — | in review | #1 |
+| 01 | 🎨 Design in Figma: tokens, components and screens | `figma-write` | [stage-01-design](specs/stage-01-design.md) | pending | |
+| 02 | Project base: Astro, Tailwind with design tokens, es/en routes, layout, tests | `node`, `browser`, `figma-read` | written in 01 | pending | |
+| 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | written in 02 | pending | |
+| 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | written in 03 | pending | |
+| 05 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | `web` | written in 04 | pending | |
+| 06 | Ingestion: script, variants with sharp, upload through the pipeline | `node`, `web` | written in 05 | pending | |
+| 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | written in 06 | pending | |
+| 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | written in 07 | pending | |
+| 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | |
+| 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser`, `figma-read` | written in 09 | pending | |
+| 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web`, `figma-read` | written in 10 | pending | |
 
-## Bitácora
+## Releases
 
-Cada etapa agrega aquí una línea al abrir su PR: fecha, etapa, enlace al PR y una frase de lo que hizo.
+Production changes only when Hugo publishes a GitHub Release (see `DELIVERY.md`). Suggested milestones; Hugo can release whenever he wants:
+
+| Version | After stage | What visitors get |
+| --- | --- | --- |
+| `v0.1.0` | 04 | The site shell: design, navigation, both languages, preferences |
+| `v0.5.0` | 07 | The photo gallery |
+| `v1.0.0` | 11 | The complete site |
+
+## Decisions
+
+- The four mandatory review points are covered by stages 00 (plan), 01 (design), 05 (photos) and 08 (texts). Production releases are a fifth, separate gate.
+- Design comes right after the plan, so the project base (Stage 02) is built on approved tokens and layout. Design uses placeholders instead of NASA photos, because curation comes later.
+- The pipeline (Stage 03) comes right after the project base: it needs a buildable project, and every later stage then gets previews, staging and security checks.
+- Media upload runs in the pipeline, not in agents: agents never hold storage credentials.
+- Every PR carries the spec of the next stage (look-ahead cycle), so merging a PR approves both the result and the next plan.
+- Stages 07 and 09 do not integrate unapproved content: 07 comes after 05–06, and 09 after 08.
+- Stage 10 includes the footer with the short AI notice; the Stage 02 layout reserves the space.
+- Production keeps two credential-only jobs in the `production` environment, media promotion and then the Pages deploy (Hugo's decision, 2026-10-15); Stage 03 confirms how many approvals GitHub asks for.
+- Until Stage 03 is merged, Cloudflare Pages' Git integration keeps deploying every merge to `main` straight to production (Hugo's decision, 2026-10-15); the production URL is not announced.
+- Cloudflare: one account, two Pages projects (`artemis-ii` for production, `artemis-ii-staging` for staging and previews) and two R2 buckets (Hugo's decision, 2026-10-14); a separate account for production is a possible later change, described in `DELIVERY.md`.
+- The `approval` status is reported by a GitHub Actions workflow defined on `main` (Hugo's decision, 2026-10-14); moving it to a dedicated GitHub App is a planned future change, described under "Trust assumption for the `approval` status" in `DELIVERY.md`.
+
+## Detail by stage
+
+The scope, acceptance criteria and tasks of each stage live in its spec. These summaries are the starting point for those specs.
+
+### 00 🔍 Plan, structure, site map, product spec and delivery design
+- **Deliverable:** this file, `STRUCTURE.md`, `SITEMAP.md`, `DELIVERY.md`, `AGENTS.md` (with `CLAUDE.md` pointing to it), `agents/`, `specs/README.md`, `specs/_template.md`, `specs/product.md`, `specs/stage-01-design.md`, PR template. No code.
+
+### 01 🎨 Design in Figma
+- Figma file (from `FIGMA_FILE_URL`) with Foundations (variables with theme and density modes), Components and Screens (mobile and desktop for every page in `SITEMAP.md`), plus `Exploration` and `Archive` pages.
+- `docs/specs/design.md` with tokens, CSS variable names, frame links and contrast ratios.
+
+### 02 Project base
+- Astro + strict TypeScript + Tailwind; `@astrojs/react` for islands; `@astrojs/sitemap`.
+- Design tokens from `design.md` as CSS variables (`src/styles/tokens.css`) wired into Tailwind.
+- `package.json` with `dev`, `build`, `check`, `test` scripts and `package-lock.json`; Playwright acceptance tests against the static build.
+- Routes `src/pages/es/*` and `src/pages/en/*`; `/` redirects to `/es/`. Base layout, top bar and footer per Figma; UI text dictionary.
+- Content collections with Zod schema (minimal sample data). `src/lib/media.ts` builds URLs from `MEDIA_BASE_URL`. Section pages as shells.
+- **Removes the `package.json` existence guard** from `.github/workflows/ci.yml` in the same PR that adds `package.json`, so `npm ci`, `check`, `build` and `test` are unconditional from then on and deleting `package.json` can never make CI skip everything. The agent token cannot push workflow files, so Hugo applies this edit to the Stage 02 branch (the spec and the PR description say so).
+- Until Stage 03, Cloudflare Pages' Git integration still deploys; the production URL is not announced.
+
+### 03 Delivery pipeline and security baseline
+- The workflows, gates and controls in `DELIVERY.md`: CI, security checks, preview, staging and production deploys, rollback, Dependabot, `public/_headers`, smoke tests.
+- Applies the decisions in `DELIVERY.md` (public repository, limited agent token with approval clicks, Pages setup), runs the agent-identity verification tests, and documents the exact setup steps in `SETUP.md`.
+- **Possible blocker:** Cloudflare API token, buckets or GitHub settings not ready; the stage opens as a draft with the steps Hugo must take.
+
+### 04 Preferences
+- React island in the top bar: theme, language, density and, only in galleries, gallery view, as designed in Figma.
+- Inline script in `<head>` that applies theme and density before painting. `localStorage` always in try/catch.
+- Browser language detection only on the first visit; the language selector keeps the page.
+
+### 05 🔍 Curation
+- `CURATION.md` with 20–30 mission photos and 5–8 launch photos: NASA ID, link to the original, chapter, justification, verified rights, candidate stories. No downloads.
+
+### 06 Ingestion
+- `scripts/ingest.ts` only generates media and manifests, and never holds credentials: a local mode (agents: download, variants, metadata into content collections) and a build mode (pipeline, no secrets: the same variants and the manifest as an artifact). Uploading to the staging bucket and promoting to production on release is done by `media.yml` with a pinned storage tool that consumes that artifact and runs no project code (`docs/DELIVERY.md`). Idempotent, keyed by NASA ID plus content hash (same source bytes and variant settings: no-op; changed content: a new immutable path, per `MEDIA-03`).
+
+### 07 Gallery
+- Chapters, three views (mosaic, gallery, immersive) and the per-photo page, per Figma; Open Graph image per photo.
+
+### 08 🔍 Texts
+- ES/EN drafts of The launch, The mission and Why it matters, plus photo stories, each fact with its source. In `docs/content-review/`, not integrated.
+
+### 09 Sections
+- Home, The launch (click-to-load player), The mission (timeline, crew, milestones) and Why it matters, with the approved texts, per Figma.
+- The approved photo stories, captions and alt text from Stage 08 go into the content collections (`stories` and photo entries, with their sources), so the gallery views and per-photo pages from Stage 07 show them in both languages.
+
+### 10 About, AI notice, credits, OG and hreflang
+- Short AI notice in the footer and full in About, `CONTACT_URL`, NASA usage guidelines, credits, hreflang and Open Graph per language.
+
+### 11 Final review
+- Accessibility, mobile performance, security (dynamic scan findings, headers), broken links, build in both languages with the 3 densities and 3 views, visual check against Figma, the traceability column in `product.md`, and quality checks switched to blocking.
+
+## Log
+
+Each stage adds a line here before opening its PR (date, stage and one sentence on what it did) and fills in the PR link in a follow-up commit right after opening it.
+
+- 2026-10-12 — Stage 00 — PR #1 — Detailed plan, project structure and site map.
+- 2026-10-12 — Intermediate step (requested by Hugo) — All Markdown docs are now English-only and are the single source of truth; the Spanish versions were removed.
+- 2026-10-12 — Naming unification — Branch pattern generalized to `claude/*`, English-only workflow naming (stage, PR titles, CI steps, chapter IDs), routine renamed to "next stage".
+- 2026-10-12 — Stage 00 update (requested by Hugo) — Added the Figma design stage (01, stages renumbered to 10) and spec-driven development: product spec with requirement IDs, stage specs written one stage ahead, PR template, acceptance tests in CI.
+- 2026-10-12 — Stage 00 update — Verified the Figma connector can write to the design file (`use_figma`); Stage 01 spec and design rules updated with the tools to use and avoid.
+- 2026-10-12 — Stage 00 update (requested by Hugo) — DevSecOps and agent-neutral restructure: four environments (local, preview, staging, production), production only through releases, new Stage 03 (delivery pipeline and security baseline, stages renumbered to 11), `AGENTS.md` as the single instruction file for any agent, `docs/DELIVERY.md`, `docs/agents/`.
+- 2026-10-12 — Stage 00 update — Repository confirmed public by Hugo; `DELIVERY.md` updated with public-repository rules, the agent identity setup and GitHub-native security checks (CodeQL, secret scanning with push protection, dependency review).
+- 2026-10-12 — Stage 00 update — Agent identity decided: limited fine-grained token plus approval clicks (merge and production). GitHub Copilot coding agent and a custom GitHub App evaluated and not used for now.
+- 2026-10-12 — Stage 00 update — Added `## Code Review Rules` to `AGENTS.md` and the OpenAI Codex setup, verified facts and open questions to `docs/agents/other-agents.md`.
+- 2026-10-13 — Stage 00 update — Added `REVIEW.md` (short copy of the review rules for GitHub Copilot code review) and listed it as a protected path.
+- 2026-10-13 — Stage 00 update — Addressed Copilot code review on `docs/DELIVERY.md`: PR code never runs with credentials (build and deploy split), fork policy with a `preview` check that always reports, media namespaced per PR and promoted from manifests only.
+- 2026-10-13 — Stage 00 update — Second Copilot review addressed: release gate (tag on `main` with a successful staging deployment), CI no longer skips missing `check`/`test` scripts, one preview layout (media bundled under `/media/`), OPS-02 scoped to same-repository PRs.
+- 2026-10-13 — Stage 00 update — Third Copilot review: media is immutable and content-addressed, one media path in `STRUCTURE.md` and `DELIVERY.md`.
+- 2026-10-13 — Stage 00 update — Fourth Copilot review: the CI `package.json` guard is temporary and Stage 02 must remove it atomically (applied by Hugo, since agent tokens cannot push workflows).
+- 2026-10-13 — Stage 00 update — Fifth Copilot review: production build runs in a no-secrets job; only the deploy job (artifact download and upload, no project code) is in the `production` environment.
+- 2026-10-13 — Stage 00 update — Sixth Copilot review: release media promotion is a credential-only job in the `production` environment behind Hugo's approval, next to the Pages deploy; neither runs project code.
+- 2026-10-13 — Stage 00 update — Copilot findings from review bodies: complete Figma page set, PR link added to `PLAN.md` after opening the PR, previews scoped to same-repository PRs in `PROMPT.md`, media upload and promotion ordered before site deploys and smoke tests, `TECH` requirements in `product.md`, `npm audit` from Stage 02, photo stories integrated in Stage 09, missing capability opens a draft PR.

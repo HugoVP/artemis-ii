@@ -1,81 +1,73 @@
-# Puesta en marcha (Hugo, una sola vez)
+# Setup (Hugo)
 
-Con esto el proyecto queda listo para avanzar solo, etapa por etapa, con tu aprobación en cada una.
+What Hugo sets up outside the repo so agents and the pipeline can work. Steps marked **(Stage 03)** are only needed when the pipeline stage starts; that stage's spec will list them exactly.
 
-## Cómo funciona
+## How it works
 
 ```
-Routine arranca una etapa ─► el agente trabaja en la nube ─► abre un PR
-        ▲                                                     │
-        │                                     revisas la vista previa de Cloudflare
-        │                                                     │
-        └──── fusionas el PR (tu aprobación) ◄────────────────┘
-                     │
-                     └─► Cloudflare despliega main a producción
+agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─► staging ─► next stage starts
+                                                                     │
+                                              Hugo publishes a release ─► production
 ```
 
-- **Aprobar** = fusionar el PR.
-- **Pedir cambios** = comentar en el PR. Con Auto-fix activo, el agente los atiende en la misma rama.
-- **Pausar el proyecto** = apagar la routine con su interruptor.
+- **Approve a stage** = merge its PR (it goes to staging).
+- **Request changes** = comment on the PR.
+- **Go to production** = publish a GitHub Release (see `docs/DELIVERY.md`).
+- **Pause the project** = turn off the agent's trigger (for Claude Code, the routine's switch).
 
 ## 1. GitHub
 
-1. Crea un repo privado, por ejemplo `HugoVP/artemis-ii`.
-2. Sube todos los archivos de esta carpeta a `main` (incluida `.github/`).
-3. Instala la Claude GitHub App en el repo: https://github.com/apps/claude
-4. En **Settings → Rules → Rulesets**, crea una regla para `main`:
-   - Exigir pull request antes de fusionar.
-   - Exigir que pase el check `CI / build`.
-   - Bloquear force push y borrado.
+1. Public repo `HugoVP/artemis-ii` (see "Public repository" in `docs/DELIVERY.md`). Install the GitHub App of each agent you use (for example https://github.com/apps/claude).
+2. **Settings → Code security:** turn on Dependabot alerts, secret scanning and push protection. **Settings → Actions → General:** require approval for workflows from outside contributors.
+3. **Settings → Rules → Rulesets**, a rule for `main`: require a pull request, block force pushes and deletion. Required checks: `CI / build` now; after Stage 03, the checks listed in `docs/DELIVERY.md`.
+4. **(Stage 03)** Variables and environments from `docs/DELIVERY.md`. Credentials go into the environment of the jobs that use them (`preview`, `staging`, `production`), never into repository-level secrets.
+5. **(Stage 03) Agent permissions:** a fine-grained token for the agents, the `approval`, `preview`, `staging` and `production` environments and the rulesets without bypass ("Agent identity" in `docs/DELIVERY.md`). Stage 03 lists the exact steps.
 
 ## 2. Cloudflare
 
-1. Crea la cuenta en https://dash.cloudflare.com
-2. **R2:** crea un bucket (por ejemplo, `artemis-ii-media`) y actívale acceso público con un subdominio `r2.dev` o, mejor, un dominio propio después.
-3. **Token de R2:** en R2 → Manage API tokens, crea un token con permiso de lectura y escritura **solo en ese bucket**. Guarda el Access Key ID y el Secret.
-4. **Pages:** Workers & Pages → Create → Pages → Connect to Git → elige el repo.
-   - Framework preset: Astro
-   - Build command: `npm run build`
-   - Output directory: `dist`
-   - Variables de entorno: `MEDIA_BASE_URL` y `CONTACT_URL`
-   - Con esto, cada PR tiene su URL de vista previa y cada fusión a `main` despliega producción.
+1. **Pages:** the project connected to the repo (already done). Until Stage 03 it deploys previews and `main` on its own; the production URL is not shared with anyone yet. **(Stage 03)** Two projects in the same Cloudflare account: `artemis-ii` for production and `artemis-ii-staging` for staging and previews (see "Cloudflare Pages setup" in `docs/DELIVERY.md`).
+2. **(Stage 03) R2:** two buckets, for example `artemis-ii-media-staging` and `artemis-ii-media`, each with public read access (an `r2.dev` subdomain or a custom domain).
+3. **(Stage 03) Tokens**, each with the minimum scope:
+   - An API token with "Cloudflare Pages: Edit" only, for deployments. Cloudflare scopes it to the account, not to one Pages project; see "Secrets and configuration" in `docs/DELIVERY.md` for how it is protected.
+   - One R2 token per bucket, read and write on that bucket only.
 
-   El primer build fallará hasta que exista el proyecto (Etapa 01). Es normal.
+   These go into GitHub environment secrets (see "Secrets and configuration" in `docs/DELIVERY.md`), **never** into an agent environment or a repository-level secret.
 
-## 3. Entorno en la nube de Claude Code
+## 3. Figma
 
-En claude.ai/code, crea un entorno llamado `artemis-ii`:
+1. Connect Figma in claude.ai → Settings → Connectors (done).
+2. The design file "Artemis II - Site" exists and its URL is `FIGMA_FILE_URL` (done).
+3. To review the design: open the file, check the Foundations, Components and Screens pages, and leave comments on the PR. Merging the PR approves the design.
 
-- **Network access:** Custom, con "Also include default list of common package managers" activado, y estos dominios:
+## 4. Agents
+
+Each agent runs in its own sandbox with the same rules (`AGENTS.md`). Setup per agent is in `docs/agents/`:
+
+- Claude Code: `docs/agents/claude-code.md` (environment `artemis-ii`, routine, Figma connector).
+- Other agents: `docs/agents/other-agents.md`.
+
+Every agent environment gets:
+
+- **Variables:** only `FIGMA_FILE_URL`, `MEDIA_BASE_URL` (staging value) and `CONTACT_URL`. If `R2_*` variables were added to the Claude Code environment earlier, remove them: storage credentials belong to the pipeline.
+- **Network domains**, on top of the package managers:
   - `eol.jsc.nasa.gov`
   - `pds-imaging.jpl.nasa.gov`
   - `www.nasa.gov`
   - `images.nasa.gov`
   - `images-api.nasa.gov`
   - `images-assets.nasa.gov`
-  - `<TU_ACCOUNT_ID>.r2.cloudflarestorage.com`
 
-  Si una etapa se bloquea por un dominio, el agente lo dirá en el PR y lo agregas aquí.
-- **Environment variables:** `MEDIA_BASE_URL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `CONTACT_URL`.
-- **Setup script:**
-  ```
-  if [ -f package.json ]; then npm ci; fi
-  ```
+  If a stage is blocked by a domain, the agent says so in the PR and you add it.
 
-## 4. La routine
+## 5. Start
 
-Créala en claude.ai/code/routines con la configuración y el prompt de `docs/ROUTINE.md`.
+1. Merge the open stage PR. With Claude Code, the routine starts the next stage on its own; with other agents, start it with the kickoff prompt in `docs/agents/README.md`.
+2. Review each stage in its preview, comment or merge.
+3. Publish a release when you want the current staging version in production.
 
-## 5. Arrancar
+## Keep in mind
 
-1. En la routine, pulsa **Run now**. Esto lanza la Etapa 00 (el plan).
-2. Cuando llegue el PR, actívale **Auto-fix** desde la sesión.
-3. Revisa el plan, comenta si quieres cambios y fusiona cuando te guste.
-4. Desde ahí, cada fusión arranca la siguiente etapa sola.
-
-## Para tener en cuenta
-
-- Las routines están en vista previa y consumen tu límite de uso, igual que una sesión normal.
-- Un estado verde en la lista de corridas solo significa que no hubo error de infraestructura. Lo que cuenta es el PR y su vista previa.
-- Todo lo que hacen los agentes en GitHub aparece con tu usuario.
-- Las variables del entorno las puede ver cualquiera que use ese entorno. Mantén el entorno solo para este proyecto.
+- Agent runs use your usage limits on each platform.
+- A green status in an agent's run list only means there was no infrastructure error. What counts is the PR and its preview.
+- Everything agents do on GitHub currently appears under your user (see "Agent identity" in `docs/DELIVERY.md`).
+- Anyone who uses an agent environment can see its variables. Keep each environment for this project only.

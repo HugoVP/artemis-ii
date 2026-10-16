@@ -12,14 +12,14 @@ How to run a stage with an agent other than Claude Code. None of these has been 
 
 ## Starting a stage
 
-1. Make sure no stage PR is open and the previous one is merged.
-2. Start a task on this repository with the kickoff prompt:
+1. Make sure no stage PR is open and the previous one is merged. The merge opens the work-order issue `Run Stage NN: <name>` (label `agent-task`); it carries the kickoff prompt below.
+2. Start a task on this repository with the kickoff prompt (copy it from the issue):
 
    > Read AGENTS.md and follow docs/agents/next-stage.md.
 
-3. The agent opens a PR titled `Stage NN: <name>`, with the agent named in the PR body.
+3. The agent opens a PR titled `Stage NN: <name>`, with the agent named in the PR body and `Closes #<work-order issue>`.
 
-Automatic chaining (start the next stage on merge) is set up per runner. For Claude Code it is the routine in `claude-code.md`. For other runners, start each stage by hand until an equivalent trigger is configured.
+Automatic chaining (start the next stage on merge) is set up per runner. For Claude Code it is the routine in `claude-code.md`. For other runners, the work-order issue is the trigger: Hugo hands it to the agent he chooses (for example by mentioning the agent in the issue if it has a GitHub integration, to verify, or by pasting the prompt into its own interface).
 
 ## OpenAI Codex
 

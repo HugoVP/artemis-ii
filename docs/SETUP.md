@@ -78,6 +78,14 @@ Every agent environment gets:
 - **Obsidian:** open the `docs/` folder as a vault. Use relative paths for links and turn wikilinks off, so links keep working on GitHub. `docs/.obsidian/` is git-ignored.
 - **Slack:** a private channel with the GitHub app subscribed to this repository (`pulls`, `reviews`, `issues`, `releases`, `deployments`) and Linear's team notifications. Do not add Slack to the routine.
 
+## 7. Work order for the next stage (any agent)
+
+After each stage merge, `next-stage.yml` opens an issue `Run Stage NN: <name>` (label `agent-task`) with the kickoff prompt, the spec link and the needed capabilities, so any agent can start from it (`docs/agents/README.md`, "Universal flow"). One-time setup:
+
+1. On the branch of the PR that adds this workflow, move `docs/workflows/next-stage.yml` to `.github/workflows/next-stage.yml` with `git mv` (agent tokens cannot push workflow files) and delete its two header comment lines.
+2. No secret or variable is needed: the job uses the automatic token with `contents: read` and `issues: write`. The `agent-task` label is created on the first run.
+3. After the next stage PR is merged, check that the issue exists. To test earlier, run `PR_NUMBER=<n> GITHUB_REPOSITORY=<owner>/<repo> DRY_RUN=1 node scripts/next-stage-issue.mjs` on your machine: it prints the issue without creating it.
+
 ## Keep in mind
 
 - Agent runs use your usage limits on each platform.

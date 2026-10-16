@@ -26,6 +26,8 @@ Created at claude.ai/code/routines:
      - Base branch = `main`
      - Head branch starts with `claude/` (so the routine chains stages built by Claude Code; stages built by other agents are started by hand, see `other-agents.md`)
 
+  The work-order issue that `next-stage.yml` opens after each stage merge does not stop this routine: both start the next stage, and the PR the agent opens says `Closes #<issue>`. If you prefer another agent for a stage, turn the routine off (**Active** switch) before merging.
+
   The routine page also has a **Run now** button (the play icon), not a trigger, to start a stage by hand or retry one, and an **Active** switch that turns the GitHub trigger on or off. Turn it off to review one stage before the next starts.
 - **Instructions** (paste exactly this; the procedure itself lives in the repo, so this never needs to change):
 

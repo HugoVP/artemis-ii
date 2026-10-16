@@ -83,6 +83,7 @@ The scheduled routine runs with only the Figma connector (`docs/agents/claude-co
 5. **PR format**, in English, following `.github/pull_request_template.md`:
    - Title: `Stage NN: <name>`, and the label `agent-authored`.
    - Agent: the tool that did the work (for example "Claude Code" or "Codex").
+   - Work order: `Closes #N` when a `Run Stage NN` issue (label `agent-task`) exists for the stage, created by the pipeline after the previous stage merged; otherwise nothing.
    - Linear issue: `Closes HUG-N` (the number is in the "Issue" column of `docs/PLAN.md`), or "none yet".
    - What was done, in short bullets.
    - Acceptance criteria: every criterion of the stage spec, checked, with how it was verified (test name or manual).

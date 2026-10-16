@@ -1,0 +1,114 @@
+#!/usr/bin/env node
+// Moves the Linear issue of each stage forward to the status that docs/PLAN.md says.
+// Only statuses change: no issues, comments or descriptions are created or edited.
+// Forward only: PLAN.md lags a merge (a stage becomes `approved` in the next stage's PR), so Linear
+// may legitimately be ahead of the plan, and the sync never moves an issue back.
+// No dependencies (Node 22). `DRY_RUN=1` reads Linear and prints what it would change.
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { parseStages } from "./next-stage-issue.mjs";
+
+const API_URL = "https://api.linear.app/graphql";
+// Plan status -> the Linear status name to reach. `pending` never needs a move (Todo or Backlog both count).
+export const TARGETS = { pending: null, "in review": "In Review", approved: "Done" };
+const RANK = { pending: 0, "in review": 2, approved: 3 };
+
+// 0 = Backlog/Todo/Triage, 1 = In Progress (any other started state), 2 = In Review, 3 = Done, null = Canceled.
+export function rank(state) {
+  if (state.type === "canceled") return null;
+  if (state.type === "completed") return 3;
+  if (state.type === "started") return /review/i.test(state.name) ? 2 : 1;
+  return 0;
+}
+
+export function wantedRows(stages) {
+  return stages.filter((s) => s.linear).map((s) => {
+    if (!(s.status in TARGETS)) throw new Error(`Unknown status "${s.status}" for Stage ${s.number} in docs/PLAN.md (expected pending, in review or approved).`);
+    return { stage: s.number, identifier: s.linear, status: s.status };
+  });
+}
+
+// Pure: decides what to do for each issue. `states` maps a team id to its workflow states.
+export function planActions(rows, issues, states) {
+  const actions = [];
+  const notes = [];
+  for (const row of rows) {
+    const issue = issues[row.identifier];
+    if (!issue) throw new Error(`${row.identifier} (Stage ${row.stage}) was not found in Linear.`);
+    const current = rank(issue.state);
+    if (current === null) { notes.push(`${row.identifier}: ${issue.state.name}, left alone (canceled)`); continue; }
+    const wanted = RANK[row.status];
+    if (current >= wanted) {
+      notes.push(`${row.identifier}: ${issue.state.name}${current > wanted ? ` (ahead of the plan: ${row.status})` : ""}, no change`);
+      continue;
+    }
+    const name = TARGETS[row.status];
+    const teamStates = states[issue.team.id] ?? [];
+    const target = teamStates.find((s) => s.name === name);
+    if (!target) {
+      throw new Error(`Status "${name}" does not exist in Linear team ${issue.team.key}. Available: ${teamStates.map((s) => s.name).join(", ")}.`);
+    }
+    actions.push({ identifier: row.identifier, id: issue.id, from: issue.state.name, to: target.name, stateId: target.id });
+  }
+  return { actions, notes };
+}
+
+async function gql(url, key, query, variables) {
+  const res = await fetch(url, {
+    method: "POST",
+    // A personal API key goes in the header as is, without "Bearer".
+    headers: { Authorization: key, "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); } catch { throw new Error(`Linear returned HTTP ${res.status} with a body that is not JSON.`); }
+  if (!res.ok || json.errors) {
+    const msg = (json.errors ?? []).map((e) => e.message).join("; ") || `HTTP ${res.status}`;
+    throw new Error(`Linear request failed: ${msg.slice(0, 300)}`);
+  }
+  return json.data;
+}
+
+export async function run({ key, markdown, url = API_URL, dryRun = false }) {
+  const rows = wantedRows(parseStages(markdown));
+  if (!rows.length) return { actions: [], notes: ["No stage has a Linear issue in docs/PLAN.md."] };
+
+  const vars = Object.fromEntries(rows.map((r, i) => [`id${i}`, r.identifier]));
+  const decl = rows.map((_, i) => `$id${i}: String!`).join(", ");
+  const body = rows.map((_, i) => `i${i}: issue(id: $id${i}) { id identifier state { id name type } team { id key } }`).join("\n");
+  const data = await gql(url, key, `query Issues(${decl}) {\n${body}\n}`, vars);
+  const issues = {};
+  rows.forEach((r, i) => { if (data[`i${i}`]) issues[r.identifier] = data[`i${i}`]; });
+
+  const states = {};
+  for (const team of new Set(Object.values(issues).map((i) => i.team.id))) {
+    const t = await gql(url, key, "query States($id: String!) { team(id: $id) { states(first: 100) { nodes { id name type } } } }", { id: team });
+    states[team] = t.team.states.nodes;
+  }
+
+  const { actions, notes } = planActions(rows, issues, states);
+  if (!dryRun) {
+    for (const a of actions) {
+      const r = await gql(url, key, "mutation Move($id: String!, $stateId: String!) { issueUpdate(id: $id, input: { stateId: $stateId }) { success } }", { id: a.id, stateId: a.stateId });
+      if (!r.issueUpdate?.success) throw new Error(`Linear did not confirm the update of ${a.identifier}.`);
+    }
+  }
+  return { actions, notes };
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const markdown = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
+  const dryRun = Boolean(process.env.DRY_RUN);
+  const key = process.env.LINEAR_API_KEY;
+  if (!key && dryRun) {
+    // Offline check of the plan: what the sync would aim for.
+    for (const r of wantedRows(parseStages(markdown))) console.log(`${r.identifier}: plan says ${r.status} (Linear: ${TARGETS[r.status] ?? "Todo or Backlog"})`);
+  } else {
+    if (!key) throw new Error("LINEAR_API_KEY is not set.");
+    const { actions, notes } = await run({ key, markdown, dryRun });
+    for (const n of notes) console.log(n);
+    for (const a of actions) console.log(`${a.identifier}: ${a.from} -> ${a.to}${dryRun ? " (dry run, not applied)" : ""}`);
+    if (!actions.length) console.log("Linear already matches the plan.");
+  }
+}

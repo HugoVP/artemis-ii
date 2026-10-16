@@ -1,0 +1,47 @@
+# Template. Hugo moves this file to `.github/workflows/linear-sync.yml`
+# (agent tokens cannot push workflow files). See docs/SETUP.md, section 6.
+name: Linear sync
+
+# Moves each stage's Linear issue forward to the status `docs/PLAN.md` says. Runs only from `main`
+# (or by hand), and the `linear` environment only gives its secret to `main`, so PR code never sees it.
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/PLAN.md
+      - scripts/linear-sync.mjs
+      - scripts/next-stage-issue.mjs
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Read Linear and print the changes without applying them
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: linear
+    concurrency:
+      group: linear-sync
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Unit tests (mock server, no network, no credentials)
+        run: node --test scripts/linear-sync.test.mjs scripts/next-stage-issue.test.mjs
+
+      - name: Move the Linear issues forward to match docs/PLAN.md
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+        run: node scripts/linear-sync.mjs

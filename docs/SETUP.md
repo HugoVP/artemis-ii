@@ -68,6 +68,12 @@ Every agent environment gets:
 ## 6. Task tracking and notes (optional)
 
 - **Linear:** a team `HUG` and a project "Artemis II", one issue per stage in the order of `docs/PLAN.md`, and the GitHub integration turned on so a PR that says `Closes HUG-N` moves its issue. Keep Linear's own statuses; the mapping is in `AGENTS.md`.
+  Statuses follow `docs/PLAN.md` through the `linear-sync.yml` workflow, which moves each stage issue forward (never back) and only changes statuses. One-time setup:
+  1. In Linear, create a personal API key (Settings, Security & access, Personal API keys) and keep it for step 2. Never paste it in a chat, a file or an agent environment.
+  2. In GitHub, create the environment `linear`, with deployment branches limited to `main` (Selected branches and tags), and add the secret `LINEAR_API_KEY`.
+  3. On the branch of the PR that adds this workflow, move `docs/workflows/linear-sync.yml` to `.github/workflows/linear-sync.yml` with `git mv` (agent tokens cannot push workflow files) and delete its two header comment lines.
+  4. After merging, run the workflow by hand (Actions, Linear sync, Run workflow). It is a dry run by default: it prints what it would change. Check the output, then run it again with the dry-run box cleared.
+  5. To see what the plan asks for without any key, run `DRY_RUN=1 node scripts/linear-sync.mjs` on your machine.
 - **Notion:** a page "Artemis II" with a sub-page "Decision log (synced from repo)", filled automatically from `docs/PLAN.md` by the `notion-sync.yml` workflow. Only entries that end with `<!-- notion -->` are published, so nothing reaches Notion unless someone marks it as safe. The page may be public (see `AGENTS.md`). One-time setup:
   1. In Notion, create an internal connection (API token) at notion.so/profile/integrations, with the three content capabilities (read, update and insert content) and no user information.
   2. On the sub-page, open the `...` menu, then Connections, and add the connection. Share only that sub-page with it.

@@ -80,7 +80,7 @@ export function buildBlocks(markdown, sha = "") {
   const bullets = (lines) => lines.filter((l) => l.startsWith("- ") && MARKER.test(l)).map((l) => bullet(l.slice(2).replace(MARKER, "")));
   const blocks = [
     paragraph(`Synced from \`docs/PLAN.md\` in the repository${sha ? ` (commit ${sha.slice(0, 7)})` : ""}. Do not edit this page: it is overwritten on every sync.`),
-    heading("Stages"), ...stageLines(markdown.split("\n")).map(bullet),
+    heading("Stages"), ...stageLines(markdown.split(/^## /m)[0].split("\n")).map(bullet),
     heading("Decisions"), ...bullets(s["Decisions"] ?? []),
     heading("Log"), ...bullets(s["Log"] ?? []),
   ];

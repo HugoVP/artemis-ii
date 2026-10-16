@@ -66,3 +66,10 @@ test("sync appends the new blocks, then deletes the old ones", async () => {
   assert.equal(result.removed, 2);
   assert.ok(calls.indexOf("PATCH /v1/blocks/" + "p".repeat(32) + "/children") < calls.indexOf("DELETE /v1/blocks/old1"));
 });
+
+test("stage rows are read only from the opening section", () => {
+  const md = "# Plan\n\n| 00 | A | x | y | approved | #1 | z |\n\n## Notes\n\n| 99 | Secret row | a | b | c | d | e |\n";
+  const text = JSON.stringify(buildBlocks(md));
+  assert.ok(text.includes("Stage 00"));
+  assert.ok(!text.includes("Secret row"));
+});

@@ -27,14 +27,29 @@ test("buildBlocks reads stages, decisions and log from PLAN.md", () => {
   const blocks = buildBlocks(plan, "abcdef123");
   const types = blocks.map((b) => b.type);
   assert.deepEqual(types.filter((t) => t === "heading_2").length, 3);
-  assert.ok(types.filter((t) => t === "bulleted_list_item").length > 10);
+  assert.ok(types.filter((t) => t === "bulleted_list_item").length > 5);
   assert.ok(JSON.stringify(blocks).includes("Stage 02"));
 });
 
 test("buildBlocks refuses session links, tokens and emails", () => {
-  for (const bad of ["https://claude.ai/code/session_abc", "ntn_" + "a".repeat(30), "me@example.com"]) {
-    assert.throws(() => buildBlocks(`## Decisions\n\n- ${bad}\n`), /Refusing to publish/);
+  const tokens = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"].map((p) => p + "a".repeat(30));
+  for (const bad of ["https://claude.ai/code/session_abc", "ntn_" + "a".repeat(30), "me@example.com", ...tokens]) {
+    assert.throws(() => buildBlocks(`## Decisions\n\n- ${bad} <!-- notion -->\n`), /Refusing to publish/);
   }
+});
+
+test("buildBlocks refuses a token split across rich-text items", () => {
+  const split = "a".repeat(1997) + " ghp_" + "b".repeat(30);
+  assert.throws(() => buildBlocks(`## Decisions\n\n- ${split} <!-- notion -->\n`), /Refusing to publish/);
+});
+
+test("only entries with the notion marker are published", () => {
+  const md = "## Decisions\n\n- Public one <!-- notion -->\n- Credentials and bucket layout\n\n## Log\n\n- Hidden entry\n";
+  const text = JSON.stringify(buildBlocks(md));
+  assert.ok(text.includes("Public one"));
+  assert.ok(!text.includes("Credentials"));
+  assert.ok(!text.includes("Hidden entry"));
+  assert.ok(!text.includes("notion -->"));
 });
 
 test("sync appends the new blocks, then deletes the old ones", async () => {

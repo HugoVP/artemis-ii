@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Publishes the stage status, decisions and log of docs/PLAN.md to one Notion page.
+// Publishes the stage status and the marked decisions and log entries of docs/PLAN.md to one Notion page.
+// Only entries ending with `<!-- notion -->` are published (allowlist); the page may be public.
 // One-way: the repository is the source of truth and the page is overwritten on every run.
 // No dependencies (Node 22). Runs only from `.github/workflows/notion-sync.yml` on `main`,
 // or by hand with DRY_RUN=1 to print the blocks without calling Notion.
@@ -9,12 +10,13 @@ import { fileURLToPath } from "node:url";
 const NOTION_VERSION = "2022-06-28";
 const MAX_TEXT = 2000; // Notion limit per rich-text item
 const MAX_BATCH = 100; // Notion limit of blocks per append call
+const MARKER = /\s*<!--\s*notion\s*-->\s*$/;
 
 // Content that must never be published to a page that may be public.
 const FORBIDDEN = [
   [/claude\.ai\/code\/session_/i, "session link"],
   [/\b(?:secret_|ntn_)[A-Za-z0-9]{20,}/, "Notion token"],
-  [/\b(?:ghp_|github_pat_|gho_)[A-Za-z0-9_]{20,}/, "GitHub token"],
+  [/\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}/, "GitHub token"],
   [/[\w.+-]+@[\w-]+\.[\w.-]+/, "email address"],
 ];
 
@@ -74,15 +76,19 @@ function stageLines(lines) {
 
 export function buildBlocks(markdown, sha = "") {
   const s = sections(markdown);
-  const bullets = (lines) => lines.filter((l) => l.startsWith("- ")).map((l) => bullet(l.slice(2)));
+  // Allowlist: only entries that end with the marker are published. Everything else stays in the repository.
+  const bullets = (lines) => lines.filter((l) => l.startsWith("- ") && MARKER.test(l)).map((l) => bullet(l.slice(2).replace(MARKER, "")));
   const blocks = [
     paragraph(`Synced from \`docs/PLAN.md\` in the repository${sha ? ` (commit ${sha.slice(0, 7)})` : ""}. Do not edit this page: it is overwritten on every sync.`),
     heading("Stages"), ...stageLines(markdown.split("\n")).map(bullet),
     heading("Decisions"), ...bullets(s["Decisions"] ?? []),
     heading("Log"), ...bullets(s["Log"] ?? []),
   ];
-  const text = JSON.stringify(blocks);
-  for (const [re, what] of FORBIDDEN) if (re.test(text)) throw new Error(`Refusing to publish: content looks like it contains a ${what}.`);
+  // Check the serialized blocks (link URLs included) and each block's text joined, because a value can be split across rich-text items.
+  const texts = blocks.map((b) => b[b.type].rich_text.map((r) => r.text.content).join(""));
+  for (const text of [JSON.stringify(blocks), ...texts]) {
+    for (const [re, what] of FORBIDDEN) if (re.test(text)) throw new Error(`Refusing to publish: content looks like it contains a ${what}.`);
+  }
   return blocks;
 }
 

@@ -36,14 +36,16 @@ Production changes only when Hugo publishes a GitHub Release (see `DELIVERY.md`)
 
 ## Decisions
 
-- The four mandatory review points are covered by stages 00 (plan), 01 (design), 05 (photos) and 08 (texts). Production releases are a fifth, separate gate.
-- Design comes right after the plan, so the project base (Stage 02) is built on approved tokens and layout. Design uses placeholders instead of NASA photos, because curation comes later.
-- The pipeline (Stage 03) comes right after the project base: it needs a buildable project, and every later stage then gets previews, staging and security checks.
+Entries that end with `<!-- notion -->` are published to the Notion page by `notion-sync.yml` (see `AGENTS.md`). Add the marker only to entries that are safe to publish; the sync ignores the rest.
+
+- The four mandatory review points are covered by stages 00 (plan), 01 (design), 05 (photos) and 08 (texts). Production releases are a fifth, separate gate. <!-- notion -->
+- Design comes right after the plan, so the project base (Stage 02) is built on approved tokens and layout. Design uses placeholders instead of NASA photos, because curation comes later. <!-- notion -->
+- The pipeline (Stage 03) comes right after the project base: it needs a buildable project, and every later stage then gets previews, staging and security checks. <!-- notion -->
 - Media upload runs in the pipeline, not in agents: agents never hold storage credentials.
-- Every PR carries the spec of the next stage (look-ahead cycle), so merging a PR approves both the result and the next plan.
-- Stages 07 and 09 do not integrate unapproved content: 07 comes after 05–06, and 09 after 08.
-- Stage 10 includes the footer with the short AI notice; the Stage 02 layout reserves the space.
-- Work is tracked in Linear (one issue per stage, in the "Issue" column), the decision log and notes live in Notion and Obsidian is a personal reader over `docs/` (Hugo, 2026-10-15). The repo stays the source of truth; see "Task tracking and knowledge tools" in `AGENTS.md`.
+- Every PR carries the spec of the next stage (look-ahead cycle), so merging a PR approves both the result and the next plan. <!-- notion -->
+- Stages 07 and 09 do not integrate unapproved content: 07 comes after 05–06, and 09 after 08. <!-- notion -->
+- Stage 10 includes the footer with the short AI notice; the Stage 02 layout reserves the space. <!-- notion -->
+- Work is tracked in Linear (one issue per stage, in the "Issue" column), the decision log and notes live in Notion and Obsidian is a personal reader over `docs/` (Hugo, 2026-10-15). The repo stays the source of truth; see "Task tracking and knowledge tools" in `AGENTS.md`. <!-- notion -->
 - Production keeps two credential-only jobs in the `production` environment, media promotion and then the Pages deploy (Hugo's decision, 2026-10-15); Stage 03 confirms how many approvals GitHub asks for.
 - Until Stage 03 is merged, Cloudflare Pages' Git integration keeps deploying every merge to `main` straight to production (Hugo's decision, 2026-10-15); the production URL is not announced.
 - Cloudflare: one account, two Pages projects (`artemis-ii` for production, `artemis-ii-staging` for staging and previews) and two R2 buckets (Hugo's decision, 2026-10-14); a separate account for production is a possible later change, described in `DELIVERY.md`.
@@ -105,9 +107,9 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 
 Each stage adds a line here before opening its PR (date, stage and one sentence on what it did) and fills in the PR link in a follow-up commit right after opening it.
 
-- 2026-10-12 — Stage 00 — PR #1 — Detailed plan, project structure and site map.
-- 2026-10-12 — Intermediate step (requested by Hugo) — All Markdown docs are now English-only and are the single source of truth; the Spanish versions were removed.
-- 2026-10-12 — Naming unification — Branch pattern generalized to `claude/*`, English-only workflow naming (stage, PR titles, CI steps, chapter IDs), routine renamed to "next stage".
+- 2026-10-12 — Stage 00 — PR #1 — Detailed plan, project structure and site map. <!-- notion -->
+- 2026-10-12 — Intermediate step (requested by Hugo) — All Markdown docs are now English-only and are the single source of truth; the Spanish versions were removed. <!-- notion -->
+- 2026-10-12 — Naming unification — Branch pattern generalized to `claude/*`, English-only workflow naming (stage, PR titles, CI steps, chapter IDs), routine renamed to "next stage". <!-- notion -->
 - 2026-10-12 — Stage 00 update (requested by Hugo) — Added the Figma design stage (01, stages renumbered to 10) and spec-driven development: product spec with requirement IDs, stage specs written one stage ahead, PR template, acceptance tests in CI.
 - 2026-10-12 — Stage 00 update — Verified the Figma connector can write to the design file (`use_figma`); Stage 01 spec and design rules updated with the tools to use and avoid.
 - 2026-10-12 — Stage 00 update (requested by Hugo) — DevSecOps and agent-neutral restructure: four environments (local, preview, staging, production), production only through releases, new Stage 03 (delivery pipeline and security baseline, stages renumbered to 11), `AGENTS.md` as the single instruction file for any agent, `docs/DELIVERY.md`, `docs/agents/`.

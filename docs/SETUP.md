@@ -68,11 +68,11 @@ Every agent environment gets:
 ## 6. Task tracking and notes (optional)
 
 - **Linear:** a team `HUG` and a project "Artemis II", one issue per stage in the order of `docs/PLAN.md`, and the GitHub integration turned on so a PR that says `Closes HUG-N` moves its issue. Keep Linear's own statuses; the mapping is in `AGENTS.md`.
-- **Notion:** a page "Artemis II" with a sub-page "Decision log (synced from repo)", filled automatically from `docs/PLAN.md` by the `notion-sync.yml` workflow. The page may be public, so only repository content goes there (see `AGENTS.md`). One-time setup:
-  1. In Notion, create an internal connection (API token) at notion.so/profile/integrations, with read and update content access and no user information.
+- **Notion:** a page "Artemis II" with a sub-page "Decision log (synced from repo)", filled automatically from `docs/PLAN.md` by the `notion-sync.yml` workflow. Only entries that end with `<!-- notion -->` are published, so nothing reaches Notion unless someone marks it as safe. The page may be public (see `AGENTS.md`). One-time setup:
+  1. In Notion, create an internal connection (API token) at notion.so/profile/integrations, with the three content capabilities (read, update and insert content) and no user information.
   2. On the sub-page, open the `...` menu, then Connections, and add the connection. Share only that sub-page with it.
   3. In GitHub, create the environment `notion`, with deployment branches limited to `main` (Selected branches and tags), the secret `NOTION_TOKEN` and the variable `NOTION_PAGE_ID` (the sub-page ID or its URL).
-  4. Copy `docs/workflows/notion-sync.yml` to `.github/workflows/notion-sync.yml` (agent tokens cannot push workflow files).
+  4. The workflow is `.github/workflows/notion-sync.yml`. It runs on `main` when `docs/PLAN.md` changes, and by hand.
   5. Run the workflow once by hand (Actions, Notion sync, Run workflow) and check the page.
   Do not edit that sub-page: every sync overwrites it. Keep your own notes on another page.
 - **Obsidian:** open the `docs/` folder as a vault. Use relative paths for links and turn wikilinks off, so links keep working on GitHub. `docs/.obsidian/` is git-ignored.

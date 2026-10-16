@@ -1,5 +1,3 @@
-# Template. Hugo moves this file to `.github/workflows/linear-sync.yml`
-# (agent tokens cannot push workflow files). See docs/SETUP.md, section 6.
 name: Linear sync
 
 # Moves each stage's Linear issue forward to the status `docs/PLAN.md` says. Runs only from `main`

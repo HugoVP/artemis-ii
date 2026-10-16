@@ -1,0 +1,50 @@
+# Docker
+
+Docker gives every person and every agent the same environment: Node.js 22, the project's locked dependencies and the Chromium that matches the locked `@playwright/test`. It is a development and test tool. **Production does not run in Docker**: the site is static and Cloudflare Pages serves the build (`docs/DELIVERY.md`).
+
+The files need the project from Stage 02 on (`package.json` and `package-lock.json`).
+
+## Files
+
+| File | What it is |
+| --- | --- |
+| `Dockerfile` | Multi-stage build with the targets below |
+| `compose.yaml` | Shortcuts for the common tasks |
+| `.dockerignore` | Keeps `node_modules`, builds, `.git` and `.env` files out of the image |
+| `.devcontainer/devcontainer.json` | Dev container for VS Code and GitHub Codespaces, built from the `tools` target |
+
+## Targets
+
+| Target | Contains | Used for |
+| --- | --- | --- |
+| `deps` | Node 22 and `npm ci` from the lockfile | Base of the others |
+| `dev` | `deps` and the Astro dev server on port 4321 | Working on the site with hot reload |
+| `tools` | `deps` and Playwright's Chromium with its system libraries | Dev container; base of `test` |
+| `test` | `tools` and a copy of the source | `npm run check` and `npm run test`, as CI runs them |
+| `build` | `deps`, the source and `npm run build` | The static build in `/app/dist` |
+| `preview` | nginx serving the build on port 80 | Looking at the build as a static host serves it |
+
+## Common tasks
+
+```sh
+docker compose up dev                 # dev server on http://localhost:4321
+docker compose run --rm test          # checks, build and Playwright tests
+docker compose --profile preview up preview   # the build on http://localhost:8080
+```
+
+Without compose: `docker build --target test -t artemis:test . && docker run --rm --ipc=host artemis:test`.
+
+## Configuration
+
+- **Environment:** only the variables of `AGENTS.md` are meant for these containers. `MEDIA_BASE_URL` defaults to `/media` (the preview layout). Never put Cloudflare, R2, Notion, Linear or model API keys in an image or in `compose.yaml`; images can be shared, and build arguments stay in their history.
+- **Base images:** `NODE_IMAGE` and `NGINX_IMAGE` are build arguments, so a registry mirror can replace Docker Hub when it rate-limits pulls, for example `NODE_IMAGE=mirror.gcr.io/library/node:22-bookworm-slim docker compose build`.
+- **Shared memory:** Chromium needs more than Docker's default, so `test` uses `ipc: host` and the dev container passes `--ipc=host`.
+- **Base image versions:** `node:22-bookworm-slim` follows the latest Node 22 release (the project needs 22.22.0 or later). Pinning by digest is a later hardening step, together with Dependabot for Docker in Stage 03.
+
+## Dev container and Codespaces
+
+Open the repository in VS Code with the Dev Containers extension, or create a GitHub Codespace: both build the `tools` target, run `npm ci` and forward port 4321. Then `npm run dev`, `npm run check` and `npm run test` work as on a local machine with the right versions.
+
+## Next steps (not built yet)
+
+An "agent runner" image based on `tools`, with the command-line versions of the coding agents, so a stage can be run by any agent in a container started locally or by a workflow. It needs model API keys and a limited GitHub token, so it comes with its own security review.

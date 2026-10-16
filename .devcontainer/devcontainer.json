@@ -1,0 +1,23 @@
+{
+  "name": "Artemis II",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "..",
+    "target": "tools"
+  },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "postCreateCommand": "npm ci --no-audit --no-fund",
+  "forwardPorts": [4321],
+  "containerEnv": {
+    "ASTRO_TELEMETRY_DISABLED": "1"
+  },
+  "remoteEnv": {
+    "MEDIA_BASE_URL": "${localEnv:MEDIA_BASE_URL}"
+  },
+  "runArgs": ["--ipc=host"],
+  "customizations": {
+    "vscode": {
+      "extensions": ["astro-build.astro-vscode", "ms-playwright.playwright"]
+    }
+  }
+}

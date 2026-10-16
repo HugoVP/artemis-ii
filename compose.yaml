@@ -1,0 +1,31 @@
+# Local development with Docker. See docs/DOCKER.md.
+#   docker compose up dev                      dev server on http://localhost:4321
+#   docker compose run --rm test               checks, build and Playwright tests, as in CI
+#   docker compose up preview                  the static build on http://localhost:8080
+x-images: &images
+  NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
+  NGINX_IMAGE: ${NGINX_IMAGE:-nginx:1.29-alpine}
+
+services:
+  dev:
+    build: { context: ., target: dev, args: *images }
+    ports: ["4321:4321"]
+    environment:
+      MEDIA_BASE_URL: ${MEDIA_BASE_URL:-/media}
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+
+  test:
+    build: { context: ., target: test, args: *images }
+    profiles: [test]
+    # Chromium needs more shared memory than Docker's default.
+    ipc: host
+
+  preview:
+    build: { context: ., target: preview, args: *images }
+    profiles: [preview]
+    ports: ["8080:80"]
+
+volumes:
+  node_modules:

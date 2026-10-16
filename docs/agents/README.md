@@ -9,7 +9,7 @@ This project is built by AI agents, but it does not depend on any one of them. A
 
   > Read AGENTS.md and follow docs/agents/next-stage.md.
 
-- **Work order:** the next `pending` stage in `docs/PLAN.md` and its spec in `docs/specs/`. Everything an agent needs is in the repo; nothing lives in a vendor's settings except credentials and connectors.
+- **Work order:** the next `pending` stage in `docs/PLAN.md` and its spec in `docs/specs/`. When a stage PR is merged, `next-stage.yml` also opens a GitHub issue `Run Stage NN: <name>` (label `agent-task`) with the kickoff prompt, the spec link and the capabilities the stage needs. Everything an agent needs is in the repo; nothing lives in a vendor's settings except credentials and connectors.
 - **Handoff:** the PR. Any agent can pick up a stage PR on its branch to address Hugo's comments (rule 7).
 - **Traceability:** every stage PR states which agent did the work.
 
@@ -36,6 +36,41 @@ Each stage lists the capabilities it needs in the "Needs" column of `docs/PLAN.m
 | Open-source agents (for example OpenHands, Aider, Goose, Cline) with any model, including open-weight models | `AGENTS.md` (configure if not automatic) | Depends on the runner; Figma only if it is an MCP client | Not yet tried | [`other-agents.md`](other-agents.md) |
 
 When an agent is tried for the first time, update its row with what was verified and the date.
+
+## Universal flow
+
+Every layer below is plain files, GitHub or a pipeline workflow, so any agent and model can take part. Only the last row depends on the agent.
+
+| Layer | Where it lives | Depends on an agent? |
+| --- | --- | --- |
+| Rules | `AGENTS.md` (plus a one-line pointer file for agents that do not read it, like `CLAUDE.md`) | No |
+| Work order | The `Run Stage NN` issue, opened by `next-stage.yml` after each stage merge | No |
+| Work | Any agent that reads the repo, commits and opens a PR titled `Stage NN: <name>` that says `Closes #<issue>` | No |
+| Review | Hugo in the PR; optionally a second agent (see "Reviewer agents") | No |
+| Integrations | Pipeline workflows: Notion (`notion-sync.yml`); Linear moves with the GitHub integration (`Closes HUG-N`). Agents never hold those credentials | No |
+| Design (Figma) | The Figma MCP server, which only accepts clients in Figma's catalog | **Yes**: use a listed client for stages that need `figma-read` or `figma-write` |
+
+**Starting a stage with an agent.** Open the work-order issue, copy its prompt and give it to the agent you choose. The stage's "Needs" column says which capabilities it requires; pick an agent that has them.
+
+**Use what each agent does well.** Every stage needs `git`, and from Stage 02 on also `node` and `browser`, plus whatever its "Needs" column adds (for example `web` for curation and text stages, `figma-read` or `figma-write` for design). An agent that has all of them can take the stage, including free or open-weight ones; small models may struggle with long specs, so start them on reviews and small stages. Stages that need Figma go to a client Figma accepts. The routine in `claude-code.md` keeps chaining stages built by Claude Code; for any other agent, the work-order issue is the trigger.
+
+**Figma clients.** [Figma's guide to its MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) (checked 2026-10-16) lists among its supported clients Claude Code, Codex, Gemini CLI, OpenCode, OpenHands, Copilot CLI, Cursor and VS Code, and compares each client's remote-server and write-to-canvas support in a table. Check that table before assigning a design stage (`figma-write`) to an agent other than Claude Code.
+
+**Agent options seen on 2026-10-16.** Taken from the pages linked in each row; third-party pages sometimes disagree with each other and with vendors, and prices and free limits change, so every row is "to verify" until tried on this project. Check the vendor page before paying or relying on a free tier.
+
+| Agent | How it fits | Notes |
+| --- | --- | --- |
+| Claude Code | Routine and manual sessions; `CLAUDE.md` points to `AGENTS.md` | Hugo's paid plan. Figma with write access verified 2026-10-12 |
+| OpenAI Codex | Reads `AGENTS.md`; cloud tasks and CLI (see "OpenAI Codex" in `other-agents.md`) | Hugo's paid plan. Users report failures when starting cloud tasks from `@codex` comments on GitHub ([openai/codex issue 42098](https://github.com/openai/codex/issues/42098)); try a small task first |
+| Google Jules | Cloud VM that opens PRs on GitHub; listed as supporting `AGENTS.md` on [agents.md](https://agents.md/) | Reported to have a free tier ([TechRadar](https://www.techradar.com/pro/google-has-a-new-ai-coding-agent-and-its-now-free-for-everyone-to-use)); Figma support not confirmed |
+| Gemini CLI | Local or in GitHub Actions; its default context file is `GEMINI.md`, so use a one-line pointer file or configure it to read `AGENTS.md` | [Official docs](https://google-gemini.github.io/gemini-cli/); free-tier terms have changed, read them first. In Figma's list |
+| Google Antigravity | Local IDE agent with MCP support | A free individual plan with weekly limits is reported ([Layer3 Labs](https://www.layer3labs.io/guides/google-antigravity-pricing)); `AGENTS.md` support not confirmed; not seen in Figma's list |
+| OpenCode | Reported to read `AGENTS.md`; any model, hosted or local | Free software, you pay for the model ([comparison](https://www.critique.sh/comparisons/best-open-source-coding-agents-2026)). In Figma's list |
+| OpenHands | Runs sessions in an isolated container, any model | Free software ([comparison](https://pinggy.io/blog/best_open_source_cli_coding_agents/)). In Figma's list |
+| Aider, Cline | Terminal and VS Code agents, any model; Aider is listed as supporting `AGENTS.md` on [agents.md](https://agents.md/) | Free software; not in Figma's list, so use them for stages without Figma |
+| GitHub Copilot | Best as a reviewer (reads `REVIEW.md`) | Optional. Its cloud coding agent was evaluated and not used, see "Agent identity" in `docs/DELIVERY.md` |
+
+Whatever the agent, the safety rules do not change: its environment holds only the variables in `AGENTS.md`, never Cloudflare, R2, Notion or Linear credentials.
 
 ## Reviewer agents (optional)
 

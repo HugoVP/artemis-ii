@@ -1,0 +1,43 @@
+name: Next stage work order
+
+# `pull_request_target` runs the workflow from `main`, so a PR cannot edit it. It checks out `main`
+# only and never PR code. The job has no secrets: only the automatic token, limited to issues.
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  work-order:
+    # Merged, from a branch of this repository (never a fork), and a stage PR (title starts with "Stage ").
+    # The title is only used in this condition, never in a shell command.
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.title, 'Stage ')
+    concurrency:
+      group: next-stage-work-order
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Unit tests (mock server, no network)
+        run: node --test scripts/next-stage-issue.test.mjs
+
+      - name: Open the work order for the next stage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/next-stage-issue.mjs

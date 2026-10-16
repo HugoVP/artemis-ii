@@ -1,5 +1,7 @@
 **Agent:** <!-- the tool that did the work, e.g. "Claude Code" or "Codex" -->
 
+**Work order:** <!-- `Closes #N` for the `Run Stage NN` issue, if it exists; otherwise remove this line -->
+
 **Linear issue:** <!-- `Closes HUG-N` (see the Issue column in docs/PLAN.md), or "none yet" -->
 
 ## What was done

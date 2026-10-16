@@ -4,6 +4,7 @@ name: Linear sync
 
 # Moves each stage's Linear issue forward to the status `docs/PLAN.md` says. Runs only from `main`
 # (or by hand), and the `linear` environment only gives its secret to `main`, so PR code never sees it.
+# It only writes when the variable `LINEAR_SYNC_APPLY` is `true`; until then every run is a dry run.
 on:
   push:
     branches: [main]
@@ -43,5 +44,7 @@ jobs:
       - name: Move the Linear issues forward to match docs/PLAN.md
         env:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+          # Writes are off until the variable LINEAR_SYNC_APPLY is `true` in the `linear` environment.
+          # A manual run is also a dry run while its box is ticked.
+          DRY_RUN: ${{ (vars.LINEAR_SYNC_APPLY != 'true' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)) && '1' || '' }}
         run: node scripts/linear-sync.mjs

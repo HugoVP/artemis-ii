@@ -100,3 +100,21 @@ test("GraphQL errors are reported", async () => {
   await assert.rejects(run({ key: "bad", markdown: md, url: `http://127.0.0.1:${server.address().port}/graphql` }), /Authentication required/);
   server.close();
 });
+
+// An issue whose status changes after the first read, as Linear's GitHub integration can do mid-run.
+function changesAfterFirstRead(first, later) {
+  let reads = 0;
+  return { get value() { return issue(5, reads++ === 0 ? first : later); } };
+}
+
+for (const [label, later] of [["completed", S.done], ["canceled", S.canceled]]) {
+  test(`an issue ${label} while the sync runs is not moved back`, async () => {
+    const racing = changesAfterFirstRead(S.progress, later);
+    const m = mockLinear({ get "HUG-5"() { return racing.value; }, "HUG-6": issue(6, S.todo), "HUG-7": issue(7, S.done) });
+    const r = await run({ key: "k", markdown: md, url: m.url });
+    m.server.close();
+    assert.equal(r.actions.length, 0);
+    assert.ok(r.notes.some((n) => n.includes("HUG-5") && n.includes("changed while the sync ran")));
+    assert.ok(!m.calls.some((c) => c.query.includes("issueUpdate")));
+  });
+}

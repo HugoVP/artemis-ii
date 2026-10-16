@@ -72,8 +72,9 @@ Every agent environment gets:
   1. In Linear, create a personal API key (Settings, Security & access, Personal API keys) and keep it for step 2. Never paste it in a chat, a file or an agent environment.
   2. In GitHub, create the environment `linear`, with deployment branches limited to `main` (Selected branches and tags), and add the secret `LINEAR_API_KEY`.
   3. On the branch of the PR that adds this workflow, move `docs/workflows/linear-sync.yml` to `.github/workflows/linear-sync.yml` with `git mv` (agent tokens cannot push workflow files) and delete its two header comment lines.
-  4. After merging, run the workflow by hand (Actions, Linear sync, Run workflow). It is a dry run by default: it prints what it would change. Check the output, then run it again with the dry-run box cleared.
-  5. To see what the plan asks for without any key, run `DRY_RUN=1 node scripts/linear-sync.mjs` on your machine.
+  4. Until you switch writes on, every run is a dry run: after merging, the runs triggered by pushes and by hand only print what they would change. Run it by hand (Actions, Linear sync, Run workflow, leave the dry-run box ticked) and check the output against Linear.
+  5. When the output is what you expect, create the variable `LINEAR_SYNC_APPLY` with the value `true` in the `linear` environment. From then on, pushes that change `docs/PLAN.md` apply the changes. To go back to dry runs, delete the variable or set it to anything else.
+  6. To see what the plan asks for without any key, run `DRY_RUN=1 node scripts/linear-sync.mjs` on your machine.
 - **Notion:** a page "Artemis II" with a sub-page "Decision log (synced from repo)", filled automatically from `docs/PLAN.md` by the `notion-sync.yml` workflow. Only entries that end with `<!-- notion -->` are published, so nothing reaches Notion unless someone marks it as safe. The page may be public (see `AGENTS.md`). One-time setup:
   1. In Notion, create an internal connection (API token) at notion.so/profile/integrations, with the three content capabilities (read, update and insert content) and no user information.
   2. On the sub-page, open the `...` menu, then Connections, and add the connection. Share only that sub-page with it.

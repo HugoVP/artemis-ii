@@ -70,17 +70,21 @@ async function gql(url, key, query, variables) {
   return json.data;
 }
 
-export async function run({ key, markdown, url = API_URL, dryRun = false }) {
-  const rows = wantedRows(parseStages(markdown));
-  if (!rows.length) return { actions: [], notes: ["No stage has a Linear issue in docs/PLAN.md."] };
-
+async function fetchIssues(url, key, rows) {
   const vars = Object.fromEntries(rows.map((r, i) => [`id${i}`, r.identifier]));
   const decl = rows.map((_, i) => `$id${i}: String!`).join(", ");
   const body = rows.map((_, i) => `i${i}: issue(id: $id${i}) { id identifier state { id name type } team { id key } }`).join("\n");
   const data = await gql(url, key, `query Issues(${decl}) {\n${body}\n}`, vars);
   const issues = {};
   rows.forEach((r, i) => { if (data[`i${i}`]) issues[r.identifier] = data[`i${i}`]; });
+  return issues;
+}
 
+export async function run({ key, markdown, url = API_URL, dryRun = false }) {
+  const rows = wantedRows(parseStages(markdown));
+  if (!rows.length) return { actions: [], notes: ["No stage has a Linear issue in docs/PLAN.md."] };
+
+  const issues = await fetchIssues(url, key, rows);
   const states = {};
   for (const team of new Set(Object.values(issues).map((i) => i.team.id))) {
     const t = await gql(url, key, "query States($id: String!) { team(id: $id) { states(first: 100) { nodes { id name type } } } }", { id: team });
@@ -88,13 +92,22 @@ export async function run({ key, markdown, url = API_URL, dryRun = false }) {
   }
 
   const { actions, notes } = planActions(rows, issues, states);
-  if (!dryRun) {
-    for (const a of actions) {
-      const r = await gql(url, key, "mutation Move($id: String!, $stateId: String!) { issueUpdate(id: $id, input: { stateId: $stateId }) { success } }", { id: a.id, stateId: a.stateId });
-      if (!r.issueUpdate?.success) throw new Error(`Linear did not confirm the update of ${a.identifier}.`);
-    }
+  if (dryRun) return { actions, notes };
+
+  // Linear's own GitHub integration can complete or cancel an issue while this runs, and an update cannot
+  // be made conditional. So each issue is read again right before its write and evaluated again: the window
+  // for overwriting a newer status shrinks from the whole run to the gap between that read and the write.
+  const applied = [];
+  for (const a of actions) {
+    const row = rows.find((r) => r.identifier === a.identifier);
+    const fresh = await fetchIssues(url, key, [row]);
+    const again = planActions([row], fresh, states);
+    if (!again.actions.length) { notes.push(...again.notes.map((n) => `${n} (changed while the sync ran, skipped)`)); continue; }
+    const r = await gql(url, key, "mutation Move($id: String!, $stateId: String!) { issueUpdate(id: $id, input: { stateId: $stateId }) { success } }", { id: a.id, stateId: again.actions[0].stateId });
+    if (!r.issueUpdate?.success) throw new Error(`Linear did not confirm the update of ${a.identifier}.`);
+    applied.push(a);
   }
-  return { actions, notes };
+  return { actions: applied, notes };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

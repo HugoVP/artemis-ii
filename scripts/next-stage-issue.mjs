@@ -37,7 +37,7 @@ export function pickNext(stages, prNumber) {
 
 export function buildIssue(stage, { repo, prNumber, branch = "main" }) {
   const specUrl = stage.specPath ? `https://github.com/${repo}/blob/${branch}/docs/${stage.specPath}` : null;
-  const needs = stage.needs.length ? stage.needs.map((n) => `\`${n}\``).join(", ") : "`git`";
+  const needs = ["git", ...stage.needs.filter((n) => n !== "git")].map((n) => `\`${n}\``).join(", ");
   const body = [
     `Work order for **Stage ${stage.number}: ${stage.name}**, created automatically when PR #${prNumber} was merged.`,
     "",
@@ -48,7 +48,7 @@ export function buildIssue(stage, { repo, prNumber, branch = "main" }) {
     "> Read AGENTS.md and follow docs/agents/next-stage.md.",
     "",
     `- Spec: ${specUrl ?? "not written yet (the agent opens a draft PR that only adds it, see `docs/agents/next-stage.md`, step 6)"}`,
-    `- Capabilities the agent needs: ${needs} (plus \`node\` and \`browser\` from Stage 02 on). Without them it opens a draft PR and says what is missing.`,
+    `- Capabilities the agent needs: ${needs} (plus \`node\` and \`browser\` from Stage 02 on, since the local checks need them). Without them it opens a draft PR and says what is missing.`,
     `- Linear issue: ${stage.linear ? `\`${stage.linear}\`` : "none yet"}`,
     "",
     "## Rules for this issue",

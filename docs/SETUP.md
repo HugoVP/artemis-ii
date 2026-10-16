@@ -80,9 +80,9 @@ Every agent environment gets:
 
 ## 7. Work order for the next stage (any agent)
 
-After each stage merge, `next-stage.yml` opens an issue `Run Stage NN: <name>` (label `agent-task`) with the kickoff prompt, the spec link and the needed capabilities, so any agent can start from it (`docs/agents/README.md`, "Universal flow"). One-time setup:
+After each stage merge, `next-stage.yml` opens an issue `Run Stage NN: <name>` (label `agent-task`) with the kickoff prompt, the spec link and the needed capabilities, so any agent can start from it (`docs/agents/README.md`, "Universal flow").
 
-1. On the branch of the PR that adds this workflow, move `docs/workflows/next-stage.yml` to `.github/workflows/next-stage.yml` with `git mv` (agent tokens cannot push workflow files) and delete its two header comment lines.
+1. The workflow is `.github/workflows/next-stage.yml`. It runs when a stage PR is merged. Agent tokens cannot push workflow files, so Hugo adds or edits it.
 2. No secret or variable is needed: the job uses the automatic token with `contents: read` and `issues: write`. The `agent-task` label is created on the first run.
 3. After the next stage PR is merged, check that the issue exists. To test earlier, run `PR_NUMBER=<n> GITHUB_REPOSITORY=<owner>/<repo> DRY_RUN=1 node scripts/next-stage-issue.mjs` on your machine: it prints the issue without creating it.
 

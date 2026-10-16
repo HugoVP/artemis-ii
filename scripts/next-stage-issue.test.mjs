@@ -48,6 +48,7 @@ test("buildIssue has the prompt, an absolute spec link and no PR title", () => {
   assert.ok(issue.body.includes("Read AGENTS.md and follow docs/agents/next-stage.md."));
   assert.ok(issue.body.includes("https://github.com/o/r/blob/main/docs/specs/stage-02-base.md"));
   assert.ok(issue.body.includes("`HUG-6`"));
+  assert.ok(issue.body.includes("`git`, `node`, `browser`"));
   assert.deepEqual(issue.labels, ["agent-task"]);
   const noSpec = buildIssue(parseStages(sample)[3], { repo: "o/r", prNumber: 4 });
   assert.ok(noSpec.body.includes("not written yet"));

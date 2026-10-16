@@ -12,9 +12,9 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | # | Stage | Needs | Spec | Status | PR | Issue |
 | --- | --- | --- | --- | --- | --- | --- |
 | 00 | 🔍 Plan, structure, site map, product spec and delivery design | — | — | approved | #1 | — |
-| 01 | 🎨 Design in Figma: tokens, components and screens | `figma-write` | [stage-01-design](specs/stage-01-design.md) | in review | #4 | `HUG-5` |
-| 02 | Project base: Astro, Tailwind with design tokens, es/en routes, layout, tests | `node`, `browser`, `figma-read` | [stage-02-base](specs/stage-02-base.md) | pending | | `HUG-6` |
-| 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | written in 02 | pending | | `HUG-7` |
+| 01 | 🎨 Design in Figma: tokens, components and screens | `figma-write` | [stage-01-design](specs/stage-01-design.md) | approved | #4 | `HUG-5` |
+| 02 | Project base: Astro, Tailwind with design tokens, es/en routes, layout, tests | `node`, `browser`, `figma-read` | [stage-02-base](specs/stage-02-base.md) | in review | | `HUG-6` |
+| 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | [stage-03-pipeline](specs/stage-03-pipeline.md) | pending | | `HUG-7` |
 | 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | written in 03 | pending | | |
 | 05 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | `web` | written in 04 | pending | | |
 | 06 | Ingestion: script, variants with sharp, upload through the pipeline | `node`, `web` | written in 05 | pending | | |
@@ -126,3 +126,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-13 — Stage 00 update — Copilot findings from review bodies: complete Figma page set, PR link added to `PLAN.md` after opening the PR, previews scoped to same-repository PRs in `PROMPT.md`, media upload and promotion ordered before site deploys and smoke tests, `TECH` requirements in `product.md`, `npm audit` from Stage 02, photo stories integrated in Stage 09, missing capability opens a draft PR.
 - 2026-10-15 — Process (requested by Hugo) — Task tracking and knowledge tools: Linear issues per stage ("Issue" column), status mapping, Notion as a public-safe readable layer and Obsidian as a personal reader, documented in `AGENTS.md`, `docs/agents/` and `docs/SETUP.md`.
 - 2026-10-15 — Stage 00 approved (PR #1 merged); Stage 01 — PR #4 — Figma design built (variables, components, screens) and `design.md`; Stage 02 spec written.
+- 2026-10-16 — Stage 01 approved (PR #4 merged); Stage 02 — Astro + Tailwind base with design tokens, es/en routes, layout, content collections and Playwright tests; Stage 03 spec written.

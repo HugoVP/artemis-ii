@@ -1,0 +1,58 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Colors, type and radius are in the Tailwind theme (tokens.css); densities map to spacing utilities (p-3, gap-4, ...). */
+@theme inline {
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --container-content: var(--layout-content-max);
+}
+
+@layer base {
+  html {
+    font-size: var(--text-base);
+    background: var(--color-background);
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  a {
+    color: var(--color-accent);
+    text-underline-offset: 0.2em;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+  .skip-link {
+    position: absolute;
+    left: var(--space-3);
+    top: -4rem;
+    z-index: 10;
+    background: var(--color-surface);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+  }
+  .skip-link:focus {
+    top: var(--space-2);
+  }
+  [popover] {
+    margin: 0;
+    inset: auto;
+  }
+}

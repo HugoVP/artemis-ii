@@ -1,0 +1,126 @@
+---
+import Base from '../layouts/Base.astro';
+import Placeholder from './Placeholder.astro';
+import { chapterIds, chapterPath, photoPath, sectionPath, sections, type ChapterId, type Lang, type Section } from '../i18n/routes';
+import { ui } from '../i18n/ui';
+import { photoUrl } from '../lib/media';
+import { loadContent } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  kind: 'section' | 'chapter' | 'photo';
+  section?: Section;
+  chapter?: ChapterId;
+  photoId?: string;
+}
+const { lang, kind, section = 'gallery', chapter, photoId } = Astro.props;
+const t = ui[lang];
+const { chapters, photos, stories } = await loadContent();
+const chapterPhotos = (id: ChapterId) => photos.filter((p) => p.data.chapter === id);
+
+let title = t.pages[section].title;
+let intro: string = t.pages[section].intro;
+const photo = kind === 'photo' ? photos.find((p) => p.data.nasaId === photoId) : undefined;
+if (kind === 'chapter' && chapter) {
+  title = chapters.find((c) => c.id === chapter)!.data.title[lang];
+  intro = chapters.find((c) => c.id === chapter)!.data.summary[lang];
+}
+if (photo) {
+  title = photo.data.title[lang];
+  intro = photo.data.caption[lang];
+}
+const story = photo ? stories.find((s) => s.data.photoId === photo.data.nasaId) : undefined;
+---
+
+<Base lang={lang} title={title} description={intro}>
+  <h1 class="text-h1 mb-3">{title}</h1>
+  <p class="text-muted mb-5">{intro}</p>
+
+  {
+    kind === 'section' && section === 'home' && (
+      <div class="grid gap-5">
+        <Placeholder label={t.home.featured} />
+        <section>
+          <h2 class="text-h2 mb-3">{t.home.explore}</h2>
+          <ul class="grid gap-3 list-none m-0 p-0 md:grid-cols-2">
+            {sections
+              .filter((s) => s !== 'home')
+              .map((s) => (
+                <li class="rounded-md border border-border bg-surface p-4">
+                  <a class="text-h3 font-display" href={sectionPath(lang, s)}>
+                    {t.nav[s]}
+                  </a>
+                  <p class="m-0 text-caption text-muted">{t.pages[s].intro}</p>
+                </li>
+              ))}
+          </ul>
+        </section>
+      </div>
+    )
+  }
+
+  {
+    kind === 'section' && section === 'gallery' && (
+      <section>
+        <h2 class="text-h2 mb-3">{t.gallery.chapters}</h2>
+        <ul class="grid gap-3 list-none m-0 p-0 md:grid-cols-2">
+          {chapterIds.map((id) => (
+            <li class="rounded-md border border-border bg-surface p-4">
+              <a class="text-h3 font-display" href={chapterPath(lang, id)}>
+                {t.chapters[id]}
+              </a>
+              <p class="m-0 text-caption text-muted">
+                {t.gallery.photos}: {chapterPhotos(id).length}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    kind === 'section' && !['home', 'gallery'].includes(section) && (
+      <div class="grid gap-3">
+        <Placeholder label={`${t.placeholder}: ${t.pages[section].title}`} />
+      </div>
+    )
+  }
+
+  {
+    kind === 'chapter' && chapter && (
+      <section>
+        {chapterPhotos(chapter).length === 0 && <p class="text-muted">{t.gallery.none}</p>}
+        <ul class="grid gap-3 list-none m-0 p-0 md:grid-cols-3">
+          {chapterPhotos(chapter).map((p) => (
+            <li class="rounded-md border border-border bg-surface p-3 grid gap-2">
+              <Placeholder label={p.data.alt[lang]} ratio="4 / 3" />
+              <a href={photoPath(lang, chapter, p.data.nasaId)}>{p.data.title[lang]}</a>
+              <span class="text-caption text-muted">{t.photo.credit}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    photo && (
+      <article class="grid gap-3">
+        <Placeholder label={photo.data.alt[lang]} ratio="3 / 2" />
+        {story && <p>{story.data.text[lang]}</p>}
+        <dl class="grid gap-1 m-0 text-label">
+          <div><dt class="inline text-muted">{t.photo.nasaId}: </dt><dd class="inline m-0">{photo.data.nasaId}</dd></div>
+          <div><dt class="inline text-muted">{t.photo.date}: </dt><dd class="inline m-0">{photo.data.date ?? t.photo.tbc}</dd></div>
+          <div><dt class="inline text-muted">{t.photo.camera}: </dt><dd class="inline m-0">{photo.data.camera ?? t.photo.tbc}</dd></div>
+        </dl>
+        <p class="m-0 flex flex-wrap gap-3">
+          <span class="text-muted">{t.photo.credit}</span>
+          <a href={photo.data.originalUrl} rel="noopener noreferrer">{t.photo.original}</a>
+          <a href={photoUrl(photo.data.nasaId, photo.data.hash, 'original.jpg')} download>{t.photo.download}</a>
+          <a href={chapterPath(lang, photo.data.chapter)}>{t.photo.back}</a>
+        </p>
+      </article>
+    )
+  }
+</Base>

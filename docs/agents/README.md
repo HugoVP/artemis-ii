@@ -47,7 +47,7 @@ Every layer below is plain files, GitHub or a pipeline workflow, so any agent an
 | Work order | The `Run Stage NN` issue, opened by `next-stage.yml` after each stage merge | No |
 | Work | Any agent that reads the repo, commits and opens a PR titled `Stage NN: <name>` that says `Closes #<issue>` | No |
 | Review | Hugo in the PR; optionally a second agent (see "Reviewer agents") | No |
-| Integrations | Pipeline workflows: Notion (`notion-sync.yml`); Linear moves with the GitHub integration (`Closes HUG-N`). Agents never hold those credentials | No |
+| Integrations | Pipeline workflows: Notion (`notion-sync.yml`) and Linear statuses (`linear-sync.yml`, plus the GitHub integration with `Closes HUG-N`). Agents never hold those credentials | No |
 | Design (Figma) | The Figma MCP server, which only accepts clients in Figma's catalog | **Yes**: use a listed client for stages that need `figma-read` or `figma-write` |
 
 **Starting a stage with an agent.** Open the work-order issue, copy its prompt and give it to the agent you choose. The stage's "Needs" column says which capabilities it requires; pick an agent that has them.

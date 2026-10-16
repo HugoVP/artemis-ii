@@ -12,6 +12,7 @@ type Ui = {
   footer: { credit: string; creditLink: string; independence: string; ai: string; aiLink: string };
   pages: Record<Section, { title: string; intro: string }>;
   home: { welcome: string; featured: string; explore: string };
+  about: { aiTitle: string; aiPlaceholder: string };
   gallery: { chapters: string; photos: string; none: string; viewPhoto: string };
   chapters: Record<string, string>;
   photo: { credit: string; original: string; download: string; nasaId: string; date: string; camera: string; tbc: string; back: string };
@@ -44,6 +45,7 @@ export const ui: Record<Lang, Ui> = {
     },
     home: { welcome: 'Bienvenido a Artemis II', featured: 'Foto o video destacado (marcador de posición)', explore: 'Explora el sitio' },
     gallery: { chapters: 'Capítulos', photos: 'Fotos', none: 'Aún no hay fotos en este capítulo.', viewPhoto: 'Ver foto' },
+    about: { aiTitle: 'Aviso sobre el uso de IA', aiPlaceholder: 'El aviso completo llegará en una etapa posterior (marcador de posición).' },
     chapters: { launch: 'El despegue', outbound: 'Rumbo a la Luna', 'far-side': 'Lado oculto', eclipse: 'Eclipse', return: 'Regreso' },
     photo: { credit: 'Crédito: NASA', original: 'Ver original', download: 'Descargar', nasaId: 'ID de NASA', date: 'Fecha', camera: 'Cámara', tbc: 'Por confirmar', back: 'Volver al capítulo' },
     placeholder: 'Marcador de posición',
@@ -73,6 +75,7 @@ export const ui: Record<Lang, Ui> = {
     },
     home: { welcome: 'Welcome to Artemis II', featured: 'Featured photo or video (placeholder)', explore: 'Explore the site' },
     gallery: { chapters: 'Chapters', photos: 'Photos', none: 'No photos in this chapter yet.', viewPhoto: 'View photo' },
+    about: { aiTitle: 'AI notice', aiPlaceholder: 'The full notice will arrive in a later stage (placeholder).' },
     chapters: { launch: 'The launch', outbound: 'Outbound', 'far-side': 'Far side', eclipse: 'Eclipse', return: 'Return' },
     photo: { credit: 'Credit: NASA', original: 'View original', download: 'Download', nasaId: 'NASA ID', date: 'Date', camera: 'Camera', tbc: 'To be confirmed', back: 'Back to chapter' },
     placeholder: 'Placeholder',

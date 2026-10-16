@@ -10,6 +10,8 @@
   --spacing-5: var(--space-5);
   --spacing-6: var(--space-6);
   --container-content: var(--layout-content-max);
+  /* `text-muted` is the name the components use for the token `--color-text-muted` (design.md: color/text-muted). */
+  --color-muted: var(--color-text-muted);
 }
 
 @layer base {

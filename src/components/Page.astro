@@ -88,6 +88,15 @@ const story = photo ? stories.find((s) => s.data.photoId === photo.data.nasaId) 
   }
 
   {
+    kind === 'section' && section === 'about' && (
+      <section id="ai" class="grid gap-2 mt-5 scroll-mt-5">
+        <h2 class="text-h2">{t.about.aiTitle}</h2>
+        <p class="m-0 text-muted">{t.about.aiPlaceholder}</p>
+      </section>
+    )
+  }
+
+  {
     kind === 'chapter' && chapter && (
       <section>
         {chapterPhotos(chapter).length === 0 && <p class="text-muted">{t.gallery.none}</p>}

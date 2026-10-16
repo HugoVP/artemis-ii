@@ -28,15 +28,17 @@ The files need the project from Stage 02 on (`package.json` and `package-lock.js
 
 ```sh
 docker compose up dev                 # dev server on http://localhost:4321
-docker compose run --rm test          # checks, build and Playwright tests
-docker compose --profile preview up preview   # the build on http://localhost:8080
+docker compose run --rm --build test   # checks, build and Playwright tests
+docker compose --profile preview up --build preview   # the build on http://localhost:8080
 ```
 
 Without compose: `docker build --target test -t artemis:test . && docker run --rm --ipc=host artemis:test`.
 
+`test` and `preview` copy the source into the image, so `--build` makes them use the current files. `dev` mounts the working tree and runs `npm ci` at every start, so a lockfile change is picked up without removing the `node_modules` volume.
+
 ## Configuration
 
-- **Environment:** only the variables of `AGENTS.md` are meant for these containers. `MEDIA_BASE_URL` defaults to `/media` (the preview layout). Never put Cloudflare, R2, Notion, Linear or model API keys in an image or in `compose.yaml`; images can be shared, and build arguments stay in their history.
+- **Environment:** only the variables of `AGENTS.md` are meant for these containers. `MEDIA_BASE_URL` defaults to `/media` (the preview layout); `dev` reads it at run time and `preview` at build time. Never put Cloudflare, R2, Notion, Linear or model API keys in an image or in `compose.yaml`; images can be shared, and build arguments stay in their history.
 - **Base images:** `NODE_IMAGE` and `NGINX_IMAGE` are build arguments, so a registry mirror can replace Docker Hub when it rate-limits pulls, for example `NODE_IMAGE=mirror.gcr.io/library/node:22-bookworm-slim docker compose build`.
 - **Shared memory:** Chromium needs more than Docker's default, so `test` uses `ipc: host` and the dev container passes `--ipc=host`.
 - **Base image versions:** `node:22-bookworm-slim` follows the latest Node 22 release (the project needs 22.22.0 or later). Pinning by digest is a later hardening step, together with Dependabot for Docker in Stage 03.

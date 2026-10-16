@@ -65,7 +65,8 @@ async function gql(url, key, query, variables) {
   try { json = JSON.parse(text); } catch { throw new Error(`Linear returned HTTP ${res.status} with a body that is not JSON.`); }
   if (!res.ok || json.errors) {
     const msg = (json.errors ?? []).map((e) => e.message).join("; ") || `HTTP ${res.status}`;
-    throw new Error(`Linear request failed: ${msg.slice(0, 300)}`);
+    const hint = /scope/i.test(msg) ? " The API key needs the Read and Write permissions (create a new key with both checked, limited to the team of the stage issues)." : "";
+    throw new Error(`Linear request failed: ${msg.slice(0, 300)}${hint}`);
   }
   return json.data;
 }

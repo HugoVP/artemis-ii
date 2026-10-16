@@ -69,7 +69,7 @@ Every agent environment gets:
 
 - **Linear:** a team `HUG` and a project "Artemis II", one issue per stage in the order of `docs/PLAN.md`, and the GitHub integration turned on so a PR that says `Closes HUG-N` moves its issue. Keep Linear's own statuses; the mapping is in `AGENTS.md`.
   Statuses follow `docs/PLAN.md` through the `linear-sync.yml` workflow, which moves each stage issue forward (never back) and only changes statuses. One-time setup:
-  1. In Linear, create a personal API key (Settings, Security & access, Personal API keys) and keep it for step 2. Never paste it in a chat, a file or an agent environment.
+  1. In Linear, create a personal API key (Settings, Security & access, Personal API keys) with "Only select permissions": check **Read** and **Write** (Write alone is rejected with `Invalid scope: read required`), leave Admin unchecked, and limit "Team access" to the team of the stage issues. Keep the key for step 2. Never paste it in a chat, a file or an agent environment.
   2. In GitHub, create the environment `linear`, with deployment branches limited to `main` (Selected branches and tags), and add the secret `LINEAR_API_KEY`.
   3. The workflow is `.github/workflows/linear-sync.yml`. Agent tokens cannot push workflow files, so Hugo adds or edits it.
   4. Until you switch writes on, every run is a dry run: after merging, the runs triggered by pushes and by hand only print what they would change. Run it by hand (Actions, Linear sync, Run workflow, leave the dry-run box ticked) and check the output against Linear.

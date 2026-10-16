@@ -118,3 +118,9 @@ for (const [label, later] of [["completed", S.done], ["canceled", S.canceled]]) 
     assert.ok(!m.calls.some((c) => c.query.includes("issueUpdate")));
   });
 }
+
+test("a missing-scope error says which permissions the key needs", async () => {
+  const server = http.createServer((req, res) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ errors: [{ message: "Invalid scope: `read` required" }] })); }).listen(0);
+  await assert.rejects(run({ key: "k", markdown: md, url: `http://127.0.0.1:${server.address().port}/graphql` }), /Read and Write permissions/);
+  server.close();
+});

@@ -175,3 +175,14 @@ test("the Figma token is read in one step, before the agent, only for stages tha
   for (const name of ["prepare", "publish", "escalate"]) assert.doesNotMatch(job(run, name), /FIGMA_READ_TOKEN/);
   assert.match(job(run, "prepare"), /figma=\$FIGMA/);
 });
+
+test("project dependencies are installed after the snapshot and before the agent, never in the preparation step", () => {
+  const work = job(run, "work");
+  const prep = /- name: Prepare the workspace\n([\s\S]*?)(?=\n      #|\n      - name:)/.exec(work)[1];
+  assert.doesNotMatch(prep, /npm ci/);
+  const at = (s) => work.indexOf(`- name: ${s}`);
+  assert.ok(at("Prepare the workspace") < at("Snapshot the Figma design"));
+  assert.ok(at("Snapshot the Figma design") < at("Install the project dependencies"));
+  assert.ok(at("Install the project dependencies") < at("Run the agent"));
+  assert.equal([...run.matchAll(/npm ci/g)].length, 1);
+});

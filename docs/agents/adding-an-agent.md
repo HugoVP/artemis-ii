@@ -64,6 +64,8 @@ Checked on 2026-10-17 with `@openai/codex` 0.163.0 installed from npm (`codex ex
 | Figma's desktop MCP server | Rejected: needs the Figma desktop app running |
 | **A trusted pipeline step that reads the design with the REST API and hands the agent files** | **Chosen.** The token stays in one step that runs before the agent; the agent only gets files. `scripts/figma-snapshot.mjs` takes the top-level frames of the pages `Foundations`, `Components` and `Screens` and writes `.agent/figma/`: `index.json`, a PNG and a node tree per frame |
 
+**Order of the steps.** The snapshot runs after the trusted copy of the scripts is taken and before `npm ci`, so no project install script has run when the token is in use. The token is in the environment of that step only.
+
 **Limits.** The snapshot is read-only and has no variable names (Figma's variables API needs an Enterprise plan); the tokens are in `docs/specs/design.md` and `src/styles/global.css`, and the agent reads those. It cannot change the design (`figma-write`). It covers the three approved pages, up to 40 frames. REST requests count against Figma's rate limits, which depend on the plan and on the seat of the token's owner (a View or Collab seat on a Starter plan gets about 6 requests a month, which is not enough; a Full or Dev seat gets 10 to 20 a minute, and a run makes about 5) ([rate limits](https://developers.figma.com/docs/rest-api/rate-limits), checked 2026-10-17).
 
 **Setup (Hugo)**
@@ -80,4 +82,4 @@ Checked on 2026-10-17 with `@openai/codex` 0.163.0 installed from npm (`codex ex
 
 - **Follow-up runs on an existing PR** (continuation mode, with `.agent/review.md`): a separate change, because it runs project code next to the model key and needs its own review.
 - Reviewer agents, the orchestrator and iteration branches (phase 3).
-- The Figma MCP server in CI. Stages that need `figma-read` or `figma-write` stay in vendor environments.
+- The Figma MCP server in CI. Stages that need `figma-read` can run in the pipeline through the read-only snapshot ("Figma in the pipeline"); stages that need `figma-write` stay in vendor environments.

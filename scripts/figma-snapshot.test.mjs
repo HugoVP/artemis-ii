@@ -109,3 +109,27 @@ test("snapshot fails with the status and never prints the token", async () => {
   m.server.close();
   await assert.rejects(snapshot({ token: "", fileKey: KEY, outDir: dir }), /FIGMA_TOKEN/);
 });
+
+function stubFetch({ nodes, images }) {
+  const ok = (body) => ({ ok: true, status: 200, headers: new Headers(), json: async () => body, arrayBuffer: async () => new ArrayBuffer(4) });
+  return async (url) => {
+    const u = new URL(url);
+    if (u.pathname === `/v1/files/${KEY}`) return ok(fileJson);
+    const ids = (u.searchParams.get("ids") ?? "").split(",");
+    if (u.pathname.endsWith("/nodes")) return ok({ nodes: nodes(ids) });
+    if (u.pathname.startsWith("/v1/images")) return ok({ images: images(ids) });
+    return ok({});
+  };
+}
+
+test("snapshot fails when a frame has no node tree or no image, instead of recording a partial success", async () => {
+  const allNodes = (ids) => Object.fromEntries(ids.map((id) => [id, { document: { id } }]));
+  const allImages = (ids) => Object.fromEntries(ids.map((id) => [id, `https://img.example.com/${id}.png`]));
+  const dir = await mkdtemp(join(tmpdir(), "figma-"));
+  const run = (fetchImpl) => snapshot({ token: "t", fileKey: KEY, outDir: dir, base: "https://api.example.com", fetchImpl });
+  await assert.rejects(run(stubFetch({ nodes: (ids) => ({ ...allNodes(ids), "8:10": null }), images: allImages })), /no node tree for the frame "Top bar"/);
+  await assert.rejects(run(stubFetch({ nodes: allNodes, images: (ids) => ({ ...allImages(ids), "8:20": null }) })), /no image for the frame "Home/);
+  await assert.rejects(run(stubFetch({ nodes: allNodes, images: () => ({}) })), /no image/);
+  const r = await run(stubFetch({ nodes: allNodes, images: allImages }));
+  assert.deepEqual(r, { frames: 3, withImages: 3 });
+});

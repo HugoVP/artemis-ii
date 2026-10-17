@@ -66,22 +66,21 @@ export async function snapshot({ token, fileKey, outDir, base = "https://api.fig
     for (const f of chunk) {
       const base1 = `${safeName(f.page)}-${safeName(f.name)}-${safeName(f.id)}`;
       const entry = { id: f.id, name: f.name, page: f.page, json: null, png: null };
+      // Both files are required for every frame: a snapshot with holes would start a stage without its design.
       const node = nodes?.nodes?.[f.id]?.document;
-      if (node) {
-        entry.json = `nodes/${base1}.json`;
-        await writeFile(join(outDir, entry.json), JSON.stringify(node, null, 2));
-      }
+      if (!node) throw new Error(`Figma returned no node tree for the frame "${f.name}" (${f.id}).`);
+      entry.json = `nodes/${base1}.json`;
+      await writeFile(join(outDir, entry.json), JSON.stringify(node, null, 2));
       const url = images?.images?.[f.id];
-      if (url) {
-        const u = new URL(url);
-        if (u.protocol !== "https:" && u.origin !== new URL(base).origin) throw new Error("Refusing a non-HTTPS image URL.");
-        const res = await fetchImpl(url); // the image host needs no token, so none is sent
-        if (!res.ok) throw new Error(`Image download failed with ${res.status} for ${f.name}.`);
-        const buf = Buffer.from(await res.arrayBuffer());
-        if (buf.length > MAX_IMAGE_BYTES) throw new Error(`Image of ${f.name} is larger than ${MAX_IMAGE_BYTES} bytes.`);
-        entry.png = `frames/${base1}.png`;
-        await writeFile(join(outDir, entry.png), buf);
-      }
+      if (!url) throw new Error(`Figma returned no image for the frame "${f.name}" (${f.id}).`);
+      const u = new URL(url);
+      if (u.protocol !== "https:" && u.origin !== new URL(base).origin) throw new Error("Refusing a non-HTTPS image URL.");
+      const res = await fetchImpl(url); // the image host needs no token, so none is sent
+      if (!res.ok) throw new Error(`Image download failed with ${res.status} for ${f.name}.`);
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length > MAX_IMAGE_BYTES) throw new Error(`Image of ${f.name} is larger than ${MAX_IMAGE_BYTES} bytes.`);
+      entry.png = `frames/${base1}.png`;
+      await writeFile(join(outDir, entry.png), buf);
       out.push(entry);
     }
   }

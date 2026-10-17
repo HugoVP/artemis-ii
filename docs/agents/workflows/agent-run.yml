@@ -172,8 +172,6 @@ jobs:
           # Trusted copies, taken before the agent runs, for the scan below.
           mkdir -p "$RUNNER_TEMP/trusted"
           cp -r scripts AGENTS.md "$RUNNER_TEMP/trusted/"
-          # The key is not in the environment yet, so install scripts cannot read it.
-          npm ci --no-audit --no-fund
 
       # Agents cannot use the Figma MCP server in CI (it needs an interactive OAuth login). A trusted step reads the
       # design through Figma's REST API with a read-only token, from the trusted copy of the script, before the agent
@@ -184,6 +182,12 @@ jobs:
           FIGMA_TOKEN: ${{ secrets.FIGMA_READ_TOKEN }}
           FIGMA_FILE_URL: ${{ vars.FIGMA_FILE_URL }}
         run: node "$RUNNER_TEMP/trusted/scripts/figma-snapshot.mjs" .agent/figma
+
+      # Project dependencies are installed only now. Their install scripts are project code: they must run neither
+      # before the snapshot step (they could replace the trusted script that holds the Figma token) nor with any
+      # credential in the environment (the model key is only in the next step).
+      - name: Install the project dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Run the agent
         env:

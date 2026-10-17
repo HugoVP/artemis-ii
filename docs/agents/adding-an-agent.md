@@ -62,7 +62,7 @@ Checked on 2026-10-17 against Claude Code's documentation (code.claude.com: head
 - Shell commands run in Claude Code's sandbox (bubblewrap and socat, installed in the image), with `failIfUnavailable` so the run stops instead of running unsandboxed, and `allowUnsandboxedCommands: false` so a command cannot ask to leave the sandbox. The sandbox's network is limited to the npm registry and the NASA domains of `docs/SETUP.md`; web pages for curation and text stages go through Claude Code's `WebFetch` and `WebSearch` tools. In an unprivileged container the docs say bubblewrap needs `enableWeakerNestedSandbox`; the container is the outer boundary. The sandbox covers shell commands only, so the file tools are denied writes to the runner's temporary folder, where the trusted copies live.
 - `--no-session-persistence`: no transcript is saved to disk.
 
-**To verify on the first real run:** that the sandbox starts in the container with the weaker nested mode; that the permission rules with an absolute path (`Edit(//<temp>/**)`) deny writes there; that the allowed `Bash(...)` patterns are enough for `npm run check`, `npm run build` and `npm run test`; and cost and duration.
+**To verify on the first real run:** that the sandbox starts in the container with the weaker nested mode; that the permission rules with an absolute path (`Edit(//<temp>/**)`) deny writes there; that the allowed `Bash(...)` patterns are enough for `npm run check`, `npm run build` and `npm run test`; that a sandboxed shell download from a NASA domain works and one from another domain is refused; and cost and duration.
 
 ## Figma in the pipeline
 

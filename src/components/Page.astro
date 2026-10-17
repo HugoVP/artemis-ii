@@ -1,0 +1,262 @@
+---
+import Base from '../layouts/Base.astro';
+import Placeholder from './Placeholder.astro';
+import { chapterIds, chapterPath, photoPath, sectionPath, type ChapterId, type Lang, type Section } from '../i18n/routes';
+import { ui } from '../i18n/ui';
+import { photoUrl } from '../lib/media';
+import { loadContent } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  kind: 'section' | 'chapter' | 'photo';
+  section?: Section;
+  chapter?: ChapterId;
+  photoId?: string;
+}
+const { lang, kind, section = 'gallery', chapter, photoId } = Astro.props;
+const t = ui[lang];
+const { chapters, photos, stories } = await loadContent();
+const chapterPhotos = (id: ChapterId) => photos.filter((p) => p.data.chapter === id);
+
+let title = t.pages[section].title;
+let intro: string = t.pages[section].intro;
+const photo = kind === 'photo' ? photos.find((p) => p.data.nasaId === photoId) : undefined;
+if (kind === 'chapter' && chapter) {
+  title = chapters.find((c) => c.id === chapter)!.data.title[lang];
+  intro = chapters.find((c) => c.id === chapter)!.data.summary[lang];
+}
+if (photo) {
+  title = photo.data.title[lang];
+  intro = photo.data.caption[lang];
+}
+const story = photo ? stories.find((s) => s.data.photoId === photo.data.nasaId) : undefined;
+const contactUrl = import.meta.env.CONTACT_URL || `${sectionPath(lang, 'about')}#contact`;
+const isSection = kind === 'section';
+const h2 = 'text-h2 mb-3';
+---
+
+<Base lang={lang} title={title} description={intro}>
+  {
+    !isSection && (
+      <>
+        <h1 class="text-h1 mb-3">{title}</h1>
+        <p class="mb-5">{intro}</p>
+      </>
+    )
+  }
+
+  {
+    isSection && section === 'home' && (
+      <div class="grid gap-5">
+        <Placeholder label={t.home.featured} ratio="2.16 / 1" />
+        <div class="grid gap-4">
+          <h1 class="text-h1 m-0">{t.home.heading}</h1>
+          <p class="m-0">{t.home.welcome}</p>
+          <p class="m-0 flex flex-wrap gap-3">
+            <a class="btn btn-primary" href={sectionPath(lang, 'gallery')}>{t.home.galleryCta}</a>
+            <a class="btn btn-secondary" href={sectionPath(lang, 'mission')}>{t.home.missionCta}</a>
+          </p>
+        </div>
+        <ul class="grid gap-3 list-none m-0 p-0 sm:grid-cols-2 lg:grid-cols-4">
+          {
+            (['launch', 'mission', 'why-it-matters', 'gallery'] as const).map((s) => (
+              <li>
+                <a class="block h-full rounded-md border border-border bg-surface p-4 no-underline text-text" href={sectionPath(lang, s)}>
+                  <span class="block font-display text-h3 font-semibold">{t.nav[s]}</span>
+                  <span class="block text-muted">{t.home.cardDesc}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    isSection && section === 'launch' && (
+      <div class="grid gap-5">
+        <div class="grid gap-3">
+          <h1 class="text-h1 m-0">{title}</h1>
+          <p class="m-0 text-caption text-muted">{t.launch.dateTbc}</p>
+          <p class="m-0">{t.launch.summary}</p>
+        </div>
+        <section>
+          <h2 class={h2}>{t.launch.phasesTitle}</h2>
+          <ol class="grid gap-3 list-none m-0 p-0">
+            {[1, 2, 3].map((n) => (
+              <li class="grid grid-cols-[auto_1fr] gap-3">
+                <span class="mt-2 size-3 rounded-full bg-accent" aria-hidden="true" />
+                <div>
+                  <p class="m-0 text-caption text-muted">{t.launch.phase} {n}</p>
+                  <h3 class="text-h3 m-0">{t.launch.phaseName}</h3>
+                  <p class="m-0 text-muted">{t.launch.shortDesc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+        <section class="grid gap-3 justify-items-start">
+          <h2 class="text-h2 m-0">{t.launch.videoTitle}</h2>
+          <div class="w-full max-w-[35rem]">
+            <Placeholder label={t.launch.videoPlaceholder} ratio="2.8 / 1" />
+          </div>
+          <button type="button" class="btn btn-primary">{t.launch.play}</button>
+          <p class="m-0 text-caption text-muted">{t.launch.videoNote}</p>
+        </section>
+        <section>
+          <h2 class={h2}>{t.launch.photosTitle}</h2>
+          <ul class="grid gap-3 list-none m-0 p-0 grid-cols-2 md:grid-cols-6">
+            {[1, 2, 3, 4, 5, 6].map(() => (
+              <li><Placeholder label={t.photoPlaceholder} ratio="1 / 1" /></li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    )
+  }
+
+  {
+    isSection && section === 'mission' && (
+      <div class="grid gap-5">
+        <div class="grid gap-3">
+          <h1 class="text-h1 m-0">{title}</h1>
+          <p class="m-0">{t.mission.intro}</p>
+        </div>
+        <section>
+          <h2 class={h2}>{t.mission.timelineTitle}</h2>
+          <ol class="grid gap-3 list-none m-0 p-0">
+            {t.mission.events.map((name) => (
+              <li class="grid grid-cols-[auto_1fr] gap-3">
+                <span class="mt-2 size-3 rounded-full bg-accent" aria-hidden="true" />
+                <div>
+                  <p class="m-0 text-caption text-muted">{t.mission.dateTbc}</p>
+                  <h3 class="text-h3 m-0">{name}</h3>
+                  <p class="m-0 text-muted">{t.mission.shortDesc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+        <section>
+          <h2 class={h2}>{t.mission.crewTitle}</h2>
+          <ul class="grid gap-3 list-none m-0 p-0 grid-cols-2 md:grid-cols-4">
+            {t.mission.crew.map((name) => (
+              <li class="grid content-start gap-2 rounded-md border border-border bg-surface p-3">
+                <Placeholder label={t.photoPlaceholder} ratio="1 / 1" />
+                <h3 class="text-h3 m-0">{name}</h3>
+                <p class="m-0 text-caption text-muted">{t.mission.role}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section>
+          <h2 class={h2}>{t.mission.milestonesTitle}</h2>
+          <p class="m-0">{t.mission.milestones}</p>
+        </section>
+      </div>
+    )
+  }
+
+  {
+    isSection && section === 'why-it-matters' && (
+      <div class="grid gap-5">
+        <Placeholder label={t.photoPlaceholder} ratio="2.9 / 1" />
+        <div class="grid gap-3">
+          <h1 class="text-h1 m-0">{title}</h1>
+          <p class="m-0">{t.why.p1}</p>
+        </div>
+        <section class="grid gap-3">
+          <h2 class="text-h2 m-0">{t.why.programTitle}</h2>
+          <p class="m-0">{t.why.p2}</p>
+        </section>
+        <section class="grid gap-3">
+          <h2 class="text-h2 m-0">{t.why.nextTitle}</h2>
+          <p class="m-0">{t.why.p3}</p>
+        </section>
+        <p class="m-0 text-caption text-muted">{t.why.sources}</p>
+      </div>
+    )
+  }
+
+  {
+    isSection && section === 'gallery' && (
+      <div class="grid gap-5">
+        <div class="grid gap-3">
+          <h1 class="text-h1 m-0">{title}</h1>
+          <p class="m-0">{t.gallery.intro}</p>
+        </div>
+        <ul class="grid gap-3 list-none m-0 p-0 md:grid-cols-5">
+          {chapterIds.map((id) => (
+            <li>
+              <a class="grid gap-1 no-underline text-text" href={chapterPath(lang, id)}>
+                <Placeholder label={t.photoPlaceholder} ratio="1 / 1" decorative />
+                <span class="font-display text-h3 font-semibold">{t.chapters[id]}</span>
+                <span class="text-caption text-muted">{t.gallery.photoCount(chapterPhotos(id).length)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    isSection && section === 'about' && (
+      <div class="grid gap-5">
+        <h1 class="text-h1 m-0">{title}</h1>
+        {[t.about.sources, t.about.credits, t.about.nasa].map((block) => (
+          <section class="grid gap-3">
+            <h2 class="text-h2 m-0">{block.title}</h2>
+            <p class="m-0">{block.text}</p>
+          </section>
+        ))}
+        <section id="ai" class="grid gap-3 scroll-mt-5">
+          <h2 class="text-h2 m-0">{t.about.ai.title}</h2>
+          <p class="m-0">{t.about.ai.text}</p>
+        </section>
+        <section id="contact" class="grid gap-3 justify-items-start scroll-mt-5">
+          <h2 class="text-h2 m-0">{t.about.contact.title}</h2>
+          <a class="btn btn-primary" href={contactUrl}>{t.about.contact.button}</a>
+        </section>
+      </div>
+    )
+  }
+
+  {
+    kind === 'chapter' && chapter && (
+      <section>
+        {chapterPhotos(chapter).length === 0 && <p class="text-muted">{t.gallery.none}</p>}
+        <ul class="grid gap-3 list-none m-0 p-0 md:grid-cols-3">
+          {chapterPhotos(chapter).map((p) => (
+            <li class="rounded-md border border-border bg-surface p-3 grid gap-2">
+              <Placeholder label={p.data.alt[lang]} ratio="4 / 3" />
+              <a href={photoPath(lang, chapter, p.data.nasaId)}>{p.data.title[lang]}</a>
+              <span class="text-caption text-muted">{t.photo.credit}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    photo && (
+      <article class="grid gap-3">
+        <Placeholder label={photo.data.alt[lang]} ratio="3 / 2" />
+        {story && <p>{story.data.text[lang]}</p>}
+        <dl class="grid gap-1 m-0 text-label">
+          <div><dt class="inline text-muted">{t.photo.nasaId}: </dt><dd class="inline m-0">{photo.data.nasaId}</dd></div>
+          <div><dt class="inline text-muted">{t.photo.date}: </dt><dd class="inline m-0">{photo.data.date ?? t.photo.tbc}</dd></div>
+          <div><dt class="inline text-muted">{t.photo.camera}: </dt><dd class="inline m-0">{photo.data.camera ?? t.photo.tbc}</dd></div>
+        </dl>
+        <p class="m-0 flex flex-wrap gap-3">
+          <span class="text-muted">{t.photo.credit}</span>
+          <a href={photo.data.originalUrl} rel="noopener noreferrer">{t.photo.original}</a>
+          <a href={photoUrl(photo.data.nasaId, photo.data.hash, 'original.jpg')} download>{t.photo.download}</a>
+          <a href={chapterPath(lang, photo.data.chapter)}>{t.photo.back}</a>
+        </p>
+      </article>
+    )
+  }
+</Base>

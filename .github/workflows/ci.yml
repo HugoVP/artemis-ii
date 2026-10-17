@@ -15,34 +15,22 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check whether the project exists
-        id: project
-        run: |
-          if [ -f package.json ]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "No package.json yet (Stage 00). Skipping the build."
-          fi
-
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        if: steps.project.outputs.exists == 'true'
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
-        if: steps.project.outputs.exists == 'true'
         run: npm ci
 
       - name: Type check
-        if: steps.project.outputs.exists == 'true'
         run: npm run check
 
       - name: Build
-        if: steps.project.outputs.exists == 'true'
         run: npm run build
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: Acceptance tests
-        if: steps.project.outputs.exists == 'true'
         run: npm run test

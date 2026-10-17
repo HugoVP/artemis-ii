@@ -1,0 +1,11 @@
+---
+import Page from '../../components/Page.astro';
+import { getRoutes } from '../../lib/routes';
+
+export async function getStaticPaths() {
+  return (await getRoutes('en')).map(({ path, props }) => ({ params: { path }, props }));
+}
+const props = Astro.props;
+---
+
+<Page {...props} lang="en" />

@@ -96,6 +96,8 @@ All pairs pass. The dark `color/border` was raised from `#5A6478` during this st
 | VideoPlaceholder (before click, loads nothing) | one | 10:220 |
 | CreditLine | one | 10:226 |
 
+Top bar and footer layout (changed after Stage 01, at Hugo's request): their content sits in the same centered column as the page content (`layout/content-max`, side padding `space/4`); the bar and footer backgrounds and borders still span the full width. On desktop the brand is on the left, the links are centered between the brand and the Settings button, and the button is bordered (surface fill, `color/border` outline). Links use `color/accent`, the current page in Semi Bold. The footer lines are all caption size: the credit and the "Learn more" link in `color/accent`, the rest in `color/text-muted`, with a top border.
+
 Top bar behavior: one "Settings" (desktop) or "Menu" (mobile) button opens a panel with theme, language and density, so the controls never crowd the bar on a phone (`AC-6`). The gallery view control is a strip under the bar, shown only on gallery pages.
 
 ## Screens (page Screens, English, dark, comfortable; mobile 390 px and desktop 1440 px)

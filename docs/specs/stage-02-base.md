@@ -1,6 +1,6 @@
 # Stage 02: Project base
 
-- **Status:** draft (approved when Stage 01 is merged)
+- **Status:** approved (Stage 01 merged)
 - **Requirements covered:** `NAV-01`, `NAV-02`, `I18N-01`, `DES-02`, `TECH-01`, `TECH-02`, `TECH-03`, `QA-01`, `MEDIA-01` (URL helper only)
 - **Depends on:** Stage 01 (`docs/specs/design.md` and the Figma file); an agent with `node`, `browser` and `figma-read`
 

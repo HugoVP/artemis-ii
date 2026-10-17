@@ -23,6 +23,17 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
 4. **(Stage 03)** Variables and environments from `docs/DELIVERY.md`. Credentials go into the environment of the jobs that use them (`preview`, `staging`, `production`), never into repository-level secrets.
 5. **(Stage 03) Agent permissions:** a fine-grained token for the agents, the `approval`, `preview`, `staging` and `production` environments and the rulesets without bypass ("Agent identity" in `docs/DELIVERY.md`). Stage 03 lists the exact steps.
 
+### Stage 03 steps (pipeline)
+
+1. **Copy the workflows.** From a clone of the Stage 03 branch: `cp pipeline/github/workflows/*.yml .github/workflows/` and `cp pipeline/github/dependabot.yml .github/`, then push (agents cannot push workflow files). Do this before any other step.
+2. **Resolve the action pins.** Every `uses:` line marked `UNRESOLVED` carries an all-zero SHA. Replace it with the commit SHA of the release named in its comment (`actions/upload-artifact`, `actions/download-artifact`, `actions/dependency-review-action`, `github/codeql-action`), and drop the word UNRESOLVED. Dependabot keeps them current afterwards. The workflows do not run correctly until this is done.
+3. **Environments** (Settings → Environments), with deployment branch policies: `preview` and `staging` (`main` only), `production` (tags `v*` only, Hugo as required reviewer), `approval` (`main` only, Hugo as required reviewer).
+4. **Secrets and variables** as listed in "Secrets and configuration" of `docs/DELIVERY.md`: `CLOUDFLARE_API_TOKEN` in `preview`, `staging` and `production`; R2 keys in `staging` and `production`; the `*_STAGING` / `*_PRODUCTION` variables and `CLOUDFLARE_ACCOUNT_ID` at repository level.
+5. **Cloudflare:** create the Direct Upload Pages projects `artemis-ii-staging` and (or convert) `artemis-ii`, then turn off automatic Git deployments so only the workflows deploy.
+6. **Ruleset** on `main`: require the checks `build` (CI), the Security jobs, `approval` and `preview`, no bypass.
+7. **Agent token and verification:** do the "Verified in Stage 03" tests of `docs/DELIVERY.md` ("Agent identity") once the above is done and record the results in the PR.
+8. Check `SITE_URL_STAGING` points at the staging Pages URL, so `scripts/smoke.mjs` and the DAST scan have a target.
+
 ## 2. Cloudflare
 
 1. **Pages:** the project connected to the repo (already done). Until Stage 03 it deploys previews and `main` on its own; the production URL is not shared with anyone yet. **(Stage 03)** Two projects in the same Cloudflare account: `artemis-ii` for production and `artemis-ii-staging` for staging and previews (see "Cloudflare Pages setup" in `docs/DELIVERY.md`).

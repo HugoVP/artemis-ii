@@ -1,6 +1,6 @@
 # Stage 03: Delivery pipeline and security baseline
 
-- **Status:** draft (approved when Stage 02 is merged)
+- **Status:** approved (Stage 02 merged)
 - **Requirements covered:** `OPS-01` to `OPS-07`, `SEC-01` to `SEC-05` and `SEC-07`, `TECH-04`
 - **Depends on:** Stage 02 (buildable project with `check`, `build` and `test`); an agent with `node`; Hugo for Cloudflare, GitHub settings and secrets
 

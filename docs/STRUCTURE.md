@@ -21,6 +21,7 @@ artemis-ii/
 │   ├── specs/                 product spec, design spec, one spec per stage
 │   └── content-review/        text drafts (Stage 08)
 ├── tests/                     Playwright acceptance and smoke tests, named after spec criteria (Stage 02)
+├── pipeline/github/           Stage 03 workflows and Dependabot config, copied by Hugo into `.github/` (agent tokens cannot push workflows)
 ├── scripts/
 │   └── ingest.ts              local mode for agents, credential-free build mode for the pipeline; uploads are done by `media.yml` (Stage 06)
 ├── public/

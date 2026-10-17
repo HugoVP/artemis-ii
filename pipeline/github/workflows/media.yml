@@ -1,0 +1,61 @@
+name: Media
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+    inputs:
+      target:
+        description: 'staging or production'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Shell until Stage 06 adds scripts/ingest: an empty manifest keeps the contract of the later jobs.
+      - name: Generate variants and manifest
+        run: |
+          mkdir -p media-out
+          if [ -f scripts/ingest.ts ]; then npm run ingest -- --build --out media-out; else echo '{"photos":[]}' > media-out/manifest.json; fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: media
+          path: media-out
+
+  upload:
+    if: github.event_name == 'workflow_call'
+    needs: generate
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_PRODUCTION_ACCESS_KEY_ID || secrets.R2_STAGING_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_PRODUCTION_SECRET_ACCESS_KEY || secrets.R2_STAGING_SECRET_ACCESS_KEY }}
+      BUCKET: ${{ inputs.target == 'production' && vars.R2_PRODUCTION_BUCKET || vars.R2_STAGING_BUCKET }}
+      ENDPOINT: https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: media
+          path: media-out
+      # Credential-only: copies files with the preinstalled AWS CLI, runs no project code.
+      # Objects are immutable and content-addressed, so --size-only never overwrites changed content.
+      - name: Copy objects to the bucket
+        run: |
+          if [ -d media-out/photos ]; then
+            aws s3 sync media-out/photos "s3://${BUCKET}/photos" --endpoint-url "${ENDPOINT}" --size-only
+          else
+            echo "No media to upload yet."
+          fi

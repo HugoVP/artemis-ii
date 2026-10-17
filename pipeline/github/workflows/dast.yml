@@ -1,0 +1,29 @@
+name: DAST
+
+on:
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_run:
+    workflows: ['Deploy staging']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zap:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      # Report only (SEC-06); blocking is decided in Stage 11.
+      - name: ZAP baseline scan of staging
+        env:
+          TARGET: ${{ vars.SITE_URL_STAGING }}
+        run: |
+          mkdir -p zap && chmod 777 zap
+          docker run --rm -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t "${TARGET}" -r report.html -I
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: zap-report
+          path: zap

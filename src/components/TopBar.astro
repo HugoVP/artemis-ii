@@ -13,17 +13,17 @@ const current = (href: string) => (href === `/${lang}/` ? path === href : path.s
 ---
 
 <header class="border-b border-border bg-background">
-  <div class="max-w-content mx-auto px-4 py-3 flex items-center justify-between gap-3">
-    <a href={`/${lang}/`} class="font-display text-h3 text-text no-underline">{t.siteName}</a>
+  <div class="px-4 py-3 flex items-center gap-4">
+    <a href={`/${lang}/`} class="font-display text-h3 font-semibold text-text no-underline">{t.siteName}</a>
 
-    <nav aria-label={t.navLabel} class="hidden md:block">
+    <nav aria-label={t.navLabel} class="hidden md:block flex-1">
       <ul class="flex gap-4 list-none m-0 p-0">
         {
           sections.map((s) => {
             const href = sectionPath(lang, s);
             return (
               <li>
-                <a href={href} aria-current={current(href) ? 'page' : undefined} class="text-label">
+                <a href={href} aria-current={current(href) ? 'page' : undefined} class="text-label text-text no-underline">
                   {t.nav[s]}
                 </a>
               </li>
@@ -37,7 +37,7 @@ const current = (href: string) => (href === `/${lang}/` ? path === href : path.s
     <button
       type="button"
       popovertarget="prefs"
-      class="rounded-sm border border-border bg-surface text-text px-3 py-2 text-label cursor-pointer"
+      class="btn btn-secondary ml-auto md:ml-0 md:border-transparent md:text-text md:px-4"
     >
       <span class="md:hidden">{t.menu}</span>
       <span class="hidden md:inline">{t.settings}</span>
@@ -81,7 +81,7 @@ const current = (href: string) => (href === `/${lang}/` ? path === href : path.s
 
 <style>
   nav a[aria-current='page'] {
-    text-decoration: none;
+    color: var(--color-accent);
     font-weight: 600;
   }
 </style>

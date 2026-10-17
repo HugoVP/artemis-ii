@@ -58,3 +58,26 @@
     inset: auto;
   }
 }
+
+/* Buttons from the Figma Button component (design.md): primary fills with the accent, secondary outlines it. */
+@layer components {
+  .btn {
+    display: inline-block;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-label);
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-background);
+  }
+  .btn-secondary {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+}

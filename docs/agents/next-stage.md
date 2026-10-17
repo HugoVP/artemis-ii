@@ -19,3 +19,15 @@ The procedure every agent follows, whatever started it (a Claude Code routine, a
 9. **Open the PR** with the format in `AGENTS.md` (title `Stage NN: <name>`, with the stage's `Closes HUG-N` from the "Issue" column of `docs/PLAN.md`, or "Linear issue: none yet"), then push one follow-up commit to the same branch that adds the PR link to the stage's row and log line in `docs/PLAN.md` (rule 4). If there is a work order, the PR description also says `Closes #<its number>`, so the issue closes when the stage merges.
 
 If you get blocked at any point, open the PR as a draft explaining exactly what you need (rule 8).
+
+## When the pipeline runs you
+
+If the kickoff prompt says you run inside the agent pipeline (`docs/agents/adding-an-agent.md`), the procedure above is the same with these differences:
+
+- **No GitHub access.** You have no token. Do not push and do not open the PR; the pipeline does it after checking your result.
+- **Branch and commits.** You start on `agent/stage-NN-<your id>`. Leave your changes in the working tree and do not commit: some agents cannot write to `.git` in their sandbox (Codex keeps it read-only), so the pipeline makes one commit from your changes, using your PR title as its message.
+- **PR text.** Write the PR title (`Stage NN: <name>`) to `.agent/pr-title.txt` and the PR body, in the format of `AGENTS.md` rule 5, to `.agent/pr-body.md`. `.agent/` is git-ignored.
+- **PR link.** Do not add the PR link to `docs/PLAN.md`: the PR number does not exist yet, and the pipeline adds it in a follow-up commit.
+- **Credentials.** Your model key is in the environment of this run only. Never print, write or commit it. A result with a key-like string is rejected.
+- **Blocked.** If you are blocked (rule 8 of `AGENTS.md`), commit what you achieved and write one short line saying what you need from Hugo to `.agent/draft-reason.txt`. The pipeline then opens the PR as a draft and quotes that line.
+- **Protected paths.** Change them only if the stage spec says so. The pipeline opens the PR as a draft with a warning if you touch them, and rejects the run if you edit `.github/workflows/**`.

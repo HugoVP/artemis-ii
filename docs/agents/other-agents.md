@@ -31,6 +31,7 @@ Nothing here has been run on this project yet. "Confirmed" means found in OpenAI
 - Cloud environments run a setup script with internet access; afterwards the agent has no internet unless a domain allowlist is configured. Environment variables are visible to the agent; secrets only to the setup script ([environments](https://developers.openai.com/codex/cloud/environments), [internet access](https://developers.openai.com/codex/cloud/agent-internet)).
 - The Codex CLI and IDE extension support MCP servers (stdio and Streamable HTTP, with OAuth through `codex mcp login`) ([MCP](https://developers.openai.com/codex/mcp)). Figma's remote MCP server only accepts approved clients, and a user report lists Codex among them.
 - The CLI has a `/review` command that reviews the changes against a base branch.
+- Headless use in the pipeline (`codex exec`, authentication with `CODEX_API_KEY`) was checked against the CLI's own help on 2026-10-17; the details and what is still to verify are in `docs/agents/adding-an-agent.md`.
 
 **To verify**
 

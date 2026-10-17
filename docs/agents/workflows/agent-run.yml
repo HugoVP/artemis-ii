@@ -1,0 +1,380 @@
+name: Agent run
+
+# Proposed workflow: Hugo copies it to .github/workflows/agent-run.yml (agents cannot push there).
+# Design and threat model: docs/MULTI-AGENT-PHASES.md, "Phase 2". Setup: docs/agents/adding-an-agent.md.
+#
+# Hugo adds the label `agent:<id>` to a "Run Stage NN" issue (or starts it by hand). Three jobs:
+#   prepare  decides whether the run may start; no secrets
+#   work     runs the agent with its model key and NO GitHub write token; leaves a bundle
+#   publish  checks the bundle, then pushes the branch and opens the PR with a GitHub App token; no project code
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Stage number, two digits (must be the next pending stage)
+        required: true
+        type: string
+      agent:
+        description: Agent id from agents/registry.yaml
+        required: true
+        default: codex
+        type: string
+
+permissions: {}
+
+# One run at a time for the whole workflow (prepare, work and publish), so the open-stage-PR guard of a
+# second run sees the PR of the first. Events that prepare would ignore or reject (other labels, other actors)
+# get a group of their own, so they cannot displace a waiting run.
+concurrency:
+  group: ${{ (github.actor == vars.AGENT_TRUSTED_LOGIN && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && (github.event_name == 'workflow_dispatch' || (startsWith(github.event.label.name, 'agent:') && contains(github.event.issue.labels.*.name, 'agent-task') && github.event.issue.pull_request == null))) && 'agent-run' || format('agent-run-ignored-{0}', github.run_id) }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.event.label.name, 'agent:') &&
+       contains(github.event.issue.labels.*.name, 'agent-task') &&
+       github.event.issue.pull_request == null)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    outputs:
+      stage: ${{ steps.order.outputs.stage }}
+      agent: ${{ steps.order.outputs.agent }}
+      issue: ${{ steps.order.outputs.issue }}
+      key_secret: ${{ steps.order.outputs.key_secret }}
+      branch: ${{ steps.order.outputs.branch }}
+    steps:
+      # Always main: the checks come from main and an issue or PR cannot change them.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      # Both must be the trusted login: the actor of the original event, and whoever triggered this run. A re-run keeps
+      # the original actor but has a new triggering actor, so a collaborator cannot re-run Hugo's request.
+      - name: Only the trusted login may start a run
+        env:
+          ACTOR: ${{ github.event_name == 'workflow_dispatch' && github.actor || github.event.sender.login }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          TRUSTED: ${{ vars.AGENT_TRUSTED_LOGIN }}
+        run: |
+          node scripts/agent-checks.mjs trusted "$ACTOR" "$TRUSTED"
+          node scripts/agent-checks.mjs trusted "$TRIGGERING_ACTOR" "$TRUSTED"
+
+      - name: Resolve the work order, the stage and the agent
+        id: order
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          LABEL: ${{ github.event.label.name }}
+          INPUT_STAGE: ${{ inputs.stage }}
+          INPUT_AGENT: ${{ inputs.agent }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = workflow_dispatch ]; then
+            STAGE="$INPUT_STAGE"
+            AGENT="$INPUT_AGENT"
+            [[ "$STAGE" =~ ^[0-9]{2}$ ]] || { echo "The stage must be two digits."; exit 1; }
+            ISSUE=$(gh issue list --repo "$REPO" --label agent-task --state open --limit 100 --json number,title \
+              --jq "[.[] | select(.title | startswith(\"Run Stage ${STAGE}:\"))][0].number // empty")
+            [ -n "$ISSUE" ] || { echo "No open 'Run Stage ${STAGE}' issue with the agent-task label."; exit 1; }
+          else
+            STAGE=$(node scripts/agent-checks.mjs stage "$ISSUE_TITLE")
+            AGENT="${LABEL#agent:}"
+            ISSUE="$ISSUE_NUMBER"
+          fi
+          [[ "$AGENT" =~ ^[a-z0-9-]{1,30}$ ]] || { echo "Invalid agent id."; exit 1; }
+          echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
+
+          # Rule 3 of AGENTS.md: no new stage while a stage PR is open.
+          gh pr list --repo "$REPO" --state open --limit 100 --json title,isCrossRepository > "$RUNNER_TEMP/prs.json"
+          node scripts/agent-checks.mjs open-stage-pr "$RUNNER_TEMP/prs.json"
+
+          # Rule 1 of AGENTS.md: only the next stage to run, with an agent that has the capabilities it needs.
+          # Steps 4 and 5 of next-stage.md: an earlier stage that is in review and not merged stops the run.
+          gh pr list --repo "$REPO" --state merged --limit 200 --json number --jq '[.[].number]' > "$RUNNER_TEMP/merged.json"
+          node scripts/agent-checks.mjs plan docs/PLAN.md agents/registry.yaml "$STAGE" "$AGENT" "$RUNNER_TEMP/merged.json" > "$RUNNER_TEMP/plan.json"
+          KEY_SECRET=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).keySecret" "$RUNNER_TEMP/plan.json")
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+          echo "agent=$AGENT" >> "$GITHUB_OUTPUT"
+          echo "key_secret=$KEY_SECRET" >> "$GITHUB_OUTPUT"
+          echo "branch=agent/stage-${STAGE}-${AGENT}" >> "$GITHUB_OUTPUT"
+
+      - name: Tell the work order that the run did not start
+        if: failure() && steps.order.outputs.issue != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ steps.order.outputs.issue }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: gh issue comment "$ISSUE" --repo "$REPO" --body "The agent run did not start. The reason is in the log: $RUN_URL"
+
+  work:
+    needs: prepare
+    # Gated again: re-running only the failed jobs can reuse a successful prepare. Comparison of strings is case-insensitive.
+    if: github.triggering_actor == vars.AGENT_TRUSTED_LOGIN
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # The environment is restricted to main and holds the model keys. This job reads one of them, in one step.
+    environment: agents
+    # No write permission of any kind: the agent cannot push, comment or open a PR with this token.
+    permissions:
+      contents: read
+      packages: read
+    # Container job steps default to sh (Dash in this image), which rejects `set -o pipefail`.
+    defaults:
+      run:
+        shell: bash
+    container:
+      # Full reference with digest, from the repository variable set after the image workflow ran.
+      image: ${{ vars.AGENT_RUNNER_IMAGE }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      STAGE: ${{ needs.prepare.outputs.stage }}
+      AGENT: ${{ needs.prepare.outputs.agent }}
+      BRANCH: ${{ needs.prepare.outputs.branch }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare the workspace
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "artemis-ii-agent"
+          git config user.email "artemis-ii-agent@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          mkdir -p .agent
+          # Trusted copies, taken before the agent runs, for the scan below.
+          mkdir -p "$RUNNER_TEMP/trusted"
+          cp -r scripts AGENTS.md "$RUNNER_TEMP/trusted/"
+          # The key is not in the environment yet, so install scripts cannot read it.
+          npm ci --no-audit --no-fund
+
+      - name: Run the agent
+        env:
+          # The only step that sees the model key. For Codex, `codex exec` reads CODEX_API_KEY.
+          CODEX_API_KEY: ${{ secrets[needs.prepare.outputs.key_secret] }}
+        run: |
+          set -euo pipefail
+          KICKOFF="Read AGENTS.md and follow docs/agents/next-stage.md. Run Stage ${STAGE} only. You run inside the agent pipeline (see 'When the pipeline runs you' in docs/agents/next-stage.md): leave your changes in the working tree (the pipeline commits them), do not push, and write the PR title to .agent/pr-title.txt and the PR body to .agent/pr-body.md."
+          codex exec \
+            --sandbox workspace-write \
+            -c sandbox_workspace_write.network_access=true \
+            --ephemeral \
+            --color never \
+            "$KICKOFF"
+
+      # Codex's workspace-write sandbox keeps .git read-only, so the agent cannot commit. This trusted step does it,
+      # with hooks disabled, without the model key in its environment, and without the agent's scratch folder.
+      - name: Commit the agent's changes
+        run: |
+          set -euo pipefail
+          [ -f .agent/pr-title.txt ] && [ ! -L .agent/pr-title.txt ] && [ -s .agent/pr-title.txt ] || { echo "The agent did not write a regular file .agent/pr-title.txt."; exit 1; }
+          git add -A -- . ':!.agent' ':!node_modules'
+          if git diff --cached --quiet; then echo "The agent changed nothing."; exit 1; fi
+          git -c core.hooksPath=/dev/null commit -q -F .agent/pr-title.txt
+
+      - name: Check that no write token reached the workspace
+        run: |
+          set -u
+          export GIT_TERMINAL_PROMPT=0
+          if git push --dry-run "https://github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/agent-push-probe" >/dev/null 2>&1; then
+            echo "A push from the work job succeeded. It must not."
+            exit 1
+          fi
+          echo "A push from the work job is refused, as expected."
+
+      - name: Bundle and scan the result
+        run: |
+          set -euo pipefail
+          git rev-parse --verify "$BRANCH" >/dev/null
+          [ -n "$(git rev-list "origin/main..$BRANCH")" ] || { echo "There is nothing to publish."; exit 1; }
+          # Everything the pipeline writes goes to a fresh random folder made after the agent ran, never to a path
+          # the agent controls: a symlink planted in .agent/ could otherwise make a redirection truncate a trusted file.
+          OUT=$(mktemp -d)
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          [ ! -L .agent ] || { echo ".agent is a symlink."; exit 1; }
+          # The agent's own files are copied once, after refusing symlinks. draft-reason.txt is optional.
+          for f in pr-title.txt pr-body.md draft-reason.txt; do
+            [ ! -L ".agent/$f" ] || { echo ".agent/$f is a symlink."; exit 1; }
+            if [ -f ".agent/$f" ]; then cp -P ".agent/$f" "$OUT/$f"; else : > "$OUT/$f"; fi
+          done
+          [ -s "$OUT/pr-title.txt" ] && [ -s "$OUT/pr-body.md" ] || { echo "The agent did not write .agent/pr-title.txt and .agent/pr-body.md."; exit 1; }
+          git bundle create "$OUT/work.bundle" "$BRANCH" --not origin/main
+          # NUL-separated, no rename detection: both sides of a rename are listed and names are never quoted.
+          # Three dots: the changes of the branch since it left main.
+          git diff --no-renames --name-only -z "origin/main...$BRANCH" > "$OUT/files.txt"
+          # Scan from the trusted copy. Every new commit and blob is scanned, binary ones and merge resolutions included.
+          # Log transcripts are never uploaded. publish scans again.
+          TRUSTED="$RUNNER_TEMP/trusted/scripts/agent-checks.mjs"
+          node "$TRUSTED" scan-range origin/main "$BRANCH"
+          node "$TRUSTED" decide "$RUNNER_TEMP/trusted/AGENTS.md" "$OUT/files.txt" \
+            "$OUT/pr-title.txt" "$OUT/pr-body.md" "$OUT/draft-reason.txt" > "$OUT/decision.json"
+          cat "$OUT/decision.json"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: agent-bundle
+          path: |
+            ${{ env.OUT }}/work.bundle
+            ${{ env.OUT }}/pr-title.txt
+            ${{ env.OUT }}/pr-body.md
+            ${{ env.OUT }}/files.txt
+            ${{ env.OUT }}/draft-reason.txt
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    needs: [prepare, work]
+    if: github.triggering_actor == vars.AGENT_TRUSTED_LOGIN
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: agents
+    permissions:
+      contents: read
+    env:
+      STAGE: ${{ needs.prepare.outputs.stage }}
+      BRANCH: ${{ needs.prepare.outputs.branch }}
+      ISSUE: ${{ needs.prepare.outputs.issue }}
+      REPO: ${{ github.repository }}
+    steps:
+      # Main only, and no npm: this job never runs project code. Node runs scripts from main.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: agent-bundle
+          # The four files share .agent as their common ancestor, so they sit at the root of the artifact.
+          path: ${{ runner.temp }}/bundle/.agent
+
+      - name: Check the result
+        id: check
+        run: |
+          set -euo pipefail
+          B="$RUNNER_TEMP/bundle"
+          node scripts/agent-checks.mjs ref "$BRANCH" "$STAGE"
+          node scripts/agent-checks.mjs pr-text "$B/.agent/pr-title.txt" "$B/.agent/pr-body.md" "$STAGE"
+          git config user.name "artemis-ii-agent"
+          git config user.email "artemis-ii-agent@users.noreply.github.com"
+          # Trusted copy of the scripts, from main: later steps check out the agent's branch.
+          mkdir -p "$RUNNER_TEMP/trusted" && cp -r scripts "$RUNNER_TEMP/trusted/"
+          git fetch "$B/.agent/work.bundle" "refs/heads/$BRANCH:refs/heads/$BRANCH"
+          # Three dots: main may have moved during the run, and its own changes are not the agent's.
+          git diff --no-renames --name-only -z "origin/main...$BRANCH" > "$RUNNER_TEMP/files.txt"
+          # Scan every new commit and blob here too, before any token exists.
+          node scripts/agent-checks.mjs scan-range origin/main "$BRANCH"
+          # AGENTS.md comes from main, so a change to the protected list in the bundle does not apply to itself.
+          touch "$B/.agent/draft-reason.txt"
+          node scripts/agent-checks.mjs decide AGENTS.md "$RUNNER_TEMP/files.txt" \
+            "$B/.agent/pr-title.txt" "$B/.agent/pr-body.md" "$B/.agent/draft-reason.txt" > "$RUNNER_TEMP/decision.json" || {
+            cat "$RUNNER_TEMP/decision.json"; exit 1; }
+          cat "$RUNNER_TEMP/decision.json"
+          # Draft when a protected path changed or the agent asked for one (a blocked run, AGENTS.md rule 8).
+          # The warning goes to a file, never to a step output: it can contain agent-chosen text.
+          MODE=$(node scripts/agent-checks.mjs publish-plan "$RUNNER_TEMP/decision.json" "$B/.agent/draft-reason.txt" "$RUNNER_TEMP/warning.txt")
+          echo "draft=$([ "$MODE" = draft ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      # Short-lived token of the GitHub App, for this repository only.
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app
+        with:
+          app-id: ${{ vars.AGENT_APP_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Push the branch and open the PR
+        id: pr
+        env:
+          APP_TOKEN: ${{ steps.app.outputs.token }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          DRAFT: ${{ steps.check.outputs.draft }}
+        run: |
+          set -euo pipefail
+          B="$RUNNER_TEMP/bundle"
+          AUTH=$(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)
+          echo "::add-mask::$AUTH"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin "refs/heads/$BRANCH:refs/heads/$BRANCH"
+
+          cp "$B/.agent/pr-body.md" "$RUNNER_TEMP/body.md"
+          grep -Eq "Closes #${ISSUE}([^0-9]|$)" "$RUNNER_TEMP/body.md" || printf '\n\nWork order: Closes #%s\n' "$ISSUE" >> "$RUNNER_TEMP/body.md"
+          ARGS=(--repo "$REPO" --base main --head "$BRANCH" --title "$(cat "$B/.agent/pr-title.txt")" --body-file "$RUNNER_TEMP/body.md" --label agent-authored)
+          if [ "$DRAFT" = true ]; then
+            printf '\n\n> Draft: %s\n' "$(cat "$RUNNER_TEMP/warning.txt")" >> "$RUNNER_TEMP/body.md"
+            ARGS+=(--draft)
+          fi
+          URL=$(gh pr create "${ARGS[@]}")
+          echo "number=${URL##*/}" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      # AGENTS.md rule 4: the PR link goes into docs/PLAN.md in one follow-up commit that touches only those lines.
+      - name: Add the PR link to docs/PLAN.md
+        env:
+          APP_TOKEN: ${{ steps.app.outputs.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          git checkout "$BRANCH"
+          BEFORE=$(git rev-parse HEAD)
+          node "$RUNNER_TEMP/trusted/scripts/agent-checks.mjs" link-plan docs/PLAN.md "$STAGE" "$PR_NUMBER"
+          git add docs/PLAN.md
+          if git diff --cached --quiet; then echo "Nothing to link."; exit 0; fi
+          git commit -m "Add the PR link to docs/PLAN.md" >/dev/null
+          git diff -U0 "$BEFORE" HEAD > "$RUNNER_TEMP/followup.diff"
+          node "$RUNNER_TEMP/trusted/scripts/agent-checks.mjs" check-follow-up "$RUNNER_TEMP/followup.diff" "$PR_NUMBER"
+          AUTH=$(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)
+          echo "::add-mask::$AUTH"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin "refs/heads/$BRANCH:refs/heads/$BRANCH"
+
+      - name: Comment on the work order
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: gh issue comment "$ISSUE" --repo "$REPO" --body "The agent opened $PR_URL"
+
+  # Any failure after a successful prepare is reported on the work order and handed to Hugo.
+  escalate:
+    needs: [prepare, work, publish]
+    if: always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' && (needs.work.result != 'success' || needs.publish.result != 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Comment and label the work order
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ needs.prepare.outputs.issue }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue comment "$ISSUE" --repo "$REPO" --body "The agent result was not published. The reason is in the log: $RUN_URL"
+          gh issue edit "$ISSUE" --repo "$REPO" --add-label needs-hugo || true

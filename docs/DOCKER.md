@@ -21,6 +21,7 @@ The files need the project from Stage 02 on (`package.json` and `package-lock.js
 | `dev` | `deps` and the Astro dev server on port 4321 | Working on the site with hot reload |
 | `tools` | `deps` and Playwright's Chromium with its system libraries | Dev container; base of `test` |
 | `test` | `tools` and a copy of the source | `npm run check` and `npm run test`, as CI runs them |
+| `agent-runner` | `tools` and the pinned Codex CLI | The `agent-run` workflow (`docs/agents/adding-an-agent.md`); built and published by its own workflow |
 | `build` | `deps`, the source and `npm run build` | The static build in `/app/dist` |
 | `preview` | nginx serving the build on port 80 | Looking at the build as a static host serves it |
 
@@ -47,6 +48,6 @@ Without compose: `docker build --target test -t artemis:test . && docker run --r
 
 Open the repository in VS Code with the Dev Containers extension, or create a GitHub Codespace: both build the `tools` target, run `npm ci` and forward port 4321. Then `npm run dev`, `npm run check` and `npm run test` work as on a local machine with the right versions.
 
-## Next steps (not built yet)
+## The agent runner
 
-An "agent runner" image based on `tools`, with the command-line versions of the coding agents, so a stage can be run by any agent in a container started locally or by a workflow. It needs model API keys and a limited GitHub token, so it comes with its own security review.
+The `agent-runner` target is the image in which the pipeline runs an agent: the CI toolchain plus a pinned agent CLI. It is not meant to be run by hand, because it needs a model key and a workspace prepared by `agent-run.yml`. The `agent-runner-image` workflow builds it on `main` and publishes it to GitHub Container Registry; the run pins it by digest. Details: `docs/agents/adding-an-agent.md`.

@@ -22,6 +22,9 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 # Toolchain for checks and Playwright: the Chromium that matches the locked @playwright/test,
 # with its system libraries. Also the base of the dev container (.devcontainer/).
 FROM deps AS tools
+# Fixed browser location: job containers of GitHub Actions run with another HOME, so the default
+# ~/.cache/ms-playwright of this image would not be found there.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 # Git is not in the slim Node image; the dev container needs it for source control.
 RUN apt-get update && apt-get install -y --no-install-recommends git \
  && rm -rf /var/lib/apt/lists/*
@@ -31,6 +34,13 @@ RUN npx playwright install --with-deps chromium
 FROM tools AS test
 COPY . .
 CMD ["sh", "-c", "npm run check && npm run test"]
+
+# Runner of the agent-run workflow (docs/MULTI-AGENT-PHASES.md, Phase 2): the CI toolchain plus the pinned agent CLI.
+# Built and published by the agent-runner-image workflow; the agent job pins the image by digest.
+# It runs as root inside a throwaway container: the container, not a user account, is the isolation.
+FROM tools AS agent-runner
+ARG CODEX_VERSION=0.163.0
+RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION}
 
 # Static build. MEDIA_BASE_URL defaults to the preview layout (media served from /media).
 FROM deps AS build

@@ -142,7 +142,7 @@ Remove the label `agent:<id>`, or disable `agent-run.yml` in the Actions tab. Ve
 ### Open points
 
 - Each agent's headless mode and how it authenticates with a key (**to verify** in each vendor's documentation before it is added). Codex is checked in `docs/agents/adding-an-agent.md`. Still to check: Claude Code's print mode, Gemini CLI's prompt flag, `opencode run`.
-- The Figma MCP server needs an OAuth login in an approved client, which is unlikely to work in CI (**to verify**). Until it does, stages that need `figma-read` or `figma-write` stay in vendor environments.
+- The Figma MCP server needs an OAuth login in an approved client and does not accept tokens, so it does not work in CI. `figma-read` is provided to pipeline agents as a read-only snapshot taken by a trusted step (`docs/agents/adding-an-agent.md`, "Figma in the pipeline"). Stages that need `figma-write` stay in vendor environments.
 - Free Actions minutes for this repository and the maximum time per job (**to verify** on GitHub's live pages).
 - The runner image is built by a separate workflow on `main` and published to GitHub Container Registry, which needs `packages: write` in that workflow only.
 

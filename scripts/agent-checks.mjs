@@ -285,7 +285,7 @@ async function main(argv) {
     if (!agent) { console.error(`Agent "${args[3]}" is not in agents/registry.yaml.`); return 1; }
     const missing = missingCapabilities(stage.needs, agent.capabilities);
     if (missing.length > 0) { console.error(`Agent ${agent.id} lacks: ${missing.join(", ")}.`); return 1; }
-    console.log(JSON.stringify({ stage: stage.number, name: stage.name, agent: agent.id, runner: agent.runner, keySecret: agent.key_secret }));
+    console.log(JSON.stringify({ stage: stage.number, name: stage.name, agent: agent.id, runner: agent.runner, keySecret: agent.key_secret, figma: stage.needs.includes("figma-read") }));
     return 0;
   }
   if (cmd === "pr-text") {

@@ -14,7 +14,7 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | 00 | 🔍 Plan, structure, site map, product spec and delivery design | — | — | approved | #1 | — |
 | 01 | 🎨 Design in Figma: tokens, components and screens | `figma-write` | [stage-01-design](specs/stage-01-design.md) | approved | #4 | `HUG-5` |
 | 02 | Project base: Astro, Tailwind with design tokens, es/en routes, layout, tests | `node`, `browser`, `figma-read` | [stage-02-base](specs/stage-02-base.md) | approved | #8 | `HUG-6` |
-| 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | [stage-03-pipeline](specs/stage-03-pipeline.md) | in review | | `HUG-7` |
+| 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | [stage-03-pipeline](specs/stage-03-pipeline.md) | in review | #14 | `HUG-7` |
 | 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | [stage-04-preferences](specs/stage-04-preferences.md) | pending | | |
 | 05 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | `web` | written in 04 | pending | | |
 | 06 | Ingestion: script, variants with sharp, upload through the pipeline | `node`, `web` | written in 05 | pending | | |
@@ -127,4 +127,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-15 — Process (requested by Hugo) — Task tracking and knowledge tools: Linear issues per stage ("Issue" column), status mapping, Notion as a public-safe readable layer and Obsidian as a personal reader, documented in `AGENTS.md`, `docs/agents/` and `docs/SETUP.md`.
 - 2026-10-15 — Stage 00 approved (PR #1 merged); Stage 01 — PR #4 — Figma design built (variables, components, screens) and `design.md`; Stage 02 spec written.
 - 2026-10-16 — Stage 01 approved (PR #4 merged); Stage 02 — PR #8 — Astro + Tailwind base with design tokens, es/en routes, layout, content collections and Playwright tests; Stage 03 spec written.
-- 2026-10-17 — Stage 02 approved (PR #8 merged); Stage 03 — Delivery pipeline: workflows ready in `pipeline/github/` for Hugo to copy into `.github/`, security headers, smoke test script and setup steps; Stage 04 spec written.
+- 2026-10-17 — Stage 02 approved (PR #8 merged); Stage 03 — PR #14 — Delivery pipeline: workflows ready in `pipeline/github/` for Hugo to copy into `.github/`, security headers, smoke test script and setup steps; Stage 04 spec written.

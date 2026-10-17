@@ -10,5 +10,7 @@ export function buildMediaUrl(base: string, path: string): string {
  * `/media` (the preview layout in docs/DELIVERY.md) is only the fallback for local builds.
  */
 export function photoUrl(nasaId: string, hash: string, file: string): string {
-  return buildMediaUrl(process.env.MEDIA_BASE_URL || '/media', `photos/${nasaId}/${hash}/${file}`);
+  // Exported variables win; otherwise the value Astro loaded from a `.env` file (`import.meta.env`).
+  const base = process.env.MEDIA_BASE_URL || import.meta.env?.MEDIA_BASE_URL || '/media';
+  return buildMediaUrl(base, `photos/${nasaId}/${hash}/${file}`);
 }

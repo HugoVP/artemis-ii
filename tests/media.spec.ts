@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadEnv } from 'vite';
 import { buildMediaUrl } from '../src/lib/media';
 
 function htmlFiles(dir: string): string[] {
@@ -17,7 +18,8 @@ test.describe('AC-6 media URLs come from MEDIA_BASE_URL (MEDIA-01)', () => {
   });
 
   test('AC-6 built pages use MEDIA_BASE_URL and load nothing from NASA hosts', () => {
-    const base = (process.env.MEDIA_BASE_URL || '/media').replace(/\/+$/, '');
+    // The same lookup the build uses: `.env` files first, exported variables on top.
+    const base = (loadEnv('production', process.cwd(), '').MEDIA_BASE_URL || '/media').replace(/\/+$/, '');
     const pages = htmlFiles('dist');
     expect(pages.length).toBeGreaterThan(20);
     const photoPage = readFileSync('dist/en/gallery/launch/sample-photo-01/index.html', 'utf8');

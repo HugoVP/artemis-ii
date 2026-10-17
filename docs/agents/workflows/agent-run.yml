@@ -240,14 +240,20 @@ jobs:
             claude-print)
               CFG=$(mktemp -d)
               # Bash runs in Claude Code's sandbox (bubblewrap); the container is the outer boundary, so the nested
-              # sandbox runs in its weaker mode. The file tools cannot write to the runner's temp folder (trusted copies).
+              # sandbox runs in its weaker mode. Commands may not ask to leave the sandbox, and their network is limited
+              # to the npm registry and NASA's domains (docs/SETUP.md); web pages go through the WebFetch tool. The file
+              # tools cannot write to the runner's temp folder (trusted copies).
               node -e '
                 const [file, temp] = process.argv.slice(1);
                 require("fs").writeFileSync(file, JSON.stringify({
-                  sandbox: { enabled: true, failIfUnavailable: true, enableWeakerNestedSandbox: true },
+                  sandbox: {
+                    enabled: true, failIfUnavailable: true, enableWeakerNestedSandbox: true, allowUnsandboxedCommands: false,
+                    network: { allowedDomains: ["registry.npmjs.org", "eol.jsc.nasa.gov", "pds-imaging.jpl.nasa.gov", "www.nasa.gov",
+                      "images.nasa.gov", "images-api.nasa.gov", "images-assets.nasa.gov"] },
+                  },
                   permissions: { deny: ["Edit(/" + temp + "/**)", "Write(/" + temp + "/**)"] },
                 }), { mode: 0o600 });' "$CFG/settings.json" "$RUNNER_TEMP"
-              ALLOWED=(Read Edit Write Glob Grep "Bash(npm *)" "Bash(npx *)" "Bash(node *)" "Bash(git status*)" "Bash(git diff*)" "Bash(git log*)" "Bash(ls *)" "Bash(mkdir *)")
+              ALLOWED=(Read Edit Write Glob Grep WebSearch WebFetch "Bash(npm *)" "Bash(npx *)" "Bash(node *)" "Bash(git status*)" "Bash(git diff*)" "Bash(git log*)" "Bash(ls *)" "Bash(mkdir *)")
               MCP_ARGS=()
               if [ "${#TOOLS[@]}" -gt 0 ]; then
                 node -e '
@@ -269,15 +275,6 @@ jobs:
             *)
               echo "Unknown runner '$RUNNER'."; exit 1 ;;
           esac
-
-      # Refreshing once more replaces the access token the agent had, so it stops working when the run ends.
-      - name: Replace the Figma MCP access token
-        if: always() && needs.prepare.outputs.figma != 'none'
-        env:
-          FIGMA_MCP_CLIENT_ID: ${{ secrets.FIGMA_MCP_CLIENT_ID }}
-          FIGMA_MCP_CLIENT_SECRET: ${{ secrets.FIGMA_MCP_CLIENT_SECRET }}
-          FIGMA_MCP_REFRESH_TOKEN: ${{ secrets.FIGMA_MCP_REFRESH_TOKEN }}
-        run: node "$RUNNER_TEMP/trusted/scripts/figma-mcp-token.mjs" revoke
 
       # Codex's workspace-write sandbox keeps .git read-only, so the agent cannot commit. This trusted step does it,
       # with hooks disabled, without the model key in its environment, and without the agent's scratch folder.
@@ -456,6 +453,34 @@ jobs:
         run: gh issue comment "$ISSUE" --repo "$REPO" --body "The agent opened $PR_URL"
 
   # Any failure after a successful prepare is reported on the work order and handed to Hugo.
+  # Replaces the run's Figma MCP access token, so the token the agent had stops working. It runs on a fresh runner
+  # from a clean checkout of main: the work job ran project code (npm install scripts), so its copy of the script is
+  # no longer trusted with the refresh token.
+  figma-revoke:
+    needs: [prepare, work]
+    if: always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' && needs.prepare.outputs.figma != 'none'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: agents
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Replace the Figma MCP access token
+        env:
+          FIGMA_MCP_CLIENT_ID: ${{ secrets.FIGMA_MCP_CLIENT_ID }}
+          FIGMA_MCP_CLIENT_SECRET: ${{ secrets.FIGMA_MCP_CLIENT_SECRET }}
+          FIGMA_MCP_REFRESH_TOKEN: ${{ secrets.FIGMA_MCP_REFRESH_TOKEN }}
+        run: node scripts/figma-mcp-token.mjs revoke
+
   escalate:
     needs: [prepare, work, publish]
     if: always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' && (needs.work.result != 'success' || needs.publish.result != 'success')

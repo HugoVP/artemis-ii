@@ -77,7 +77,7 @@ test("publish pushes only after the destination ref check, and never merges", ()
 
 test("the agent never receives credentials in its checkout, and runs with a bounded time", () => {
   for (const m of run.matchAll(/actions\/checkout@[0-9a-f]{40}[^\n]*\n(?:\s+with:\n(?:\s{10}.+\n)+)?/g)) assert.match(m[0], /persist-credentials: false/);
-  for (const name of ["prepare", "work", "publish", "escalate"]) assert.match(job(run, name), /timeout-minutes: \d+/);
+  for (const name of ["prepare", "work", "publish", "figma-revoke", "escalate"]) assert.match(job(run, name), /timeout-minutes: \d+/);
   assert.match(job(run, "work"), /timeout-minutes: 90/);
   assert.match(run, /retention-days: 7/);
 });
@@ -169,10 +169,15 @@ test("single-line run: values contain no colon followed by a space, which is inv
 test("the Figma refresh token is read only by the token steps, from the trusted script, and the agent gets the access token only", () => {
   const work = job(run, "work");
   const issue = /- name: Get a Figma MCP access token\n([\s\S]*?)(?=\n      #|\n      - name:)/.exec(work)[1];
-  const revoke = /- name: Replace the Figma MCP access token\n([\s\S]*?)(?=\n      #|\n      - name:|\n      - uses:)/.exec(work)[1];
   assert.match(issue, /if: needs\.prepare\.outputs\.figma != 'none'/);
-  assert.match(revoke, /if: always\(\) && needs\.prepare\.outputs\.figma != 'none'/);
-  for (const step of [issue, revoke]) assert.match(step, /\$RUNNER_TEMP\/trusted\/scripts\/figma-mcp-token\.mjs/);
+  assert.match(issue, /\$RUNNER_TEMP\/trusted\/scripts\/figma-mcp-token\.mjs/);
+  // The replacement runs in its own job, from a clean checkout of main: the work job ran npm install scripts.
+  const revoke = job(run, "figma-revoke");
+  assert.match(revoke, /^    if: always\(\) && github\.triggering_actor == vars\.AGENT_TRUSTED_LOGIN && needs\.prepare\.result == 'success' && needs\.prepare\.outputs\.figma != 'none'/m);
+  assert.match(revoke, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+  assert.match(revoke, /run: node scripts\/figma-mcp-token\.mjs revoke/);
+  assert.doesNotMatch(revoke.replace(/^\s*#.*$/gm, ""), /\bnpm\b/);
+  assert.doesNotMatch(work, /figma-mcp-token\.mjs" revoke|FIGMA_MCP_REFRESH_TOKEN[\s\S]*Install the project dependencies[\s\S]*FIGMA_MCP_REFRESH_TOKEN/);
   assert.equal([...run.matchAll(/secrets\.FIGMA_MCP_REFRESH_TOKEN/g)].length, 2);
   const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      #|\n      - name:)/.exec(work)[1];
   assert.doesNotMatch(agentStep, /FIGMA_MCP_REFRESH_TOKEN|FIGMA_MCP_CLIENT/);
@@ -189,6 +194,8 @@ test("Figma write tools are offered only to stages that need figma-write, for bo
   assert.match(agentStep, /--permission-mode dontAsk/);
   assert.match(agentStep, /--strict-mcp-config/);
   assert.match(agentStep, /failIfUnavailable: true/);
+  assert.match(agentStep, /allowUnsandboxedCommands: false/);
+  assert.match(agentStep, /allowedDomains: \["registry\.npmjs\.org"/);
   assert.doesNotMatch(agentStep, /dangerously|bypassPermissions/);
 });
 
@@ -200,6 +207,5 @@ test("project dependencies are installed after the Figma token step and before t
   assert.ok(at("Prepare the workspace") < at("Get a Figma MCP access token"));
   assert.ok(at("Get a Figma MCP access token") < at("Install the project dependencies"));
   assert.ok(at("Install the project dependencies") < at("Run the agent"));
-  assert.ok(at("Run the agent") < at("Replace the Figma MCP access token"));
   assert.equal([...run.matchAll(/npm ci/g)].length, 1);
 });

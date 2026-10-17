@@ -9,12 +9,14 @@ artemis-ii/
 ├── CURATION.md                photo selection (Stage 05)
 ├── astro.config.mjs  tailwind.config.*  tsconfig.json
 ├── package.json  package-lock.json
+├── Dockerfile  compose.yaml  .dockerignore   development and test images (docs/DOCKER.md)
+├── .devcontainer/             dev container for VS Code and Codespaces
 ├── .github/
 │   ├── workflows/             ci, security, preview-build, deploy-preview, deploy-staging, deploy-production, media, dast (Stage 03)
 │   ├── dependabot.yml         dependency updates (Stage 03)
 │   └── pull_request_template.md
 ├── docs/
-│   ├── PLAN.md  DELIVERY.md  SETUP.md  STRUCTURE.md  SITEMAP.md
+│   ├── PLAN.md  DELIVERY.md  SETUP.md  STRUCTURE.md  SITEMAP.md  DOCKER.md
 │   ├── agents/                how to run stages with any agent
 │   ├── specs/                 product spec, design spec, one spec per stage
 │   └── content-review/        text drafts (Stage 08)

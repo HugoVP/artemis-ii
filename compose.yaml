@@ -1,0 +1,43 @@
+# Local development with Docker. See docs/DOCKER.md.
+#   docker compose up dev                      dev server on http://localhost:4321
+#   docker compose run --rm --build test       checks, build and Playwright tests, as in CI
+#   docker compose up --build preview          the static build on http://localhost:8080
+x-images: &images
+  NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
+  NGINX_IMAGE: ${NGINX_IMAGE:-nginx:1.29-alpine}
+
+services:
+  dev:
+    build: { context: ., target: dev, args: *images }
+    ports: ["4321:4321"]
+    # The named volume outlives image rebuilds, so install against the current lockfile at every start.
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0"]
+    # Passed through only when set, with no default, so values in a workspace .env file still apply
+    # (the app falls back to /media and to its own contact section by itself).
+    environment:
+      - MEDIA_BASE_URL
+      - CONTACT_URL
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+
+  test:
+    build: { context: ., target: test, args: *images }
+    profiles: [test]
+    # Chromium needs more shared memory than Docker's default.
+    ipc: host
+
+  preview:
+    # MEDIA_BASE_URL and CONTACT_URL are baked into the pages at build time, so they are build arguments here.
+    build:
+      context: .
+      target: preview
+      args:
+        <<: *images
+        MEDIA_BASE_URL: ${MEDIA_BASE_URL:-/media}
+        CONTACT_URL: ${CONTACT_URL:-}
+    profiles: [preview]
+    ports: ["8080:80"]
+
+volumes:
+  node_modules:

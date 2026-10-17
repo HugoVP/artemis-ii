@@ -50,6 +50,7 @@ jobs:
       issue: ${{ steps.order.outputs.issue }}
       key_secret: ${{ steps.order.outputs.key_secret }}
       branch: ${{ steps.order.outputs.branch }}
+      figma: ${{ steps.order.outputs.figma }}
     steps:
       # Always main: the checks come from main and an issue or PR cannot change them.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -112,6 +113,9 @@ jobs:
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
           echo "agent=$AGENT" >> "$GITHUB_OUTPUT"
           echo "key_secret=$KEY_SECRET" >> "$GITHUB_OUTPUT"
+          # Only stages that need figma-read get the Figma snapshot (and so the read-only Figma token).
+          FIGMA=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).figma" "$RUNNER_TEMP/plan.json")
+          echo "figma=$FIGMA" >> "$GITHUB_OUTPUT"
           echo "branch=agent/stage-${STAGE}-${AGENT}" >> "$GITHUB_OUTPUT"
 
       - name: Tell the work order that the run did not start
@@ -170,6 +174,16 @@ jobs:
           cp -r scripts AGENTS.md "$RUNNER_TEMP/trusted/"
           # The key is not in the environment yet, so install scripts cannot read it.
           npm ci --no-audit --no-fund
+
+      # Agents cannot use the Figma MCP server in CI (it needs an interactive OAuth login). A trusted step reads the
+      # design through Figma's REST API with a read-only token, from the trusted copy of the script, before the agent
+      # starts. The token lives in this step only; the agent gets the files in .agent/figma/ and never the token.
+      - name: Snapshot the Figma design
+        if: needs.prepare.outputs.figma == 'true'
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_READ_TOKEN }}
+          FIGMA_FILE_URL: ${{ vars.FIGMA_FILE_URL }}
+        run: node "$RUNNER_TEMP/trusted/scripts/figma-snapshot.mjs" .agent/figma
 
       - name: Run the agent
         env:

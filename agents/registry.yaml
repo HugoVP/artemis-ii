@@ -5,4 +5,4 @@
   provider: openai
   key_secret: AGENT_KEY_CODEX      # secret of the GitHub environment "agents"; never written anywhere else
   runner: codex-exec               # how agent-run.yml starts it
-  capabilities: [git, node, browser]
+  capabilities: [git, node, browser, web, figma-read]   # web: the sandbox has network access; figma-read: a read-only snapshot of the design, see docs/agents/adding-an-agent.md

@@ -112,7 +112,7 @@ test("the registry parser reads scalars and inline lists, and rejects incomplete
   const real = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
   assert.equal(real[0].id, "codex");
   assert.equal(real[0].key_secret, "AGENT_KEY_CODEX");
-  assert.deepEqual(real[0].capabilities, ["git", "node", "browser"]);
+  assert.deepEqual(real[0].capabilities, ["git", "node", "browser", "web", "figma-read"]);
   assert.throws(() => parseRegistry("- id: x\n  runner: y\n"), /key_secret/);
   assert.throws(() => parseRegistry("  id: x\n"), /Unreadable|start with/);
 });
@@ -281,4 +281,12 @@ test("the work and publish diffs use the merge base, so a main that moved is not
   const three = parsePathList(git("diff", "--no-renames", "--name-only", "-z", "main...agent/x"));
   assert.deepEqual(two.sort(), ["AGENTS.md", "mine.txt"], "two endpoints blame the agent for main's change");
   assert.deepEqual(three, ["mine.txt"]);
+});
+
+test("Codex can take stages that need the web or the Figma snapshot, and the plan says when Figma is needed", async () => {
+  const registry = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
+  const codex = registry.find((a) => a.id === "codex");
+  assert.deepEqual(missingCapabilities(["node", "browser", "figma-read"], codex.capabilities), []);
+  assert.deepEqual(missingCapabilities(["web"], codex.capabilities), []);
+  assert.deepEqual(missingCapabilities(["figma-write"], codex.capabilities), ["figma-write"]);
 });

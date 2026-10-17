@@ -161,3 +161,17 @@ test("single-line run: values contain no colon followed by a space, which is inv
     }
   }
 });
+
+test("the Figma token is read in one step, before the agent, only for stages that need figma-read, from the trusted script", () => {
+  assert.equal([...run.matchAll(/secrets\.FIGMA_READ_TOKEN/g)].length, 1);
+  const work = job(run, "work");
+  const step = /- name: Snapshot the Figma design\n([\s\S]*?)(?=\n      - name:)/.exec(work)[1];
+  assert.match(step, /if: needs\.prepare\.outputs\.figma == 'true'/);
+  assert.match(step, /FIGMA_TOKEN: \$\{\{ secrets\.FIGMA_READ_TOKEN \}\}/);
+  assert.match(step, /\$RUNNER_TEMP\/trusted\/scripts\/figma-snapshot\.mjs/);
+  assert.ok(work.indexOf("- name: Snapshot the Figma design") < work.indexOf("- name: Run the agent"));
+  const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(work)[1];
+  assert.doesNotMatch(agentStep, /FIGMA/);
+  for (const name of ["prepare", "publish", "escalate"]) assert.doesNotMatch(job(run, name), /FIGMA_READ_TOKEN/);
+  assert.match(job(run, "prepare"), /figma=\$FIGMA/);
+});

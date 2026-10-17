@@ -69,6 +69,7 @@ The scheduled routine runs with only the Figma connector (`docs/agents/claude-co
 - If implementation needs a design change, update the Figma file and `design.md` in the same PR and list it under "Spec changes", with links to the changed frames.
 - In "What to review", link each changed page to its Figma frame so Hugo can compare side by side.
 - If your agent has no Figma access, you can still run stages that do not change the design: read `design.md`. Stages that need Figma say so in the "Needs" column of `docs/PLAN.md`.
+- In the agent pipeline there is no Figma MCP server. For `figma-read`, a pipeline step takes a read-only snapshot of the design into `.agent/figma/` (frames as PNG, node trees as JSON) before the agent starts, and the agent reads that instead (`docs/agents/adding-an-agent.md`). `figma-write` is not available there.
 
 ## Rules for each stage
 

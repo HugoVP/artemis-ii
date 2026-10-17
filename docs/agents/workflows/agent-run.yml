@@ -121,7 +121,8 @@ jobs:
           REPO: ${{ github.repository }}
           ISSUE: ${{ steps.order.outputs.issue }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: gh issue comment "$ISSUE" --repo "$REPO" --body "The agent run did not start. The reason is in the log: $RUN_URL"
+        run: |
+          gh issue comment "$ISSUE" --repo "$REPO" --body "The agent run did not start. The reason is in the log: $RUN_URL"
 
   work:
     needs: prepare

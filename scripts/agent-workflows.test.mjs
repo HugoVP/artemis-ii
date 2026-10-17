@@ -149,3 +149,13 @@ test("the agent step never asks the CLI to write to a path of the agent's choosi
   assert.doesNotMatch(run, /dangerously-bypass/);
   assert.match(step, /--sandbox workspace-write/);
 });
+
+test("single-line run: values contain no colon followed by a space, which is invalid in a plain YAML scalar", () => {
+  for (const [name, text] of [["agent-run.yml", run], ["agent-runner-image.yml", image]]) {
+    for (const m of text.matchAll(/^\s*(?:- )?run: ([^|>\n].*)$/gm)) {
+      const value = m[1];
+      const quoted = /^["'].*["']$/.test(value);
+      assert.ok(quoted || !/: /.test(value.replace(/\$\{\{.*?\}\}/g, "")), `${name}: ${value}`);
+    }
+  }
+});

@@ -99,8 +99,10 @@ jobs:
           gh pr list --repo "$REPO" --state open --limit 100 --json title,isCrossRepository > "$RUNNER_TEMP/prs.json"
           node scripts/agent-checks.mjs open-stage-pr "$RUNNER_TEMP/prs.json"
 
-          # Rule 1 of AGENTS.md: only the next pending stage, with an agent that has the capabilities it needs.
-          node scripts/agent-checks.mjs plan docs/PLAN.md agents/registry.yaml "$STAGE" "$AGENT" > "$RUNNER_TEMP/plan.json"
+          # Rule 1 of AGENTS.md: only the next stage to run, with an agent that has the capabilities it needs.
+          # Steps 4 and 5 of next-stage.md: an earlier stage that is in review and not merged stops the run.
+          gh pr list --repo "$REPO" --state merged --limit 200 --json number --jq '[.[].number]' > "$RUNNER_TEMP/merged.json"
+          node scripts/agent-checks.mjs plan docs/PLAN.md agents/registry.yaml "$STAGE" "$AGENT" "$RUNNER_TEMP/merged.json" > "$RUNNER_TEMP/plan.json"
           KEY_SECRET=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).keySecret" "$RUNNER_TEMP/plan.json")
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
           echo "agent=$AGENT" >> "$GITHUB_OUTPUT"
@@ -167,7 +169,7 @@ jobs:
           CODEX_API_KEY: ${{ secrets[needs.prepare.outputs.key_secret] }}
         run: |
           set -euo pipefail
-          KICKOFF="Read AGENTS.md and follow docs/agents/next-stage.md. Run Stage ${STAGE} only. You run inside the agent pipeline (see 'When the pipeline runs you' in docs/agents/next-stage.md): commit on the current branch, do not push, and write the PR title to .agent/pr-title.txt and the PR body to .agent/pr-body.md."
+          KICKOFF="Read AGENTS.md and follow docs/agents/next-stage.md. Run Stage ${STAGE} only. You run inside the agent pipeline (see 'When the pipeline runs you' in docs/agents/next-stage.md): leave your changes in the working tree (the pipeline commits them), do not push, and write the PR title to .agent/pr-title.txt and the PR body to .agent/pr-body.md."
           codex exec \
             --sandbox workspace-write \
             -c sandbox_workspace_write.network_access=true \
@@ -175,6 +177,16 @@ jobs:
             --color never \
             --output-last-message .agent/last-message.txt \
             "$KICKOFF"
+
+      # Codex's workspace-write sandbox keeps .git read-only, so the agent cannot commit. This trusted step does it,
+      # with hooks disabled, without the model key in its environment, and without the agent's scratch folder.
+      - name: Commit the agent's changes
+        run: |
+          set -euo pipefail
+          [ -s .agent/pr-title.txt ] || { echo "The agent did not write .agent/pr-title.txt."; exit 1; }
+          git add -A -- . ':!.agent' ':!node_modules'
+          if git diff --cached --quiet; then echo "The agent changed nothing."; exit 1; fi
+          git -c core.hooksPath=/dev/null commit -q -F .agent/pr-title.txt
 
       - name: Check that no write token reached the workspace
         run: |
@@ -190,7 +202,7 @@ jobs:
         run: |
           set -euo pipefail
           git rev-parse --verify "$BRANCH" >/dev/null
-          [ -n "$(git rev-list "origin/main..$BRANCH")" ] || { echo "The agent made no commits."; exit 1; }
+          [ -n "$(git rev-list "origin/main..$BRANCH")" ] || { echo "There is nothing to publish."; exit 1; }
           [ -s .agent/pr-title.txt ] && [ -s .agent/pr-body.md ] || { echo "The agent did not write .agent/pr-title.txt and .agent/pr-body.md."; exit 1; }
           git bundle create .agent/work.bundle "$BRANCH" --not origin/main
           # NUL-separated, no rename detection: both sides of a rename are listed and names are never quoted.
@@ -298,7 +310,7 @@ jobs:
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin "refs/heads/$BRANCH:refs/heads/$BRANCH"
 
           cp "$B/.agent/pr-body.md" "$RUNNER_TEMP/body.md"
-          grep -q "Closes #${ISSUE}" "$RUNNER_TEMP/body.md" || printf '\n\nWork order: Closes #%s\n' "$ISSUE" >> "$RUNNER_TEMP/body.md"
+          grep -Eq "Closes #${ISSUE}([^0-9]|$)" "$RUNNER_TEMP/body.md" || printf '\n\nWork order: Closes #%s\n' "$ISSUE" >> "$RUNNER_TEMP/body.md"
           ARGS=(--repo "$REPO" --base main --head "$BRANCH" --title "$(cat "$B/.agent/pr-title.txt")" --body-file "$RUNNER_TEMP/body.md" --label agent-authored)
           if [ "$DRAFT" = true ]; then
             printf '\n\n> Draft: %s\n' "$(cat "$RUNNER_TEMP/warning.txt")" >> "$RUNNER_TEMP/body.md"

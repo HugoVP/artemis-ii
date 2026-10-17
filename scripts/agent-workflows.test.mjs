@@ -111,3 +111,18 @@ test("the draft warning never goes through a step output", () => {
   assert.doesNotMatch(run, /outputs\.warning|warning=/);
   assert.match(run, /publish-plan/);
 });
+
+test("a trusted step makes the commit, with hooks off and without the scratch folder, after the agent ran", () => {
+  const work = job(run, "work");
+  assert.ok(work.indexOf("- name: Run the agent") < work.indexOf("- name: Commit the agent's changes"));
+  const step = /- name: Commit the agent's changes\n([\s\S]*?)(?=\n      - name:)/.exec(work)[1];
+  assert.match(step, /core\.hooksPath=\/dev\/null/);
+  assert.match(step, /':!\.agent'/);
+  assert.doesNotMatch(step, /CODEX_API_KEY|secrets\./);
+});
+
+test("the work order line is matched on a numeric boundary, and prepare checks merged stage PRs", () => {
+  assert.match(run, /grep -Eq "Closes #\$\{ISSUE\}\(\[\^0-9\]\|\$\)"/);
+  assert.match(job(run, "prepare"), /--state merged/);
+  assert.match(job(run, "prepare"), /merged\.json/);
+});

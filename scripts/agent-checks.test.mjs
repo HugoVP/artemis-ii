@@ -76,7 +76,7 @@ test("the secret scan finds model keys, tokens, private keys and session links, 
   assert.deepEqual(findSecrets("sk-ant-" + "b".repeat(30)), ["Anthropic API key"]);
   assert.deepEqual(findSecrets("ghp_" + "c".repeat(36)), ["GitHub token"]);
   assert.deepEqual(findSecrets("-----BEGIN " + "RSA PRIVATE KEY-----"), ["private key"]);
-  assert.deepEqual(findSecrets("see https://claude.ai/code/" + "session_" + "abc"), ["session link"]);
+  assert.deepEqual(findSecrets("see https://claude.ai/code/" + "session_" + "A1b2C3d4E5f6G7h8"), ["session link"]);
   assert.deepEqual(findSecrets("plain text, a sk-ip, and AGENT_KEY_CODEX as a name"), []);
   const d = decidePublication({ files: ["src/a.ts"], patterns, texts: [key] });
   assert.equal(d.action, "reject");
@@ -105,7 +105,8 @@ test("the follow-up commit may only add the PR link to one or two lines of PLAN.
   assert.equal(checkPlanFollowUp(two, 21).ok, false, "another file");
 });
 
-import { parseRegistry, missingCapabilities, hasOpenStagePr, nextPendingStage } from "./agent-checks.mjs";
+import { parseRegistry, missingCapabilities, hasOpenStagePr, selectStage } from "./agent-checks.mjs";
+import { parseStages } from "./next-stage-issue.mjs";
 
 test("the registry parser reads scalars and inline lists, and rejects incomplete entries", async () => {
   const real = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
@@ -128,11 +129,21 @@ test("P2-6: the open-stage-PR guard counts same-repository PRs titled Stage, and
   assert.equal(hasOpenStagePr([]), false);
 });
 
-test("the next pending stage is read from the real PLAN.md", async () => {
+test("stage selection runs the first unapproved stage, skips merged in-review stages, and stops at unresolved ones", () => {
+  const rows = (...r) => parseStages(["| # | Stage | Needs | Spec | Status | PR | Issue |", "| --- | --- | --- | --- | --- | --- | --- |", ...r.map(([n, st, pr]) => `| ${n} | S${n} | \`node\` | w | ${st} | ${pr} | — |`)].join("\n"));
+  const none = new Set();
+  assert.equal(selectStage(rows(["01", "approved", "#4"], ["02", "pending", ""]), none).stage.number, "02");
+  assert.equal(selectStage(rows(["01", "in review", "#4"], ["02", "pending", ""]), new Set([4])).stage.number, "02", "merged stage is approved by the run");
+  assert.match(selectStage(rows(["01", "in review", "#4"], ["02", "pending", ""]), none).stop, /Stage 01 is in review/, "open or closed-unmerged PR stops the run");
+  assert.match(selectStage(rows(["01", "in review", ""], ["02", "pending", ""]), none).stop, /no PR/);
+  assert.match(selectStage(rows(["01", "approved", "#4"]), none).stop, /Every stage is approved/);
+  assert.match(selectStage(rows(["01", "weird", ""]), none).stop, /unknown status/);
+});
+
+test("the real PLAN.md parses into stages that selectStage can walk", async () => {
   const plan = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
-  const s = nextPendingStage(plan);
-  assert.match(s.number, /^[0-9]{2}$/);
-  assert.equal(s.status, "pending");
+  const r = selectStage(parseStages(plan), new Set());
+  assert.ok(r.stage ? /^[0-9]{2}$/.test(r.stage.number) : typeof r.stop === "string");
 });
 
 import { linkPlan } from "./agent-checks.mjs";
@@ -213,4 +224,25 @@ test("a draft comes from protected paths, from the agent's own request, or both;
   assert.match(both.warning, /AGENTS\.md\. The agent asked for a draft: blocked$/);
   assert.equal(cleanDraftReason("x".repeat(900)).length, 500);
   assert.equal(finalizePublication({ action: "publish" }, "   \n ").draft, false);
+});
+
+test("a session link needs an identifier: the placeholders in AGENTS.md and REVIEW.md are not flagged", async () => {
+  assert.deepEqual(findSecrets("for example `claude.ai/code/session_…`"), []);
+  assert.deepEqual(findSecrets("claude.ai/code/session_ and chatgpt.com/codex/tasks/"), []);
+  assert.deepEqual(findSecrets("https://chatgpt.com/codex/tasks/task_e_0123456789abcdef"), ["session link"]);
+  for (const f of ["../AGENTS.md", "../REVIEW.md"]) assert.deepEqual(findSecrets(await readFile(new URL(f, import.meta.url), "utf8")), [], f);
+});
+
+test("scanRange also finds a key in a file name, and decide scans the path list", () => {
+  const dir = mkdtempSync(join(tmpdir(), "scan-"));
+  const git = (...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" });
+  git("init", "-q", "-b", "main");
+  writeFileSync(join(dir, "a.txt"), "base\n");
+  git("add", "."); git("commit", "-q", "-m", "base");
+  git("checkout", "-q", "-b", "agent/x");
+  const key = "sk-" + "proj-" + "q".repeat(40);
+  writeFileSync(join(dir, `${key}.txt`), "clean contents\n");
+  git("add", "."); git("commit", "-q", "-m", "named file");
+  assert.deepEqual(scanRange("main", "agent/x", dir), ["OpenAI-style API key"]);
+  assert.equal(decidePublication({ files: [`${key}.txt`], patterns, texts: [`${key}.txt`] }).action, "reject");
 });

@@ -63,7 +63,8 @@ export function scanObjectBatch(batch) {
     const [, type, size] = batch.subarray(i, nl).toString("latin1").split(" ");
     const len = Number(size);
     if (!Number.isInteger(len)) throw new Error("Unreadable output of git cat-file --batch.");
-    if (type === "blob" || type === "commit" || type === "tag") for (const name of findSecrets(batch.subarray(nl + 1, nl + 1 + len).toString("latin1"))) found.add(name);
+    // Trees hold file names, so a key in a name is found too.
+    if (type === "blob" || type === "commit" || type === "tag" || type === "tree") for (const name of findSecrets(batch.subarray(nl + 1, nl + 1 + len).toString("latin1"))) found.add(name);
     i = nl + 1 + len + 1;
   }
   return [...found];
@@ -100,7 +101,7 @@ const SECRET_PATTERNS = [
   ["GitHub token", /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})/],
   ["Google API key", /\bAIza[0-9A-Za-z_-]{35}\b/],
   ["private key", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
-  ["session link", /claude\.ai\/code\/session_|chatgpt\.com\/codex\/tasks\//],
+  ["session link", /claude\.ai\/code\/session_[A-Za-z0-9]{8,}|chatgpt\.com\/codex\/tasks\/[A-Za-z0-9_-]{8,}/],
 ];
 
 export function findSecrets(text) {
@@ -143,9 +144,22 @@ export function hasOpenStagePr(prs) {
   return prs.some((p) => p.isCrossRepository === false && String(p.title).startsWith("Stage "));
 }
 
-// Rule 1 of AGENTS.md: take only the next pending stage.
-export function nextPendingStage(planMd) {
-  return parseStages(planMd).find((s) => s.status === "pending") ?? null;
+// Steps 4 and 5 of docs/agents/next-stage.md: the first stage that is not approved is the one to run. If it is
+// `pending`, run it. If it is `in review` and its PR is merged, the run marks it approved and moves on; if its PR
+// is open or was closed without merging, stop, so a later stage never starts before an earlier one is approved.
+// `merged` is the set of merged PR numbers.
+export function selectStage(stages, merged) {
+  for (const s of stages) {
+    if (s.status === "approved") continue;
+    if (s.status === "pending") return { stage: s };
+    if (s.status === "in review") {
+      const pr = Number(String(s.pr).replace(/\D/g, ""));
+      if (pr && merged.has(pr)) continue;
+      return { stop: `Stage ${s.number} is in review (${s.pr || "no PR"}) and is not merged: it waits for Hugo's decision.` };
+    }
+    return { stop: `Stage ${s.number} has the unknown status "${s.status}".` };
+  }
+  return { stop: "Every stage is approved." };
 }
 
 export const PR_BODY_HEADINGS = [
@@ -225,7 +239,7 @@ export function decidePublication({ files, patterns, texts }) {
 //   node scripts/agent-checks.mjs stage <issue title>
 //   node scripts/agent-checks.mjs ref <ref> <stage>
 //   node scripts/agent-checks.mjs open-stage-pr <json-file>
-//   node scripts/agent-checks.mjs plan <PLAN.md> <registry.yaml> <stage> <agent-id>
+//   node scripts/agent-checks.mjs plan <PLAN.md> <registry.yaml> <stage> <agent-id> <merged-prs.json>
 //   node scripts/agent-checks.mjs pr-text <title-file> <body-file> <stage>
 //   node scripts/agent-checks.mjs link-plan <PLAN.md> <stage> <pr>
 //   node scripts/agent-checks.mjs check-follow-up <diff-file> <pr>
@@ -258,9 +272,12 @@ async function main(argv) {
   }
   if (cmd === "plan") {
     // plan <PLAN.md> <registry.yaml> <stage> <agent-id>  -> prints JSON {stage, name, agent}; fails if not allowed
-    const stage = nextPendingStage(await readFile(args[0], "utf8"));
-    if (!stage) { console.error("No pending stage in docs/PLAN.md."); return 1; }
-    if (stage.number !== args[2]) { console.error(`Stage ${args[2]} is not the next pending stage (${stage.number} is).`); return 1; }
+    // plan <PLAN.md> <registry.yaml> <stage> <agent-id> <merged-prs.json>
+    const merged = new Set(JSON.parse(await readFile(args[4], "utf8")).map(Number));
+    const picked = selectStage(parseStages(await readFile(args[0], "utf8")), merged);
+    if (picked.stop) { console.error(picked.stop); return 1; }
+    const stage = picked.stage;
+    if (stage.number !== args[2]) { console.error(`Stage ${args[2]} is not the next stage to run (${stage.number} is).`); return 1; }
     const agent = parseRegistry(await readFile(args[1], "utf8")).find((a) => a.id === args[3]);
     if (!agent) { console.error(`Agent "${args[3]}" is not in agents/registry.yaml.`); return 1; }
     const missing = missingCapabilities(stage.needs, agent.capabilities);
@@ -308,6 +325,7 @@ async function main(argv) {
     const patterns = parseProtectedPaths(await readFile(args[0], "utf8"));
     const files = parsePathList(await readFile(args[1], "utf8"));
     const texts = await Promise.all(args.slice(2).map((f) => readFile(f, "utf8")));
+    texts.push(files.join("\n"));
     const d = decidePublication({ files, patterns, texts });
     console.log(JSON.stringify(d));
     return d.action === "reject" ? 1 : 0;

@@ -26,8 +26,8 @@ Agents cannot push to `.github/workflows/`, so the workflows live in `docs/agent
 
 ## What a run does
 
-1. `prepare` checks that the label (or the manual start) comes from `AGENT_TRUSTED_LOGIN`, that the issue title is `Run Stage NN: …`, that no stage PR is open, that NN is the next pending stage, and that the agent has the capabilities the stage needs.
-2. `work` runs the agent in the runner image with its model key and a read-only token. The agent commits on `agent/stage-NN-<id>` and writes `.agent/pr-title.txt` and `.agent/pr-body.md`. The job scans every new commit and blob (binary ones too) and uploads the result as an artifact kept 7 days.
+1. `prepare` checks that the label (or the manual start) comes from `AGENT_TRUSTED_LOGIN`, that the issue title is `Run Stage NN: …`, that no stage PR is open, that NN is the stage to run (the first one not approved; an earlier stage in review whose PR is not merged stops the run), and that the agent has the capabilities the stage needs.
+2. `work` runs the agent in the runner image with its model key and a read-only token. The agent edits files on the branch `agent/stage-NN-<id>` and writes `.agent/pr-title.txt` and `.agent/pr-body.md`; a trusted step then makes one commit (the Codex sandbox keeps `.git` read-only). The job scans every new commit and blob (binary ones too) and uploads the result as an artifact kept 7 days.
 3. `publish` checks the artifact again with scripts from `main` (destination ref, protected paths with no rename detection, secret scan of all new objects, PR text), pushes the branch with a short-lived App token, opens the PR with the label `agent-authored` (as a draft, with a warning, if it touches protected paths or the agent wrote `.agent/draft-reason.txt` because it was blocked), adds the PR link to `docs/PLAN.md` and comments on the work order.
 4. A failure after `prepare` comments on the work order and adds the label `needs-hugo`.
 

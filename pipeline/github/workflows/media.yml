@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p media-out
           if [ -f scripts/ingest.ts ]; then npm run ingest -- --build --out media-out; else echo '{"photos":[]}' > media-out/manifest.json; fi
-      - uses: actions/upload-artifact@0000000000000000000000000000000000000000 # UNRESOLVED v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: media
           path: media-out

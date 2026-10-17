@@ -25,10 +25,10 @@ on:
 permissions: {}
 
 # One run at a time for the whole workflow (prepare, work and publish), so the open-stage-PR guard of a
-# second run sees the PR of the first. Labels unrelated to agents get a group of their own, so they cannot
-# displace a waiting run.
+# second run sees the PR of the first. Events that prepare would ignore or reject (other labels, other actors)
+# get a group of their own, so they cannot displace a waiting run.
 concurrency:
-  group: ${{ (github.event_name == 'workflow_dispatch' || (startsWith(github.event.label.name, 'agent:') && contains(github.event.issue.labels.*.name, 'agent-task') && github.event.issue.pull_request == null)) && 'agent-run' || format('agent-run-ignored-{0}', github.run_id) }}
+  group: ${{ (github.actor == vars.AGENT_TRUSTED_LOGIN && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && (github.event_name == 'workflow_dispatch' || (startsWith(github.event.label.name, 'agent:') && contains(github.event.issue.labels.*.name, 'agent-task') && github.event.issue.pull_request == null))) && 'agent-run' || format('agent-run-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -182,7 +182,6 @@ jobs:
             -c sandbox_workspace_write.network_access=true \
             --ephemeral \
             --color never \
-            --output-last-message .agent/last-message.txt \
             "$KICKOFF"
 
       # Codex's workspace-write sandbox keeps .git read-only, so the agent cannot commit. This trusted step does it,

@@ -134,11 +134,18 @@ test("the work order line is matched on a numeric boundary, and prepare checks m
 test("path diffs use three dots, and the concurrency group mirrors the eligibility of prepare", () => {
   for (const m of run.matchAll(/git diff [^\n]*--name-only[^\n]*/g)) assert.match(m[0], /origin\/main\.\.\.\$/);
   const group = /^  group: (.*)$/m.exec(run)[1];
-  for (const part of ["agent-task", "issue.pull_request == null", "startsWith(github.event.label.name, 'agent:')"]) assert.ok(group.includes(part), part);
+  for (const part of ["agent-task", "issue.pull_request == null", "startsWith(github.event.label.name, 'agent:')", "github.actor == vars.AGENT_TRUSTED_LOGIN", "github.triggering_actor == vars.AGENT_TRUSTED_LOGIN"]) assert.ok(group.includes(part), part);
 });
 
 test("a re-run by anyone but the trusted login is refused, in prepare and again in the later jobs", () => {
   assert.match(job(run, "prepare"), /TRIGGERING_ACTOR: \$\{\{ github\.triggering_actor \}\}/);
   assert.match(job(run, "prepare"), /trusted "\$TRIGGERING_ACTOR" "\$TRUSTED"/);
   for (const name of ["work", "publish", "escalate"]) assert.match(job(run, name), /^    if: .*github\.triggering_actor == vars\.AGENT_TRUSTED_LOGIN/m, name);
+});
+
+test("the agent step never asks the CLI to write to a path of the agent's choosing, and never bypasses the sandbox", () => {
+  const step = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(run)[1];
+  assert.doesNotMatch(step, /--output-last-message|-o \./);
+  assert.doesNotMatch(run, /dangerously-bypass/);
+  assert.match(step, /--sandbox workspace-write/);
 });

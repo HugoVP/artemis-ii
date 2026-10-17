@@ -45,7 +45,9 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 
 **Job `prepare`:**
 
-- Runs only if the label was added by the repository owner (`github.event.sender.login == github.repository_owner`) and the issue has the `agent-task` label.
+- Has two start paths, both owner-validated:
+  - **Label path:** runs only if the label was added by the repository owner (`github.event.sender.login == github.repository_owner`) and the issue has the `agent-task` label.
+  - **Manual path (`workflow_dispatch`):** runs only if the actor is the repository owner. It has no issue to parse, so the `stage` input is validated against `^[0-9]{2}$`, the stage must be the next `pending` stage in `docs/PLAN.md`, and the job resolves its `Run Stage NN` issue by searching for the open issue with that title and the `agent-task` label. If none exists, the run stops. The kickoff and the issue comments of the later jobs use that issue.
 - Reads the stage number from the issue title. It treats the title as data: only `^Run Stage [0-9]{2}:` is accepted, and the number is passed on through an environment variable, never interpolated into a shell command.
 - Reads `agents/registry.yaml` (created in phase 2 with one entry) to find how to start that agent and which capabilities it has. If the stage's "Needs" column asks for a capability the agent lacks, the job comments on the issue and stops.
 - Refuses to start a new stage if a stage PR is already open (rule 3 of `AGENTS.md`). Follow-up requests on an existing PR use the separate continuation mode described below.
@@ -57,7 +59,7 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 - Creates the branch `agent/stage-NN-<agent>` locally.
 - Starts the agent headless with the kickoff prompt from the issue: "Read AGENTS.md and follow docs/agents/next-stage.md". The agent must write its PR title and body to `.agent/pr-title.txt` and `.agent/pr-body.md`. `.agent/` is git-ignored.
 - Exposes only that agent's model key, and only to the step that starts it. The key comes from the GitHub environment `agents`.
-- Has `timeout-minutes` set (for example 90). Serialization is not set on this job alone: the whole workflow (`prepare`, `work` and `publish`) runs under one `concurrency` group per stage, `agent-run-stage-NN`, without cancelling a run in progress. A lock held only by `work` would be released before `publish` finishes. The open-stage-PR guard of `prepare` runs after the run has acquired that group, so two requests cannot both pass it before either opens a PR.
+- Has `timeout-minutes` set (for example 90). Serialization is not set on this job alone: the whole workflow (`prepare`, `work` and `publish`) runs under one repository-wide `concurrency` group, `agent-run`, without cancelling a run in progress. A lock held only by `work`, or one per stage number, would let two requests for different stages both pass the open-stage-PR guard before either opens a PR, which `AGENTS.md` rule 3 forbids across stages. The open-stage-PR guard of `prepare` runs after the run has acquired that group, so only one request at a time can pass it.
 - Scans before it uploads anything. A trusted scan step, run from `main` and not from the repository, checks every commit in the bundle, every file in it and the PR text for the registered model keys and for private keys. Only if the scan passes does it upload the bundle and the `.agent/` PR files as a workflow artifact with short retention (for example 7 days). If it finds a match, nothing is uploaded and the run stops with a security escalation. Agent transcripts and logs are never uploaded; only a short run summary written by the workflow is kept. Log masking does not clean artifacts, so the artifact is a second, independent check on top of the `publish` scan.
 
 **Job `publish`:**
@@ -124,10 +126,10 @@ Phase 2 needs one amendment before it is built, not after:
 
 - **P2-1:** a label added by Hugo starts a run. The same label added by another account does not (checked with a test account, or by reading the `prepare` condition and its test).
 - **P2-2:** the `work` job has no GitHub write token. Checked in the job's permissions block, and by a step that fails if `git push` works.
-- **P2-3:** a run that touches a protected path not listed in the spec opens a draft PR with a warning. The test covers one path of each kind: a workflow file, `AGENTS.md`, `public/_headers` and a scanner configuration file.
+- **P2-3:** a run that touches a protected path not listed in the spec opens a draft PR with a warning. The test covers `AGENTS.md`, `public/_headers` and a scanner configuration file. A direct edit of `.github/workflows/**` is a separate outcome: the App has no Workflows permission, so `publish` does not try to push it. It rejects the run, escalates to Hugo (`needs-hugo`), and the proposed workflow goes through the `docs/agents/workflows/` route for Hugo to copy.
 - **P2-4:** the PR opened by the App starts CI and the preview.
 - **P2-5:** a merge attempt by the App on a test PR into `main` is refused because `approval` is missing (the App's merge permission is not what stops it), the App cannot push to `.github/workflows/`, and `publish` refuses a destination ref outside `agent/stage-NN-*` and another stage's branch (test with a sandbox branch).
-- **P2-6:** two runs for the same stage never overlap, including the `publish` job: a second request waits until the first run has fully finished, and its open-stage-PR guard sees the PR the first run opened.
+- **P2-6:** two runs never overlap, for the same stage or for different stages, including the `publish` job: a second request waits until the first run has fully finished, and its open-stage-PR guard sees the PR the first run opened.
 - **P2-7:** the checks of `publish` have unit tests in `scripts/*.test.mjs`, like the Notion and Linear scripts.
 
 ### Rollback
@@ -242,7 +244,7 @@ These need coordinated PRs that Hugo approves before phase 3 is built. Until the
 | A stage PR targets `main`, and merging it starts the next stage | A stage PR targets `iteration/N`, and the pipeline starts the next stage after its merge |
 | "If a stage PR is open, do not start another stage" | Same rule, per iteration |
 | Hugo approves each stage | Hugo approves the iteration plan and the iteration PR |
-| `PLAN.md` statuses: pending, in review, approved | Adds `integrated` (merged into `iteration/N`, not yet in `main`) |
+| `PLAN.md` statuses: pending, in review, approved | Adds `integrated` (merged into `iteration/N`, not yet in `main`). When Hugo accepts an iteration, the iteration PR itself carries the finalization: its last commit changes every `integrated` row of that iteration to `approved`, so `main` never contains `integrated`. `linear-sync.yml` and `notion-sync.yml` keep running only on `main` and keep seeing the three current statuses. `docs/agents/next-stage.md` is amended to count `integrated` as done when it picks the next stage inside an iteration. |
 | Merging a stage PR approves the next stage's spec (`docs/specs/README.md`) | The spec written at the end of a stage is approved with the iteration PR, or by Hugo's iteration plan when it is part of it; the pipeline never treats its own merge as that approval |
 | Content and design review stages (🔍 🎨 in `docs/PLAN.md`) need Hugo's approval before later stages use the result | These stages keep Hugo's approval inside the iteration, or the iteration plan marks them as a stop where the pipeline waits for him |
 | CI runs only on pull requests to `main` | CI, security checks and previews also run on pull requests to `iteration/**`, and every check the gate requires is verified to run there |

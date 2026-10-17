@@ -1,0 +1,18 @@
+---
+import { sectionPath, type Lang } from '../i18n/routes';
+import { ui } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const f = ui[lang].footer;
+---
+
+<footer class="border-t border-border bg-surface">
+  <div class="max-w-content mx-auto px-4 py-5 grid gap-2 text-caption text-muted">
+    <p class="m-0"><a href={f.creditLink} rel="noopener noreferrer">{f.credit}</a></p>
+    <p class="m-0">{f.independence}</p>
+    <p class="m-0">{f.ai} <a href={`${sectionPath(lang, 'about')}#ai`}>{f.aiLink}</a></p>
+  </div>
+</footer>

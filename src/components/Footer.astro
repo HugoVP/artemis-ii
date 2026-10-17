@@ -9,10 +9,10 @@ const { lang } = Astro.props;
 const f = ui[lang].footer;
 ---
 
-<footer class="bg-surface">
-  <div class="px-4 py-5 grid gap-3">
-    <p class="m-0 text-label font-semibold"><a class="text-text no-underline" href={f.creditLink} rel="noopener noreferrer">{f.credit}</a></p>
-    <p class="m-0 text-caption text-muted">{f.independence}</p>
-    <p class="m-0 text-label">{f.ai} <a class="text-text underline" href={`${sectionPath(lang, 'about')}#ai`}>{f.aiLink}</a></p>
+<footer class="border-t border-border bg-surface">
+  <div class="max-w-content mx-auto px-4 py-5 grid gap-2 text-caption text-muted">
+    <p class="m-0"><a href={f.creditLink} rel="noopener noreferrer">{f.credit}</a></p>
+    <p class="m-0">{f.independence}</p>
+    <p class="m-0">{f.ai} <a href={`${sectionPath(lang, 'about')}#ai`}>{f.aiLink}</a></p>
   </div>
 </footer>

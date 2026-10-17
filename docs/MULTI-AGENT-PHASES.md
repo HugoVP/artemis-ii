@@ -70,7 +70,7 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
   - No commit message, file or PR text contains secret-like strings or session links. A secret scanner runs over every commit in the bundle and over the PR text before anything is pushed, with patterns for the model keys of the registered providers and for private keys. The privacy filter of `notion-sync.mjs` (GitHub and Notion tokens, emails, session links) is a second check, not the main one, because it does not know model keys. If the scanner is a third-party tool, adding it is justified in the phase 2 PR.
   - The PR title starts with `Stage NN:` and the body follows the template.
 - Creates a token for the GitHub App with `actions/create-github-app-token`, scoped to this repository, valid for one hour.
-- Pushes only to a ref that matches `agent/stage-NN-*` for the validated stage number, opens the PR with the label `agent-authored`, and comments on the issue with the PR link. The App token is repository-wide, so this destination check is what keeps one run from touching another stage's branch.
+- Pushes only to a ref that matches `agent/stage-NN-*` for the validated stage number, opens the PR with the label `agent-authored`, and comments on the issue with the PR link. The App token is repository-wide, so this destination check is what keeps one run from touching another stage's branch. Once the PR exists, `publish` makes the follow-up commit that `AGENTS.md` rule 4 asks for: it adds the PR link to the stage's row and to its log line in `docs/PLAN.md`, and checks that this commit changes only those two lines. The worker cannot do it because the PR number does not exist yet, and an issue comment does not replace it.
 
 **Follow-up runs (continuation mode).** When Hugo or a reviewer asks for changes, Hugo adds the label `agent:<id>` on the existing stage PR. This is a separate mode of the workflow with its own checks, so it does not bypass the guards of a new run:
 
@@ -200,7 +200,7 @@ Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR tha
 4. Two reviewers review in read-only jobs with no write token at all; a separate trusted publisher posts each review and its verdict
 5. The leader addresses the findings (at most 2 rounds)
 6. Gate: CI + security checks + source checks + both reviewers report "no blocking findings"
-7. The pipeline merges the stage PR into iteration/N and starts the next stage
+7. The pipeline merges the stage PR into iteration/N, creates the `Run Stage NN` issue of the next stage from the validated iteration SHA (`next-stage.yml` only reacts to merges into `main`, so the handoff runs the same issue script against `iteration/N`), and then starts the next stage
 8. After the last stage, the pipeline opens "Iteration N" PR: iteration/N → main, with a summary and the preview link
 9. Hugo reviews the preview once and merges (or comments, and the flow goes back to step 3 for that stage)
 ```
@@ -307,14 +307,12 @@ A small Linux server that runs **self-hosted GitHub Actions runners**. The workf
 
 - The runner connects to GitHub (outbound only): the server needs no open inbound port.
 - Runners are **ephemeral**: each job gets a fresh container that is deleted after the job, so nothing from one run reaches the next.
-- **Isolation of the runner.** Runner groups are an organization or enterprise control, so a repository owned by a personal account cannot restrict a runner to specific workflows with them. A supported setup is a Phase 4 prerequisite, and one of these is chosen and tested before the runner is registered:
-  - Move the repository to a GitHub organization (a free one is enough, **to verify**) and use a runner group limited to this repository and to the agent workflows.
-  - Or, on a personal repository, register a repository-level runner with a label that only the agent workflows request, require approval for every outside collaborator's workflow run, never run on `pull_request` events from forks, and verify with a test fork PR that it cannot reach the runner.
+- **Isolation of the runner.** A runner label only selects a runner; it does not authorize workflows, and a modified workflow could request the same label. The enforceable control is a runner group limited to this repository and to the agent workflows, and runner groups exist only in a GitHub organization or enterprise. So Phase 4 requires the repository to live in an organization (a free one is enough, **to verify**) before any runner is registered. On a personal repository, Phase 4 is not built: the agent workflows stay on GitHub-hosted runners.
 - Docker runs rootless, or the runner runs in its own VM, so a job cannot reach the host.
 
 ### Security
 
-- Self-hosted runners must never run jobs from fork PRs (GitHub warns about this for public repositories). These workflows start only from Hugo's labels and from `main`, and the isolation chosen in "How it works" (organization runner group, or a workflow-only label with approval required for outside collaborators) enforces it.
+- Self-hosted runners must never run jobs from fork PRs (GitHub warns about this for public repositories). These workflows start only from Hugo's labels and from `main`, and the organization runner group described in "How it works" enforces it.
 - Secrets stay in GitHub environments. The server stores none, apart from the runner's registration.
 - Automatic security updates, SSH with keys only, and no other services on the server.
 - If the server is compromised, Hugo removes the runner in GitHub, rotates the model keys and the App key, and rebuilds the server from its setup script.
@@ -333,13 +331,13 @@ To compare when phase 4 starts. Prices and free tiers change, so all of them are
 
 1. Choose the host and create the server.
 2. Run the setup script from the phase 4 PR (installs Docker and the runner, hardens SSH).
-3. Choose the isolation from "How it works" (organization with a runner group, or a repository-level runner with a workflow-only label and approval required for outside collaborators), then register the runner.
+3. Move the repository to an organization if it is not in one, create the runner group limited to this repository and the agent workflows, then register the runner in that group.
 4. Set the repository variable that switches `runs-on`.
 
 ### Acceptance criteria
 
 - **P4-1:** a job on the self-hosted runner leaves no files or containers after it ends.
-- **P4-2:** with the isolation that was chosen (organization runner group, or workflow-only label with approval required for outside collaborators), a test fork PR cannot run a job on the self-hosted runner, and a workflow that is not an agent workflow cannot request it.
+- **P4-2:** with the runner group in place, a test fork PR cannot run a job on the self-hosted runner, and a workflow that is not an agent workflow cannot use the runner even if it asks for it (test with a throwaway workflow on a branch).
 - **P4-3:** switching the variable back moves every job to GitHub-hosted runners without other changes.
 
 ### Rollback

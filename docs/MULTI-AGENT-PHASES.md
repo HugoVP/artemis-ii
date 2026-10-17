@@ -13,6 +13,8 @@ Each phase has the same sections: what it delivers, how it works, security, what
 
 ## Phase 2: one agent, run by the pipeline
 
+> **Status:** built in its own PR. The files are `agents/registry.yaml`, the `agent-runner` target of the `Dockerfile`, the proposed workflows in `docs/agents/workflows/`, `scripts/agent-checks.mjs` and the guide `docs/agents/adding-an-agent.md`. The guide records what was verified for Codex and what is still **to verify** on the first real run. Continuation mode (follow-up runs on an existing PR) is left for a separate change; criteria P2-1 to P2-7 below cover new runs.
+
 ### What it delivers
 
 1. A Docker target `agent-runner`.
@@ -139,7 +141,7 @@ Remove the label `agent:<id>`, or disable `agent-run.yml` in the Actions tab. Ve
 
 ### Open points
 
-- Each agent's headless mode and how it authenticates with a key (**to verify** in each vendor's documentation before it is added). Examples to check: Claude Code's print mode or its GitHub Action, `codex exec`, Gemini CLI's prompt flag, `opencode run`.
+- Each agent's headless mode and how it authenticates with a key (**to verify** in each vendor's documentation before it is added). Codex is checked in `docs/agents/adding-an-agent.md`. Still to check: Claude Code's print mode, Gemini CLI's prompt flag, `opencode run`.
 - The Figma MCP server needs an OAuth login in an approved client, which is unlikely to work in CI (**to verify**). Until it does, stages that need `figma-read` or `figma-write` stay in vendor environments.
 - Free Actions minutes for this repository and the maximum time per job (**to verify** on GitHub's live pages).
 - The runner image is built by a separate workflow on `main` and published to GitHub Container Registry, which needs `packages: write` in that workflow only.

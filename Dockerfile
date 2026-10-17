@@ -32,6 +32,13 @@ FROM tools AS test
 COPY . .
 CMD ["sh", "-c", "npm run check && npm run test"]
 
+# Runner of the agent-run workflow (docs/MULTI-AGENT-PHASES.md, Phase 2): the CI toolchain plus the pinned agent CLI.
+# Built and published by the agent-runner-image workflow; the agent job pins the image by digest.
+# It runs as root inside a throwaway container: the container, not a user account, is the isolation.
+FROM tools AS agent-runner
+ARG CODEX_VERSION=0.163.0
+RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION}
+
 # Static build. MEDIA_BASE_URL defaults to the preview layout (media served from /media).
 FROM deps AS build
 ARG MEDIA_BASE_URL=/media

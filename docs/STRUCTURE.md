@@ -11,17 +11,20 @@ artemis-ii/
 ├── package.json  package-lock.json
 ├── Dockerfile  compose.yaml  .dockerignore   development and test images (docs/DOCKER.md)
 ├── .devcontainer/             dev container for VS Code and Codespaces
+├── agents/
+│   └── registry.yaml          agents the pipeline can run (docs/agents/adding-an-agent.md)
 ├── .github/
 │   ├── workflows/             ci, security, preview-build, deploy-preview, deploy-staging, deploy-production, media, dast (Stage 03)
 │   ├── dependabot.yml         dependency updates (Stage 03)
 │   └── pull_request_template.md
 ├── docs/
 │   ├── PLAN.md  DELIVERY.md  SETUP.md  STRUCTURE.md  SITEMAP.md  DOCKER.md  MULTI-AGENT.md  MULTI-AGENT-PHASES.md
-│   ├── agents/                how to run stages with any agent
+│   ├── agents/                how to run stages with any agent; workflows/ holds the proposed agent-run workflows
 │   ├── specs/                 product spec, design spec, one spec per stage
 │   └── content-review/        text drafts (Stage 08)
 ├── tests/                     Playwright acceptance and smoke tests, named after spec criteria (Stage 02)
 ├── scripts/
+│   ├── agent-checks.mjs       checks of the agent-run workflow, with tests
 │   └── ingest.ts              local mode for agents, credential-free build mode for the pipeline; uploads are done by `media.yml` (Stage 06)
 ├── public/
 │   └── _headers               security headers (Stage 03); plus favicon and very light thumbnails

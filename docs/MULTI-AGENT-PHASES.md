@@ -57,14 +57,14 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 - Creates the branch `agent/stage-NN-<agent>` locally.
 - Starts the agent headless with the kickoff prompt from the issue: "Read AGENTS.md and follow docs/agents/next-stage.md". The agent must write its PR title and body to `.agent/pr-title.txt` and `.agent/pr-body.md`. `.agent/` is git-ignored.
 - Exposes only that agent's model key, and only to the step that starts it. The key comes from the GitHub environment `agents`.
-- Has `timeout-minutes` set (for example 90) and `concurrency: agent-run-stage-NN`, so one stage never has two runs.
+- Has `timeout-minutes` set (for example 90). Serialization is not set on this job alone: the whole workflow (`prepare`, `work` and `publish`) runs under one `concurrency` group per stage, `agent-run-stage-NN`, without cancelling a run in progress. A lock held only by `work` would be released before `publish` finishes. The open-stage-PR guard of `prepare` runs after the run has acquired that group, so two requests cannot both pass it before either opens a PR.
 - Scans before it uploads anything. A trusted scan step, run from `main` and not from the repository, checks every commit in the bundle, every file in it and the PR text for the registered model keys and for private keys. Only if the scan passes does it upload the bundle and the `.agent/` PR files as a workflow artifact with short retention (for example 7 days). If it finds a match, nothing is uploaded and the run stops with a security escalation. Agent transcripts and logs are never uploaded; only a short run summary written by the workflow is kept. Log masking does not clean artifacts, so the artifact is a second, independent check on top of the `publish` scan.
 
 **Job `publish`:**
 
 - Has no project code: it does not run npm or any repository script.
 - Downloads the bundle and checks it:
-  - The diff does not touch protected paths (`.github/**`, `AGENTS.md`, `CLAUDE.md`, `REVIEW.md`, `docs/DELIVERY.md`, `docs/agents/**`, `public/_headers`), unless the stage spec lists them. When it does, the PR still opens, but as a draft with a warning.
+  - The diff does not touch protected paths, as `AGENTS.md` defines them (`.github/**`, `AGENTS.md`, `CLAUDE.md`, `REVIEW.md`, `docs/DELIVERY.md`, `docs/agents/**` and security configuration, which is `public/_headers` and the configuration files of the scanners), unless the stage spec lists them. The check reads that definition from the `AGENTS.md` on `main`, so a change to the list there changes the check. When it does, the PR still opens, but as a draft with a warning.
   - No commit message, file or PR text contains secret-like strings or session links. A secret scanner runs over every commit in the bundle and over the PR text before anything is pushed, with patterns for the model keys of the registered providers and for private keys. The privacy filter of `notion-sync.mjs` (GitHub and Notion tokens, emails, session links) is a second check, not the main one, because it does not know model keys. If the scanner is a third-party tool, adding it is justified in the phase 2 PR.
   - The PR title starts with `Stage NN:` and the body follows the template.
 - Creates a token for the GitHub App with `actions/create-github-app-token`, scoped to this repository, valid for one hour.
@@ -124,10 +124,10 @@ Phase 2 needs one amendment before it is built, not after:
 
 - **P2-1:** a label added by Hugo starts a run. The same label added by another account does not (checked with a test account, or by reading the `prepare` condition and its test).
 - **P2-2:** the `work` job has no GitHub write token. Checked in the job's permissions block, and by a step that fails if `git push` works.
-- **P2-3:** a run that touches a protected path not listed in the spec opens a draft PR with a warning.
+- **P2-3:** a run that touches a protected path not listed in the spec opens a draft PR with a warning. The test covers one path of each kind: a workflow file, `AGENTS.md`, `public/_headers` and a scanner configuration file.
 - **P2-4:** the PR opened by the App starts CI and the preview.
 - **P2-5:** a merge attempt by the App on a test PR into `main` is refused because `approval` is missing (the App's merge permission is not what stops it), the App cannot push to `.github/workflows/`, and `publish` refuses a destination ref outside `agent/stage-NN-*` and another stage's branch (test with a sandbox branch).
-- **P2-6:** two runs for the same stage never overlap.
+- **P2-6:** two runs for the same stage never overlap, including the `publish` job: a second request waits until the first run has fully finished, and its open-stage-PR guard sees the PR the first run opened.
 - **P2-7:** the checks of `publish` have unit tests in `scripts/*.test.mjs`, like the Notion and Linear scripts.
 
 ### Rollback
@@ -175,11 +175,11 @@ Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR tha
 
 **Choosing the leader of a stage:**
 
-1. **Filter:** the agent has every capability in the stage's "Needs" column and has the `lead` role.
+1. **Filter:** the agent has every capability in the stage's "Needs" column, has the `lead` role, and did not lead the previous stage.
 2. **Score** each remaining agent from 0 to 100:
    - Past results: 50 points. Share of its stage PRs with green CI on the first push and with no blocking review finding, over its last 5 stages. An agent with no history gets 25.
    - Cost: 20 points. Free-tier and open-weight agents score higher, so paid quota is kept for hard stages.
-   - Rotation: 20 points. Zero if the agent led the previous stage.
+   - Rotation: 20 points for any agent that did not lead the previous stage. The previous leader is also excluded in the eligibility filter above, so rotation is a guarantee and not only a preference. If no other agent is eligible, the run stops and escalates to Hugo (`needs-hugo`) with the reason, instead of silently reusing the previous leader; Hugo can allow it for that stage.
    - Fit: 10 points. A manual hint in the spec, such as "prefers long context".
 3. **Ties:** the agent that led less recently.
 
@@ -215,7 +215,7 @@ Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR tha
 
 Reviewer execution never holds a token that can write comments. The reviewer job only produces its text as an output. A separate trusted publisher job, with no project code, attaches the facts it knows and posts the comment, and records the comment ID (in a check run it creates for the exact SHA). The gate accepts only the comment IDs recorded by that publisher, not any matching block authored by the App, so a manipulated reviewer cannot post passes for both reviewers. The block is bound to the facts the job knows, not to what the model says about itself: the reviewer id assigned by the orchestrator, the provider and the head SHA that was reviewed. The gate needs a fresh `pass` from both assigned reviewers for the current head SHA. If the leader pushes again, earlier passes no longer count, and the pipeline merges exactly the SHA that both reviewers passed.
 
-**Content stages (🔍).** A script checks that every fact in the content collections has a source ID that exists and a link that answers. A reviewer checks at least a sample of facts against their sources. A fact that cannot be verified escalates to Hugo.
+**Content stages (🔍).** A script checks that every fact has a source ID that exists and a link that answers. It checks the draft artifacts of the review stages (`CURATION.md` in Stage 05 and `docs/content-review/` in Stage 08), which is where new facts first appear, and the content collections in the stages that integrate them (Stages 06 and 09). A reviewer checks at least a sample of facts against their sources. A fact that cannot be verified escalates to Hugo.
 
 **Design stages (🎨).** They need Figma, so they keep running in a vendor environment that has the connector. Hugo approves them inside the iteration PR, comparing with the Figma frames.
 
@@ -252,7 +252,7 @@ These need coordinated PRs that Hugo approves before phase 3 is built. Until the
 ### Security
 
 - A ruleset on `iteration/*`: PR required, required checks, no force push, no deletion. The only actor that can merge is the App of the gate job, which runs on `main` and checks the gate. The CI trigger migration (`iteration/**`) is part of the phase 3 PR, and it is verified that every required check runs on iteration PRs before the ruleset requires them.
-- Reviewer jobs get no write token (`contents: read` only). Posting their comments is done by the trusted publisher job (`pull-requests: write`, no project code), which also records the comment IDs the gate accepts.
+- Reviewer jobs get no write token (`contents: read` only). Posting their comments is done by the trusted publisher job (`pull-requests: write` and `checks: write`, no project code), which also records the comment IDs the gate accepts in a check run on the reviewed SHA. `checks: write` goes only to that job, never to reviewer execution.
 - The gate job runs no project code. It reads check results and reviewer blocks through the API.
 - `main` keeps its ruleset and Hugo's `approval`. Nothing in phase 3 can merge into `main`.
 

@@ -9,7 +9,8 @@ How the `agent-run` workflow runs an agent on a stage, how Hugo sets it up, and 
 | `agents/registry.yaml` | The agents the pipeline can run: id, model key secret, how it starts, capabilities |
 | `docs/agents/workflows/agent-run.yml` | Proposed workflow. Hugo copies it to `.github/workflows/agent-run.yml` |
 | `docs/agents/workflows/agent-runner-image.yml` | Proposed workflow that builds and publishes the runner image. Hugo copies it too |
-| `Dockerfile`, target `agent-runner` | The CI toolchain plus the pinned agent CLI |
+| `Dockerfile`, target `agent-runner` | The CI toolchain plus the pinned agent CLIs (Codex and Claude Code) and Claude Code's shell sandbox |
+| `scripts/figma-mcp-token.mjs`, `scripts/figma-mcp-credentials.mjs` | Issue and replace the run's Figma MCP access token; extract the one-time grant on Hugo's machine ("Figma in the pipeline") |
 | `scripts/agent-checks.mjs` | The checks of `prepare`, `work` and `publish`, with unit tests in `scripts/agent-checks.test.mjs` and `scripts/agent-workflows.test.mjs` |
 
 Agents cannot push to `.github/workflows/`, so the workflows live in `docs/agents/workflows/` and Hugo copies them. Copy them again whenever they change.
@@ -17,9 +18,9 @@ Agents cannot push to `.github/workflows/`, so the workflows live in `docs/agent
 ## Setup (Hugo)
 
 1. **GitHub App**, only for his account, installed only on this repository, no webhook. Permissions: Contents, Pull requests and Issues (read and write) and Metadata (read). Nothing else; in particular no Checks, which belongs to phase 3.
-2. **Environment `agents`**, restricted to `main`, with the variable `AGENT_APP_ID` and the secrets `AGENT_APP_PRIVATE_KEY` and `AGENT_KEY_<ID>` (one per agent, for example `AGENT_KEY_CODEX`). Each model key is a dedicated key with a spending limit set in the provider's console.
+2. **Environment `agents`**, restricted to `main`, with the variable `AGENT_APP_ID` and the secrets `AGENT_APP_PRIVATE_KEY` and `AGENT_KEY_<ID>` (one per agent: `AGENT_KEY_CODEX` for Codex, `AGENT_KEY_CLAUDE` for Claude Code). Each model key is a dedicated key with a spending limit set in the provider's console (OpenAI: a project with a budget; Anthropic: a workspace with a spend limit in the Claude Console). For stages that use Figma, the three `FIGMA_MCP_*` secrets ("Figma in the pipeline").
 3. **Repository variable `AGENT_TRUSTED_LOGIN`** with Hugo's GitHub login. Only this login can start a run.
-4. **Labels** `agent-task` (already used by work orders), `agent-authored` and `needs-hugo`. Create one `agent:<id>` label per agent, for example `agent:codex`.
+4. **Labels** `agent-task` (already used by work orders), `agent-authored` and `needs-hugo`. Create one `agent:<id>` label per agent: `agent:codex` and `agent:claude`.
 5. **Copy the two workflows** from `docs/agents/workflows/` to `.github/workflows/` and merge that change. The Actions policy of the repository allows only GitHub-created actions pinned by SHA, which these files respect.
 6. **Publish the runner image.** Run the workflow "Agent runner image" by hand (or merge a change to `Dockerfile`). Its job summary prints the image reference with its digest. Save it as the repository variable `AGENT_RUNNER_IMAGE`. Packages of a public repository are private by default: the run pulls the image with the workflow token, which can read it when the package is linked to this repository (**to verify** on the first run; otherwise make the package public in its settings).
 7. **First test:** add the label `agent:codex` to the `Run Stage NN` issue of a small stage, or start "Agent run" by hand with the stage number. Compare the PR with one from a vendor environment.
@@ -51,35 +52,64 @@ Checked on 2026-10-17 with `@openai/codex` 0.163.0 installed from npm (`codex ex
 
 **To verify on the first real run:** that `-c sandbox_workspace_write.network_access=true` is accepted and lets `npm` reach the registry inside the sandbox; that Codex's own sandbox starts inside a Docker container, and which directories it leaves writable (the trusted copy of the scripts must not be among them). The sandbox is required: if it cannot start, the run fails and is escalated. Do not switch to `--dangerously-bypass-approvals-and-sandbox`: Docker isolates the host, not the trusted steps from the agent inside the same job, and the scan before the upload would no longer be trustworthy. A setup without the sandbox needs the checking and the upload moved to a place the agent cannot write, which is a separate design; that `codex exec` honors `AGENTS.md` and the kickoff prompt; that the GitHub App token option names of `actions/create-github-app-token` match (`app-id`, `private-key`, `owner`, `repositories`); that a `container.image` can come from the `vars` context; and the cost and duration of a real stage.
 
+## Verified for Claude Code
+
+Checked on 2026-10-17 against Claude Code's documentation (code.claude.com: headless mode, MCP, permissions, permission modes, sandboxing) and the CLI help of version 2.1.302, not with a real run:
+
+- `claude -p "<prompt>"` runs one prompt non-interactively and reads `ANTHROPIC_API_KEY` from the environment ("In non-interactive mode (`-p`), the key is always used when present"). It loads `CLAUDE.md`, which imports `AGENTS.md`.
+- `--permission-mode dontAsk`: "anything that would prompt is denied", so only the tools in `--allowedTools` run. The workflow allows reading and editing files, `npm`, `npx`, `node`, read-only `git` and the Figma tools of the stage. `--dangerously-skip-permissions` is not used (it also refuses to run as root).
+- `--mcp-config <file> --strict-mcp-config`: only the Figma server of the run is loaded, from a file the workflow writes with the `Authorization` header and deletes afterwards.
+- Shell commands run in Claude Code's sandbox (bubblewrap and socat, installed in the image), with `failIfUnavailable` so the run stops instead of running unsandboxed. In an unprivileged container the docs say bubblewrap needs `enableWeakerNestedSandbox`; the container is the outer boundary. The sandbox covers shell commands only, so the file tools are denied writes to the runner's temporary folder, where the trusted copies live.
+- `--no-session-persistence`: no transcript is saved to disk.
+
+**To verify on the first real run:** that the sandbox starts in the container with the weaker nested mode; that the permission rules with an absolute path (`Edit(//<temp>/**)`) deny writes there; that the allowed `Bash(...)` patterns are enough for `npm run check`, `npm run build` and `npm run test`; and cost and duration.
+
 ## Figma in the pipeline
 
-**The problem.** Stages that need `figma-read` read frames and variables from Figma. Figma's MCP server (`mcp.figma.com`) signs in with OAuth in a browser, and only for clients on its approved list, which includes Codex ([Figma's guide](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server)). It does not accept personal access tokens: Figma's support has said so on [its forum](https://forum.figma.com/suggest-a-feature-11/support-for-pat-personal-access-token-based-auth-in-figma-remote-mcp-47465) (checked 2026-10-17). A CI job cannot do the browser login.
+Agents in the pipeline use Figma's own MCP server (`https://mcp.figma.com/mcp`), as Claude Code and Codex do on a desktop.
 
-**Options looked at**
+**How the server authenticates (checked 2026-10-17).** It does not accept personal access tokens: Figma's support and staff have said so on its forum ([thread](https://forum.figma.com/suggest-a-feature-11/support-for-pat-personal-access-token-based-auth-in-figma-remote-mcp-47465)), and tests by users with `Authorization: Bearer <PAT>` and `X-Figma-Token` get `Unauthorized`. It accepts OAuth access tokens issued to clients on Figma's approved list, which includes Codex and Claude Code ([Figma's guide](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server)); registering any other client is refused. An access token is an ordinary bearer token: once issued, any MCP client can send it in an `Authorization` header, with no browser. So a person signs in once with an approved client, and the pipeline keeps that grant.
 
-| Option | Verdict |
-| --- | --- |
-| Remote MCP with OAuth credentials exported from Hugo's machine and stored as a secret | Rejected: the refresh token rotates and a pipeline job cannot write the new one back to a secret (agents and jobs have no permission to change secrets), so it breaks after the first refresh. Also, an interactive login by hand every few days defeats the pipeline |
-| Third-party MCP servers that use a personal token (community packages) | Rejected for now: third-party code between the agent and Figma, and the token would sit in the agent's own process environment |
-| Figma's desktop MCP server | Rejected: needs the Figma desktop app running |
-| **A trusted pipeline step that reads the design with the REST API and hands the agent files** | **Chosen.** The token stays in one step that runs before the agent; the agent only gets files. `scripts/figma-snapshot.mjs` takes the top-level frames of the pages `Foundations`, `Components` and `Screens` and writes `.agent/figma/`: `index.json`, a PNG and a node tree per frame |
+**How the pipeline uses it**
 
-**Order of the steps.** The snapshot runs after the trusted copy of the scripts is taken and before `npm ci`, so no project install script has run when the token is in use. The token is in the environment of that step only.
+1. Hugo signs in once with Codex on his machine (below). The grant's client id and refresh token become secrets of the environment `agents`.
+2. For stages that need `figma-read` or `figma-write`, a trusted step runs `scripts/figma-mcp-token.mjs` before any project code: it exchanges the refresh token for a fresh access token. The refresh token never leaves that step.
+3. The agent step gets the access token only. Codex reads it through `bearer_token_env_var`; Claude Code through an MCP config file with an `Authorization` header. Both see only the read tools (`get_metadata`, `get_screenshot`, `get_variable_defs`, `get_design_context`, `whoami`), plus `use_figma` in stages that need `figma-write`.
+4. At the end, `revoke` refreshes once more, which replaces the token the agent had: Figma keeps one access token per app and user, so the old one stops working (**to verify** for MCP grants; documented for Figma's OAuth apps).
 
-**Limits.** The snapshot is read-only and has no variable names (Figma's variables API needs an Enterprise plan); the tokens are in `docs/specs/design.md` and `src/styles/global.css`, and the agent reads those. It cannot change the design (`figma-write`). It covers the three approved pages, up to 40 frames. REST requests count against Figma's rate limits, which depend on the plan and on the seat of the token's owner (a View or Collab seat on a Starter plan gets about 6 requests a month, which is not enough; a Full or Dev seat gets 10 to 20 a minute, and a run makes about 5) ([rate limits](https://developers.figma.com/docs/rest-api/rate-limits), checked 2026-10-17).
+**What the agent can reach.** The access token carries Hugo's Figma permissions while the run lasts: every file his account can open, for reading, and for writing through `use_figma`. The tool lists limit what the agent's MCP client offers, not what the token allows. `AGENTS.md` restricts edits to the file in `FIGMA_FILE_URL`. To make it a hard limit, sign in with a separate Figma account that only has access to the design file (it needs a Dev or Full seat: View and Collab seats get 6 tool calls a month).
 
-**Setup (Hugo)**
+**Rate limits.** Figma's MCP server allows up to 200 tool calls a day, and around 10 a minute, for a Dev or Full seat on a Professional or Organization plan; Starter plans and View or Collab seats get 6 a month ([rate limits and access](https://developers.figma.com/docs/figma-mcp-server/rate-limits-access/), checked 2026-10-17). A stage uses a few dozen calls.
 
-1. In Figma: your avatar → **Settings** → **Security** → **Personal access tokens** → **Generate new token**. Name it `artemis-ii-agents`, expiration 90 days (the maximum), and tick only **File content: Read only** (`file_content:read`). Copy the token once; Figma does not show it again.
-2. A Figma token can read every file of its owner. If your plan lets you, create a second Figma account that has access only to the design file and use its token instead. Otherwise keep the expiration short and rotate it.
-3. In GitHub: **Settings** → **Environments** → `agents` → add the secret `FIGMA_READ_TOKEN` and the variable `FIGMA_FILE_URL` (the URL of the design file, the same one agents use elsewhere).
-4. Copy the updated `agent-run.yml` from `docs/agents/workflows/` to `.github/workflows/`.
-5. Write down the expiration date: when the token expires, the stage fails at the snapshot step with a 401 or 403 and the work order gets the label `needs-hugo`.
+**Setup (Hugo, once)**
 
-**To verify on the first stage that needs it:** that the snapshot step succeeds with the token and the file, that the frames are the right ones, and that Codex can use PNG frames from the folder (it may need to view them with the image option of `codex exec`).
+Requirements: Codex CLI and Node 22 on your machine, the `gh` CLI signed in to GitHub, and a clone of this repository with this change merged.
+
+1. Sign in with Codex in a folder of its own, so this grant is not shared with your everyday Codex (Git Bash):
+   ```
+   export CODEX_HOME="$HOME/.codex-figma-pipeline"
+   mkdir -p "$CODEX_HOME"
+   codex mcp add figma --url https://mcp.figma.com/mcp
+   codex -c mcp_oauth_credentials_store=file mcp login figma
+   ```
+   A browser window opens: sign in with the Figma account the agents should use and allow access.
+2. Store the grant as secrets of the environment `agents`, straight from the file, without showing them:
+   ```
+   F="$CODEX_HOME/.credentials.json"
+   node scripts/figma-mcp-credentials.mjs "$F" client_id | gh secret set FIGMA_MCP_CLIENT_ID --env agents
+   node scripts/figma-mcp-credentials.mjs "$F" refresh_token | gh secret set FIGMA_MCP_REFRESH_TOKEN --env agents
+   node scripts/figma-mcp-credentials.mjs "$F" client_secret | gh secret set FIGMA_MCP_CLIENT_SECRET --env agents
+   ```
+   The last line may say there is no client secret: that is normal for Codex, skip it. If the first line says it cannot find the grant, the credentials file of your Codex version has another name or layout; send the error (not the file).
+3. The first run of a stage that needs Figma checks it: its step "Get a Figma MCP access token" must say "Figma MCP token issued".
+4. Delete the local folder: `rm -r "$HOME/.codex-figma-pipeline"`. The grant stays valid on Figma's side.
+5. Copy the updated `agent-run.yml` from `docs/agents/workflows/` to `.github/workflows/`.
+
+To revoke the grant: Figma → **Settings** → **Security** → connected apps, remove the Codex entry, and delete the three secrets.
+
+**To verify on the first run that needs Figma:** where Codex stores its MCP credentials with `mcp_oauth_credentials_store=file` (the helper searches the file by field name); that refresh tokens of MCP grants can be reused, as Figma documents for OAuth apps (if a run prints "Figma returned a new refresh token", the stored one must be updated after every run, which this setup cannot do); the lifetime of the access token; that Codex accepts the tool list in `enabled_tools`; and that Claude Code's MCP config file with the `Authorization` header connects.
 
 ## Not in this phase
 
 - **Follow-up runs on an existing PR** (continuation mode, with `.agent/review.md`): a separate change, because it runs project code next to the model key and needs its own review.
 - Reviewer agents, the orchestrator and iteration branches (phase 3).
-- The Figma MCP server in CI. Stages that need `figma-read` can run in the pipeline through the read-only snapshot ("Figma in the pipeline"); stages that need `figma-write` stay in vendor environments.

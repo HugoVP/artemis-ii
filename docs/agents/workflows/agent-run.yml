@@ -51,6 +51,7 @@ jobs:
       key_secret: ${{ steps.order.outputs.key_secret }}
       branch: ${{ steps.order.outputs.branch }}
       figma: ${{ steps.order.outputs.figma }}
+      runner: ${{ steps.order.outputs.runner }}
     steps:
       # Always main: the checks come from main and an issue or PR cannot change them.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -113,9 +114,11 @@ jobs:
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
           echo "agent=$AGENT" >> "$GITHUB_OUTPUT"
           echo "key_secret=$KEY_SECRET" >> "$GITHUB_OUTPUT"
-          # Only stages that need figma-read get the Figma snapshot (and so the read-only Figma token).
+          # none, read or write: only stages that need Figma get a Figma MCP token, and only write stages get write tools.
           FIGMA=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).figma" "$RUNNER_TEMP/plan.json")
+          RUNNER=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).runner" "$RUNNER_TEMP/plan.json")
           echo "figma=$FIGMA" >> "$GITHUB_OUTPUT"
+          echo "runner=$RUNNER" >> "$GITHUB_OUTPUT"
           echo "branch=agent/stage-${STAGE}-${AGENT}" >> "$GITHUB_OUTPUT"
 
       - name: Tell the work order that the run did not start
@@ -173,35 +176,108 @@ jobs:
           mkdir -p "$RUNNER_TEMP/trusted"
           cp -r scripts AGENTS.md "$RUNNER_TEMP/trusted/"
 
-      # Agents cannot use the Figma MCP server in CI (it needs an interactive OAuth login). A trusted step reads the
-      # design through Figma's REST API with a read-only token, from the trusted copy of the script, before the agent
-      # starts. The token lives in this step only; the agent gets the files in .agent/figma/ and never the token.
-      - name: Snapshot the Figma design
-        if: needs.prepare.outputs.figma == 'true'
+      # Figma's MCP server accepts OAuth access tokens issued to approved clients (Codex, Claude Code, …), not personal
+      # access tokens. Hugo signed in once with such a client; this trusted step exchanges the stored refresh token for
+      # a fresh access token before any project code runs. The refresh token and client id stay in this step; the agent
+      # step gets the access token only. See docs/agents/adding-an-agent.md, "Figma in the pipeline".
+      - name: Get a Figma MCP access token
+        if: needs.prepare.outputs.figma != 'none'
         env:
-          FIGMA_TOKEN: ${{ secrets.FIGMA_READ_TOKEN }}
-          FIGMA_FILE_URL: ${{ vars.FIGMA_FILE_URL }}
-        run: node "$RUNNER_TEMP/trusted/scripts/figma-snapshot.mjs" .agent/figma
+          FIGMA_MCP_CLIENT_ID: ${{ secrets.FIGMA_MCP_CLIENT_ID }}
+          FIGMA_MCP_CLIENT_SECRET: ${{ secrets.FIGMA_MCP_CLIENT_SECRET }}
+          FIGMA_MCP_REFRESH_TOKEN: ${{ secrets.FIGMA_MCP_REFRESH_TOKEN }}
+        run: |
+          set -euo pipefail
+          FIGMA_TOKEN_DIR=$(mktemp -d)
+          echo "FIGMA_TOKEN_DIR=$FIGMA_TOKEN_DIR" >> "$GITHUB_ENV"
+          node "$RUNNER_TEMP/trusted/scripts/figma-mcp-token.mjs" issue "$FIGMA_TOKEN_DIR/token"
 
       # Project dependencies are installed only now. Their install scripts are project code: they must run neither
-      # before the snapshot step (they could replace the trusted script that holds the Figma token) nor with any
+      # before the token step (they could replace the trusted script that handles the Figma secrets) nor with any
       # credential in the environment (the model key is only in the next step).
       - name: Install the project dependencies
         run: npm ci --no-audit --no-fund
 
       - name: Run the agent
         env:
-          # The only step that sees the model key. For Codex, `codex exec` reads CODEX_API_KEY.
-          CODEX_API_KEY: ${{ secrets[needs.prepare.outputs.key_secret] }}
+          # The only step that sees the model key. It is handed to the agent's CLI under the name that CLI reads.
+          AGENT_MODEL_KEY: ${{ secrets[needs.prepare.outputs.key_secret] }}
+          RUNNER: ${{ needs.prepare.outputs.runner }}
+          FIGMA: ${{ needs.prepare.outputs.figma }}
         run: |
           set -euo pipefail
+          KEY="$AGENT_MODEL_KEY"; unset AGENT_MODEL_KEY
           KICKOFF="Read AGENTS.md and follow docs/agents/next-stage.md. Run Stage ${STAGE} only. You run inside the agent pipeline (see 'When the pipeline runs you' in docs/agents/next-stage.md): leave your changes in the working tree (the pipeline commits them), do not push, and write the PR title to .agent/pr-title.txt and the PR body to .agent/pr-body.md."
-          codex exec \
-            --sandbox workspace-write \
-            -c sandbox_workspace_write.network_access=true \
-            --ephemeral \
-            --color never \
-            "$KICKOFF"
+
+          # Figma MCP: read tools for figma-read stages, plus use_figma for figma-write stages. Nothing for other stages.
+          FIGMA_MCP_TOKEN=""
+          TOOLS=()
+          if [ "$FIGMA" != none ]; then
+            FIGMA_MCP_TOKEN=$(cat "$FIGMA_TOKEN_DIR/token")
+            rm -f -- "$FIGMA_TOKEN_DIR/token"
+            TOOLS=(get_metadata get_screenshot get_variable_defs get_design_context whoami)
+            if [ "$FIGMA" = write ]; then TOOLS+=(use_figma); fi
+          fi
+          export FIGMA_MCP_TOKEN
+
+          case "$RUNNER" in
+            codex-exec)
+              FIGMA_ARGS=()
+              if [ "${#TOOLS[@]}" -gt 0 ]; then
+                LIST=$(printf '"%s",' "${TOOLS[@]}")
+                FIGMA_ARGS=(-c 'mcp_servers.figma.url="https://mcp.figma.com/mcp"'
+                            -c 'mcp_servers.figma.bearer_token_env_var="FIGMA_MCP_TOKEN"'
+                            -c "mcp_servers.figma.enabled_tools=[${LIST%,}]")
+              fi
+              CODEX_API_KEY="$KEY" codex exec \
+                --sandbox workspace-write \
+                -c sandbox_workspace_write.network_access=true \
+                "${FIGMA_ARGS[@]}" \
+                --ephemeral \
+                --color never \
+                "$KICKOFF"
+              ;;
+            claude-print)
+              CFG=$(mktemp -d)
+              # Bash runs in Claude Code's sandbox (bubblewrap); the container is the outer boundary, so the nested
+              # sandbox runs in its weaker mode. The file tools cannot write to the runner's temp folder (trusted copies).
+              node -e '
+                const [file, temp] = process.argv.slice(1);
+                require("fs").writeFileSync(file, JSON.stringify({
+                  sandbox: { enabled: true, failIfUnavailable: true, enableWeakerNestedSandbox: true },
+                  permissions: { deny: ["Edit(/" + temp + "/**)", "Write(/" + temp + "/**)"] },
+                }), { mode: 0o600 });' "$CFG/settings.json" "$RUNNER_TEMP"
+              ALLOWED=(Read Edit Write Glob Grep "Bash(npm *)" "Bash(npx *)" "Bash(node *)" "Bash(git status*)" "Bash(git diff*)" "Bash(git log*)" "Bash(ls *)" "Bash(mkdir *)")
+              MCP_ARGS=()
+              if [ "${#TOOLS[@]}" -gt 0 ]; then
+                node -e '
+                  require("fs").writeFileSync(process.argv[1], JSON.stringify({ mcpServers: { figma: {
+                    type: "http", url: "https://mcp.figma.com/mcp",
+                    headers: { Authorization: "Bearer " + process.env.FIGMA_MCP_TOKEN } } } }), { mode: 0o600 });' "$CFG/mcp.json"
+                MCP_ARGS=(--mcp-config "$CFG/mcp.json")
+                for t in "${TOOLS[@]}"; do ALLOWED+=("mcp__figma__$t"); done
+              fi
+              # dontAsk: anything not in the allow list is denied, Figma write tools included unless this is a write stage.
+              ANTHROPIC_API_KEY="$KEY" claude -p "$KICKOFF" \
+                --strict-mcp-config "${MCP_ARGS[@]}" \
+                --settings "$CFG/settings.json" \
+                --permission-mode dontAsk \
+                --no-session-persistence \
+                --allowedTools "${ALLOWED[@]}"
+              rm -f -- "$CFG/settings.json" "$CFG/mcp.json"
+              ;;
+            *)
+              echo "Unknown runner '$RUNNER'."; exit 1 ;;
+          esac
+
+      # Refreshing once more replaces the access token the agent had, so it stops working when the run ends.
+      - name: Replace the Figma MCP access token
+        if: always() && needs.prepare.outputs.figma != 'none'
+        env:
+          FIGMA_MCP_CLIENT_ID: ${{ secrets.FIGMA_MCP_CLIENT_ID }}
+          FIGMA_MCP_CLIENT_SECRET: ${{ secrets.FIGMA_MCP_CLIENT_SECRET }}
+          FIGMA_MCP_REFRESH_TOKEN: ${{ secrets.FIGMA_MCP_REFRESH_TOKEN }}
+        run: node "$RUNNER_TEMP/trusted/scripts/figma-mcp-token.mjs" revoke
 
       # Codex's workspace-write sandbox keeps .git read-only, so the agent cannot commit. This trusted step does it,
       # with hooks disabled, without the model key in its environment, and without the agent's scratch folder.

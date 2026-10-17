@@ -112,7 +112,9 @@ test("the registry parser reads scalars and inline lists, and rejects incomplete
   const real = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
   assert.equal(real[0].id, "codex");
   assert.equal(real[0].key_secret, "AGENT_KEY_CODEX");
-  assert.deepEqual(real[0].capabilities, ["git", "node", "browser", "web", "figma-read"]);
+  assert.deepEqual(real[0].capabilities, ["git", "node", "browser", "web", "figma-read", "figma-write"]);
+  assert.deepEqual(real.map((a) => a.id), ["codex", "claude"]);
+  assert.throws(() => parseRegistry("- id: x\n  key_secret: AGENT_KEY_X\n  runner: shell-anything\n  capabilities: [git]\n"), /unknown runner/);
   assert.throws(() => parseRegistry("- id: x\n  runner: y\n"), /key_secret/);
   assert.throws(() => parseRegistry("  id: x\n"), /Unreadable|start with/);
 });
@@ -149,7 +151,7 @@ test("the real PLAN.md parses into stages that selectStage can walk", async () =
 import { linkPlan } from "./agent-checks.mjs";
 
 test("a registry entry cannot point the work job at a secret that is not a model key", () => {
-  const bad = (k) => `- id: x\n  key_secret: ${k}\n  runner: r\n  capabilities: [git]\n`;
+  const bad = (k) => `- id: x\n  key_secret: ${k}\n  runner: codex-exec\n  capabilities: [git]\n`;
   assert.throws(() => parseRegistry(bad("AGENT_APP_PRIVATE_KEY")), /AGENT_KEY_/);
   assert.throws(() => parseRegistry(bad("GITHUB_TOKEN")), /AGENT_KEY_/);
   assert.equal(parseRegistry(bad("AGENT_KEY_OTHER"))[0].key_secret, "AGENT_KEY_OTHER");
@@ -283,10 +285,11 @@ test("the work and publish diffs use the merge base, so a main that moved is not
   assert.deepEqual(three, ["mine.txt"]);
 });
 
-test("Codex can take stages that need the web or the Figma snapshot, and the plan says when Figma is needed", async () => {
+test("Codex and Claude Code can take every stage of the plan, Figma ones included", async () => {
   const registry = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
-  const codex = registry.find((a) => a.id === "codex");
-  assert.deepEqual(missingCapabilities(["node", "browser", "figma-read"], codex.capabilities), []);
-  assert.deepEqual(missingCapabilities(["web"], codex.capabilities), []);
-  assert.deepEqual(missingCapabilities(["figma-write"], codex.capabilities), ["figma-write"]);
+  const plan = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
+  for (const id of ["codex", "claude"]) {
+    const agent = registry.find((a) => a.id === id);
+    for (const s of parseStages(plan)) assert.deepEqual(missingCapabilities(s.needs, agent.capabilities), [], `${id}, Stage ${s.number}`);
+  }
 });

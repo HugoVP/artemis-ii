@@ -112,6 +112,9 @@ export function findSecrets(text) {
   return SECRET_PATTERNS.filter(([, re]) => re.test(s)).map(([name]) => name);
 }
 
+// How agent-run.yml can start an agent; each value has a branch in its "Run the agent" step.
+export const RUNNERS = ["codex-exec", "claude-print"];
+
 // agents/registry.yaml is a flat list of entries with scalar values and inline lists, so no YAML library is needed.
 export function parseRegistry(yaml) {
   const agents = [];
@@ -132,6 +135,7 @@ export function parseRegistry(yaml) {
     for (const k of ["id", "key_secret", "runner", "capabilities"]) if (a[k] === undefined) throw new Error(`Agent ${a.id ?? "?"} has no "${k}" in agents/registry.yaml.`);
     if (!/^[a-z0-9-]{1,30}$/.test(a.id)) throw new Error(`Agent id "${a.id}" is not a short lowercase slug.`);
     // A registry entry can never point the work job at the App key or any other secret.
+    if (!RUNNERS.includes(a.runner)) throw new Error(`Agent ${a.id} has the unknown runner "${a.runner}" (known: ${RUNNERS.join(", ")}).`);
     if (!/^AGENT_KEY_[A-Z0-9_]{1,40}$/.test(a.key_secret)) throw new Error(`key_secret "${a.key_secret}" of agent ${a.id} must look like AGENT_KEY_<ID>.`);
   }
   return agents;
@@ -285,7 +289,7 @@ async function main(argv) {
     if (!agent) { console.error(`Agent "${args[3]}" is not in agents/registry.yaml.`); return 1; }
     const missing = missingCapabilities(stage.needs, agent.capabilities);
     if (missing.length > 0) { console.error(`Agent ${agent.id} lacks: ${missing.join(", ")}.`); return 1; }
-    console.log(JSON.stringify({ stage: stage.number, name: stage.name, agent: agent.id, runner: agent.runner, keySecret: agent.key_secret, figma: stage.needs.includes("figma-read") }));
+    console.log(JSON.stringify({ stage: stage.number, name: stage.name, agent: agent.id, runner: agent.runner, keySecret: agent.key_secret, figma: stage.needs.includes("figma-write") ? "write" : stage.needs.includes("figma-read") ? "read" : "none" }));
     return 0;
   }
   if (cmd === "pr-text") {

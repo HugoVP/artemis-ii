@@ -23,7 +23,7 @@ Each stage lists the capabilities it needs in the "Needs" column of `docs/PLAN.m
 | `node` | Node.js 22 and npm, able to run project scripts | Stage 02 on |
 | `browser` | Headless Chromium for Playwright tests | Stage 02 on |
 | `web` | HTTP access to NASA and news domains | Curation, ingestion, texts |
-| `figma-read` | Figma MCP server, read tools (`get_metadata`, `get_screenshot`, `get_variable_defs`); in the agent pipeline, a read-only snapshot of the design in `.agent/figma/` (frames and node trees, without variable names) | Stages with visible changes |
+| `figma-read` | Figma MCP server, read tools (`get_metadata`, `get_screenshot`, `get_variable_defs`); in the agent pipeline, through an access token the pipeline issues for the run | Stages with visible changes |
 | `figma-write` | Figma MCP server, `use_figma` | Design stage and design changes |
 
 ## Known agents

@@ -35,7 +35,11 @@ test("P2-2: the work job has read-only permissions and no App credential", () =>
 test("the model key is read in exactly one step of one job, and the App key only in publish", () => {
   assert.equal([...run.matchAll(/secrets\[needs\.prepare\.outputs\.key_secret\]/g)].length, 1);
   const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(run)[1];
-  assert.match(agentStep, /CODEX_API_KEY: \$\{\{ secrets\[needs\.prepare\.outputs\.key_secret\] \}\}/);
+  assert.match(agentStep, /AGENT_MODEL_KEY: \$\{\{ secrets\[needs\.prepare\.outputs\.key_secret\] \}\}/);
+  // Handed to the CLI under its own name, and removed from the environment that the CLI inherits.
+  assert.match(agentStep, /unset AGENT_MODEL_KEY/);
+  assert.match(agentStep, /CODEX_API_KEY="\$KEY" codex exec/);
+  assert.match(agentStep, /ANTHROPIC_API_KEY="\$KEY" claude -p/);
   for (const name of ["prepare", "work", "escalate"]) assert.doesNotMatch(job(run, name), /AGENT_APP_PRIVATE_KEY/);
   assert.equal([...run.matchAll(/secrets\.AGENT_APP_PRIVATE_KEY/g)].length, 1);
   assert.doesNotMatch(image, /secrets\./);
@@ -162,27 +166,40 @@ test("single-line run: values contain no colon followed by a space, which is inv
   }
 });
 
-test("the Figma token is read in one step, before the agent, only for stages that need figma-read, from the trusted script", () => {
-  assert.equal([...run.matchAll(/secrets\.FIGMA_READ_TOKEN/g)].length, 1);
+test("the Figma refresh token is read only by the token steps, from the trusted script, and the agent gets the access token only", () => {
   const work = job(run, "work");
-  const step = /- name: Snapshot the Figma design\n([\s\S]*?)(?=\n      - name:)/.exec(work)[1];
-  assert.match(step, /if: needs\.prepare\.outputs\.figma == 'true'/);
-  assert.match(step, /FIGMA_TOKEN: \$\{\{ secrets\.FIGMA_READ_TOKEN \}\}/);
-  assert.match(step, /\$RUNNER_TEMP\/trusted\/scripts\/figma-snapshot\.mjs/);
-  assert.ok(work.indexOf("- name: Snapshot the Figma design") < work.indexOf("- name: Run the agent"));
-  const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(work)[1];
-  assert.doesNotMatch(agentStep, /FIGMA/);
-  for (const name of ["prepare", "publish", "escalate"]) assert.doesNotMatch(job(run, name), /FIGMA_READ_TOKEN/);
+  const issue = /- name: Get a Figma MCP access token\n([\s\S]*?)(?=\n      #|\n      - name:)/.exec(work)[1];
+  const revoke = /- name: Replace the Figma MCP access token\n([\s\S]*?)(?=\n      #|\n      - name:|\n      - uses:)/.exec(work)[1];
+  assert.match(issue, /if: needs\.prepare\.outputs\.figma != 'none'/);
+  assert.match(revoke, /if: always\(\) && needs\.prepare\.outputs\.figma != 'none'/);
+  for (const step of [issue, revoke]) assert.match(step, /\$RUNNER_TEMP\/trusted\/scripts\/figma-mcp-token\.mjs/);
+  assert.equal([...run.matchAll(/secrets\.FIGMA_MCP_REFRESH_TOKEN/g)].length, 2);
+  const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      #|\n      - name:)/.exec(work)[1];
+  assert.doesNotMatch(agentStep, /FIGMA_MCP_REFRESH_TOKEN|FIGMA_MCP_CLIENT/);
+  for (const name of ["prepare", "publish", "escalate"]) assert.doesNotMatch(job(run, name), /FIGMA_MCP_/);
   assert.match(job(run, "prepare"), /figma=\$FIGMA/);
 });
 
-test("project dependencies are installed after the snapshot and before the agent, never in the preparation step", () => {
+test("Figma write tools are offered only to stages that need figma-write, for both runners", () => {
+  const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      #|\n      - name:)/.exec(job(run, "work"))[1];
+  assert.match(agentStep, /TOOLS=\(get_metadata get_screenshot get_variable_defs get_design_context whoami\)/);
+  assert.match(agentStep, /if \[ "\$FIGMA" = write \]; then TOOLS\+=\(use_figma\); fi/);
+  assert.match(agentStep, /mcp_servers\.figma\.enabled_tools=/);
+  assert.match(agentStep, /mcp_servers\.figma\.bearer_token_env_var="FIGMA_MCP_TOKEN"/);
+  assert.match(agentStep, /--permission-mode dontAsk/);
+  assert.match(agentStep, /--strict-mcp-config/);
+  assert.match(agentStep, /failIfUnavailable: true/);
+  assert.doesNotMatch(agentStep, /dangerously|bypassPermissions/);
+});
+
+test("project dependencies are installed after the Figma token step and before the agent, never in the preparation step", () => {
   const work = job(run, "work");
   const prep = /- name: Prepare the workspace\n([\s\S]*?)(?=\n      #|\n      - name:)/.exec(work)[1];
   assert.doesNotMatch(prep, /npm ci/);
   const at = (s) => work.indexOf(`- name: ${s}`);
-  assert.ok(at("Prepare the workspace") < at("Snapshot the Figma design"));
-  assert.ok(at("Snapshot the Figma design") < at("Install the project dependencies"));
+  assert.ok(at("Prepare the workspace") < at("Get a Figma MCP access token"));
+  assert.ok(at("Get a Figma MCP access token") < at("Install the project dependencies"));
   assert.ok(at("Install the project dependencies") < at("Run the agent"));
+  assert.ok(at("Run the agent") < at("Replace the Figma MCP access token"));
   assert.equal([...run.matchAll(/npm ci/g)].length, 1);
 });

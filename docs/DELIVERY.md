@@ -47,6 +47,8 @@ Required checks for merging into `main` (set in the ruleset once Stage 03 is mer
 
 **Code from a PR never runs with credentials.** Build, test and ingest jobs for a PR run with read-only tokens and no secrets. Anything that uses a credential (deploying, uploading media) runs in a separate job that downloads an artifact and does not execute code from the PR, and whose workflow definition comes from the default branch (`workflow_run`, or a call from a workflow that only runs on `main` or on release tags), so a PR cannot rewrite the privileged steps. The artifact is treated as untrusted data: nothing in it is executed or sourced, and the PR number and SHA come from the event payload. Changes to `package.json` scripts or `scripts/` in a PR therefore cannot read deployment or storage keys.
 
+**One narrow exception: the model key of an agent run.** When the pipeline runs an agent (`agent-run.yml`, planned in `docs/MULTI-AGENT-PHASES.md`), the `work` job holds one model API key next to project code, because the agent runs the project's own scripts. That key is a dedicated key with a spending limit set in the provider's console, lives in the GitHub environment `agents` (deployment branch policy: `main` only), and is exposed only to the step that starts that agent. It is the only credential in that job: it has no GitHub write token and no deployment or storage credentials, and the repository-wide rule above still holds for every other job.
+
 ## Gates
 
 | Gate | Kind | Blocks |
@@ -89,11 +91,14 @@ Local security checks every agent runs before opening a PR: `npm audit --audit-l
 | `NOTION_TOKEN` (Notion internal connection, shared with one page only) | Secret | GitHub environment `notion` (deployment branch policy: `main` only), never repository-level | `notion-sync.yml` |
 | `NOTION_PAGE_ID` | Variable | GitHub environment `notion` | `notion-sync.yml` |
 | `LINEAR_API_KEY` (Linear personal API key) | Secret | GitHub environment `linear` (deployment branch policy: `main` only), never repository-level | `linear-sync.yml` |
+| `AGENT_KEY_<ID>` (one dedicated model API key per registered agent, with a spending limit) | Secret | GitHub environment `agents` (deployment branch policy: `main` only), never repository-level | The step that starts that agent in the `work` job of `agent-run.yml` |
+| `AGENT_APP_PRIVATE_KEY` (key of the GitHub App that opens agent PRs) and `AGENT_APP_ID` | Secret and variable | GitHub environment `agents` | The `publish` job of `agent-run.yml`, which runs no project code |
+| `AGENT_TRUSTED_LOGIN` (Hugo's GitHub login) | Variable | GitHub Actions (repository variable) | The authorization checks of `agent-run.yml` |
 | `CONTACT_URL` | Variable | GitHub Actions and agent environments | Builds |
 | `FIGMA_FILE_URL` | Variable | Agent environments | Design work |
 | `MEDIA_BASE_URL` (staging value) | Variable | Agent environments | Local development |
 
-Agent environments never contain Cloudflare or R2 credentials. **No credential is a repository-level secret:** a workflow in a same-repository PR can read repository-level secrets, but not environment secrets whose deployment policy allows only `main` or release tags. Each credential lives in the environment of the jobs that use it.
+Agent environments never contain Cloudflare or R2 credentials, and vendor agent environments never contain the model keys of `agent-run.yml`. **No credential is a repository-level secret:** a workflow in a same-repository PR can read repository-level secrets, but not environment secrets whose deployment policy allows only `main` or release tags. Each credential lives in the environment of the jobs that use it.
 
 - **R2 production keys** live in a GitHub `production` environment, restricted to release tags and with Hugo as required reviewer, so only the media promotion job can read them. R2 tokens are scoped per bucket, so this is real isolation.
 - **The Cloudflare Pages token** cannot be limited to one Pages project, so the `production` environment does not isolate it, and this design does not claim it does. Its boundary is the code allowed to read it: only credential-only deploy jobs in workflows defined on the default branch hold it; they run no project code, never execute, source or read configuration from the artifact they deploy, use a Pages project name and target branch fixed in the workflow, and receive the PR number (the only PR-derived value) through an environment variable, never interpolated into a shell command. The `production` environment approval and the release gate control what reaches production, not who can read the token. Changing those workflows takes a PR to a protected path that Hugo approves. If Cloudflare offers per-project token scopes, Stage 03 splits it into a preview and staging token and a production token held only in the `production` environment, and verifies the current behavior when it builds the pipeline.
@@ -117,7 +122,7 @@ Agent environments never contain Cloudflare or R2 credentials. **No credential i
 | Asset | Threat | Controls |
 | --- | --- | --- |
 | Production site | Unreviewed change goes live | Production only from releases Hugo publishes; staging first; smoke tests; rollback |
-| Credentials | Leak through code, logs or an agent | Secrets only in the pipeline, scoped tokens per bucket and per service, gitleaks, agents hold none |
+| Credentials | Leak through code, logs or an agent | Secrets only in the pipeline, scoped tokens per bucket and per service, gitleaks, agents hold no deployment or storage credentials (a pipeline-run agent holds only its dedicated, capped model key) |
 | Dependencies | Vulnerable or malicious package | Lockfile and `npm ci`, `npm audit`, Dependabot, new dependencies justified in the PR |
 | CI/CD | An agent weakens checks or workflows | Protected paths, "Security-relevant changes" section, workflow lint, required checks |
 | Agent instructions | Prompt injection from fetched content | Untrusted-content rule in `AGENTS.md`; Hugo reviews every PR |

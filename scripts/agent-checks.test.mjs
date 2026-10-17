@@ -229,7 +229,7 @@ test("a draft comes from protected paths, from the agent's own request, or both;
 test("a session link needs an identifier: the placeholders in AGENTS.md and REVIEW.md are not flagged", async () => {
   assert.deepEqual(findSecrets("for example `claude.ai/code/session_…`"), []);
   assert.deepEqual(findSecrets("claude.ai/code/session_ and chatgpt.com/codex/tasks/"), []);
-  assert.deepEqual(findSecrets("https://chatgpt.com/codex/tasks/task_e_0123456789abcdef"), ["session link"]);
+  assert.deepEqual(findSecrets("https://chatgpt.com/codex/" + "tasks/task_e_0123456789abcdef"), ["session link"]);
   for (const f of ["../AGENTS.md", "../REVIEW.md"]) assert.deepEqual(findSecrets(await readFile(new URL(f, import.meta.url), "utf8")), [], f);
 });
 

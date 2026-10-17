@@ -96,10 +96,13 @@ export function touchesWorkflows(files) {
 
 // Names of the kinds of secret found, never the matched text, so the report cannot leak the value.
 const SECRET_PATTERNS = [
-  ["OpenAI-style API key", /\bsk-(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{20,}/],
-  ["Anthropic API key", /\bsk-ant-[A-Za-z0-9_-]{20,}/],
-  ["GitHub token", /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})/],
-  ["Google API key", /\bAIza[0-9A-Za-z_-]{35}\b/],
+  // No word boundaries: a key glued to other bytes (text, binary data) is still a key. The shapes are distinctive
+  // enough for that: a bare `sk-` needs 32 or more letters and digits in a row, so words like "risk-management" pass.
+  ["OpenAI-style API key", /sk-(?:(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}|[A-Za-z0-9]{32,})/],
+  ["Anthropic API key", /sk-ant-[A-Za-z0-9_-]{20,}/],
+  ["GitHub token", /(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})/],
+  ["Google API key", /AIza[0-9A-Za-z_-]{35}/],
+  ["Notion token", /(?:ntn_|secret_)[A-Za-z0-9]{40,}/],
   ["private key", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
   ["session link", /claude\.ai\/code\/session_[A-Za-z0-9]{8,}|chatgpt\.com\/codex\/tasks\/[A-Za-z0-9_-]{8,}/],
 ];

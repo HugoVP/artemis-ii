@@ -16,7 +16,7 @@ Agents cannot push to `.github/workflows/`, so the workflows live in `docs/agent
 
 ## Setup (Hugo)
 
-1. **GitHub App**, only for his account, installed only on this repository, no webhook. Permissions: Contents, Pull requests, Issues and Checks (read and write) and Metadata (read). Nothing else.
+1. **GitHub App**, only for his account, installed only on this repository, no webhook. Permissions: Contents, Pull requests and Issues (read and write) and Metadata (read). Nothing else; in particular no Checks, which belongs to phase 3.
 2. **Environment `agents`**, restricted to `main`, with the variable `AGENT_APP_ID` and the secrets `AGENT_APP_PRIVATE_KEY` and `AGENT_KEY_<ID>` (one per agent, for example `AGENT_KEY_CODEX`). Each model key is a dedicated key with a spending limit set in the provider's console.
 3. **Repository variable `AGENT_TRUSTED_LOGIN`** with Hugo's GitHub login. Only this login can start a run.
 4. **Labels** `agent-task` (already used by work orders), `agent-authored` and `needs-hugo`. Create one `agent:<id>` label per agent, for example `agent:codex`.

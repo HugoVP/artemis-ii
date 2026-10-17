@@ -246,3 +246,39 @@ test("scanRange also finds a key in a file name, and decide scans the path list"
   assert.deepEqual(scanRange("main", "agent/x", dir), ["OpenAI-style API key"]);
   assert.equal(decidePublication({ files: [`${key}.txt`], patterns, texts: [`${key}.txt`] }).action, "reject");
 });
+
+test("keys glued to other bytes are still found, and ordinary words with sk- are not flagged", () => {
+  const keys = {
+    "OpenAI-style API key": ["sk-" + "proj-" + "a".repeat(30), "sk-" + "b".repeat(48)],
+    "Anthropic API key": ["sk-ant-" + "c".repeat(30)],
+    "GitHub token": ["ghp_" + "d".repeat(36), "github_pat_" + "e".repeat(60)],
+    "Google API key": ["AIza" + "f".repeat(35)],
+    "Notion token": ["ntn_" + "g".repeat(40), "secret_" + "h".repeat(43)],
+  };
+  for (const [kind, list] of Object.entries(keys)) {
+    for (const key of list) {
+      for (const text of [key, `x${key}`, `text${key}more`, `\u0000\u0001${key}\u0002`]) assert.ok(findSecrets(text).includes(kind), `${kind}: ${text.slice(0, 20)}`);
+    }
+  }
+  for (const ok of ["risk-management-framework-for-the-agents", "task-description-with-many-words-in-it", "ask-me-anything-about-the-pipeline-please", "secret_sync_workflow_and_settings", "ntn_short"]) {
+    assert.deepEqual(findSecrets(ok), [], ok);
+  }
+});
+
+test("the work and publish diffs use the merge base, so a main that moved is not counted as the agent's changes", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "scan-"));
+  const git = (...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" }).toString();
+  git("init", "-q", "-b", "main");
+  writeFileSync(join(dir, "a.txt"), "base\n");
+  git("add", "."); git("commit", "-q", "-m", "base");
+  git("checkout", "-q", "-b", "agent/x");
+  writeFileSync(join(dir, "mine.txt"), "mine\n");
+  git("add", "."); git("commit", "-q", "-m", "mine");
+  git("checkout", "-q", "main");
+  writeFileSync(join(dir, "AGENTS.md"), "main moved\n");
+  git("add", "."); git("commit", "-q", "-m", "main only");
+  const two = parsePathList(git("diff", "--no-renames", "--name-only", "-z", "main", "agent/x"));
+  const three = parsePathList(git("diff", "--no-renames", "--name-only", "-z", "main...agent/x"));
+  assert.deepEqual(two.sort(), ["AGENTS.md", "mine.txt"], "two endpoints blame the agent for main's change");
+  assert.deepEqual(three, ["mine.txt"]);
+});

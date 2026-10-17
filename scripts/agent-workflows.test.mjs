@@ -126,3 +126,9 @@ test("the work order line is matched on a numeric boundary, and prepare checks m
   assert.match(job(run, "prepare"), /--state merged/);
   assert.match(job(run, "prepare"), /merged\.json/);
 });
+
+test("path diffs use three dots, and the concurrency group mirrors the eligibility of prepare", () => {
+  for (const m of run.matchAll(/git diff [^\n]*--name-only[^\n]*/g)) assert.match(m[0], /origin\/main\.\.\.\$/);
+  const group = /^  group: (.*)$/m.exec(run)[1];
+  for (const part of ["agent-task", "issue.pull_request == null", "startsWith(github.event.label.name, 'agent:')"]) assert.ok(group.includes(part), part);
+});

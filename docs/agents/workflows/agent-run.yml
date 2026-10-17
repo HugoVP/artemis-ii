@@ -28,7 +28,7 @@ permissions: {}
 # second run sees the PR of the first. Labels unrelated to agents get a group of their own, so they cannot
 # displace a waiting run.
 concurrency:
-  group: ${{ (github.event_name == 'workflow_dispatch' || startsWith(github.event.label.name, 'agent:')) && 'agent-run' || format('agent-run-ignored-{0}', github.run_id) }}
+  group: ${{ (github.event_name == 'workflow_dispatch' || (startsWith(github.event.label.name, 'agent:') && contains(github.event.issue.labels.*.name, 'agent-task') && github.event.issue.pull_request == null)) && 'agent-run' || format('agent-run-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -206,7 +206,8 @@ jobs:
           [ -s .agent/pr-title.txt ] && [ -s .agent/pr-body.md ] || { echo "The agent did not write .agent/pr-title.txt and .agent/pr-body.md."; exit 1; }
           git bundle create .agent/work.bundle "$BRANCH" --not origin/main
           # NUL-separated, no rename detection: both sides of a rename are listed and names are never quoted.
-          git diff --no-renames --name-only -z origin/main "$BRANCH" > .agent/files.txt
+          # Three dots: the changes of the branch since it left main.
+          git diff --no-renames --name-only -z "origin/main...$BRANCH" > .agent/files.txt
           # Scan from the trusted copy. Every new commit and blob is scanned, binary ones and merge resolutions included.
           # Log transcripts are never uploaded. publish scans again.
           # The agent writes .agent/draft-reason.txt only to ask for a draft; an empty file means no request.
@@ -273,7 +274,8 @@ jobs:
           # Trusted copy of the scripts, from main: later steps check out the agent's branch.
           mkdir -p "$RUNNER_TEMP/trusted" && cp -r scripts "$RUNNER_TEMP/trusted/"
           git fetch "$B/.agent/work.bundle" "refs/heads/$BRANCH:refs/heads/$BRANCH"
-          git diff --no-renames --name-only -z origin/main "$BRANCH" > "$RUNNER_TEMP/files.txt"
+          # Three dots: main may have moved during the run, and its own changes are not the agent's.
+          git diff --no-renames --name-only -z "origin/main...$BRANCH" > "$RUNNER_TEMP/files.txt"
           # Scan every new commit and blob here too, before any token exists.
           node scripts/agent-checks.mjs scan-range origin/main "$BRANCH"
           # AGENTS.md comes from main, so a change to the protected list in the bundle does not apply to itself.

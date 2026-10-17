@@ -83,3 +83,31 @@ test("the image workflow is the only one with packages: write, and does not run 
   assert.doesNotMatch(run, /packages: write/);
   assert.doesNotMatch(image, /pull_request/);
 });
+
+test("the work job runs its steps with bash, not the container's default sh", () => {
+  assert.match(job(run, "work"), /defaults:\n      run:\n        shell: bash/);
+});
+
+test("the artifact keeps the hidden .agent files and is extracted where publish looks for them", () => {
+  assert.match(job(run, "work"), /include-hidden-files: true/);
+  assert.match(job(run, "publish"), /path: \$\{\{ runner\.temp \}\}\/bundle\/\.agent/);
+});
+
+test("path lists are NUL separated without rename detection, and no scan relies on a text patch", () => {
+  const diffs = [...run.matchAll(/git diff [^\n]*--name-only[^\n]*/g)].map((m) => m[0]);
+  assert.equal(diffs.length, 2);
+  for (const d of diffs) assert.match(d, /--no-renames/), assert.match(d, / -z /);
+  assert.doesNotMatch(run, /git log -p/);
+});
+
+test("every new object is scanned in work and again in publish, before the App token exists", () => {
+  assert.match(job(run, "work"), /scan-range origin\/main "\$BRANCH"/);
+  const publish = job(run, "publish");
+  assert.ok(publish.indexOf("scan-range origin/main") !== -1);
+  assert.ok(publish.indexOf("scan-range origin/main") < publish.indexOf("create-github-app-token"));
+});
+
+test("the draft warning never goes through a step output", () => {
+  assert.doesNotMatch(run, /outputs\.warning|warning=/);
+  assert.match(run, /publish-plan/);
+});

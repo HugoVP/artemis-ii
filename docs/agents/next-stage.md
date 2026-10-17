@@ -29,4 +29,5 @@ If the kickoff prompt says you run inside the agent pipeline (`docs/agents/addin
 - **PR text.** Write the PR title (`Stage NN: <name>`) to `.agent/pr-title.txt` and the PR body, in the format of `AGENTS.md` rule 5, to `.agent/pr-body.md`. `.agent/` is git-ignored.
 - **PR link.** Do not add the PR link to `docs/PLAN.md`: the PR number does not exist yet, and the pipeline adds it in a follow-up commit.
 - **Credentials.** Your model key is in the environment of this run only. Never print, write or commit it. A result with a key-like string is rejected.
+- **Blocked.** If you are blocked (rule 8 of `AGENTS.md`), commit what you achieved and write one short line saying what you need from Hugo to `.agent/draft-reason.txt`. The pipeline then opens the PR as a draft and quotes that line.
 - **Protected paths.** Change them only if the stage spec says so. The pipeline opens the PR as a draft with a warning if you touch them, and rejects the run if you edit `.github/workflows/**`.

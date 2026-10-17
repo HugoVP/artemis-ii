@@ -158,3 +158,59 @@ test("linkPlan adds the PR link to the stage row and its log line, and nothing e
   const diff = `diff --git a/docs/PLAN.md b/docs/PLAN.md\n` + changed.map((i) => `-${a[i]}\n+${b[i]}`).join("\n") + "\n";
   assert.deepEqual(checkPlanFollowUp(diff, 21), { ok: true });
 });
+
+import { parsePathList, scanRange, finalizePublication, cleanDraftReason } from "./agent-checks.mjs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+test("linkPlan ignores historical mentions of the stage and links only its own newest log entry", () => {
+  const plan = ["| 03 | Pipeline | `node` | [s](s.md) | in review |  | `HUG-7` |", "", "## Log", "",
+    "- 2026-10-12 — Stage 00 update — Added new Stage 03 (delivery pipeline).",
+    "- 2026-10-13 — Stage 03 — PR #9 — An older, already linked entry.",
+    "- 2026-10-14 — Stage 03 — An older unlinked entry.",
+    "- 2026-10-17 — Stage 03 — The newest entry."].join("\n");
+  const out = linkPlan(plan, "03", 21).split("\n");
+  const src = plan.split("\n");
+  assert.deepEqual(out.map((l, i) => l !== src[i]), [true, false, false, false, false, false, false, true]);
+  assert.match(out[7], /Stage 03 — PR #21 — The newest entry/);
+});
+
+test("path lists are NUL separated, so unusual names and both sides of a rename are checked literally", () => {
+  const list = parsePathList("AGENTS.md\0docs/agents/é.md\0name with \"quotes\".md\0");
+  assert.deepEqual(list, ["AGENTS.md", "docs/agents/é.md", 'name with "quotes".md']);
+  assert.deepEqual(protectedTouched(list, patterns), ["AGENTS.md", "docs/agents/é.md"]);
+  assert.deepEqual(parsePathList(""), []);
+});
+
+test("scanRange finds a key in a binary blob and in a commit message, and passes a clean branch", () => {
+  const dir = mkdtempSync(join(tmpdir(), "scan-"));
+  const git = (...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" });
+  git("init", "-q", "-b", "main");
+  writeFileSync(join(dir, "a.txt"), "base\n");
+  git("add", "."); git("commit", "-q", "-m", "base");
+  git("checkout", "-q", "-b", "agent/x");
+  writeFileSync(join(dir, "ok.txt"), "clean\n");
+  git("add", "."); git("commit", "-q", "-m", "clean change");
+  assert.deepEqual(scanRange("main", "agent/x", dir), []);
+  const key = "sk-" + "proj-" + "z".repeat(40);
+  const binary = Buffer.concat([Buffer.from([0, 1, 2, 255, 254, 0]), Buffer.from(key), Buffer.from([0, 9])]);
+  writeFileSync(join(dir, "blob.bin"), binary);
+  git("add", "."); git("commit", "-q", "-m", "binary");
+  assert.deepEqual(scanRange("main", "agent/x", dir), ["OpenAI-style API key"]);
+  git("checkout", "-q", "-b", "agent/y", "main");
+  writeFileSync(join(dir, "b.txt"), "b\n");
+  git("add", "."); git("commit", "-q", "-m", "message with " + key);
+  assert.deepEqual(scanRange("main", "agent/y", dir), ["OpenAI-style API key"]);
+});
+
+test("a draft comes from protected paths, from the agent's own request, or both; the reason is one short line", () => {
+  assert.deepEqual(finalizePublication({ action: "publish" }, ""), { draft: false, warning: "" });
+  assert.equal(finalizePublication({ action: "publish" }, "Missing capability:\n  figma-write\n").warning, "The agent asked for a draft: Missing capability: figma-write");
+  const both = finalizePublication({ action: "draft", reason: "Protected paths changed: AGENTS.md." }, "blocked");
+  assert.equal(both.draft, true);
+  assert.match(both.warning, /AGENTS\.md\. The agent asked for a draft: blocked$/);
+  assert.equal(cleanDraftReason("x".repeat(900)).length, 500);
+  assert.equal(finalizePublication({ action: "publish" }, "   \n ").draft, false);
+});

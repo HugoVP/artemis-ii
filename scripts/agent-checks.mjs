@@ -1,7 +1,8 @@
 // Checks that the agent-run workflow applies before it lets an agent's result leave the runner.
 // Pure functions, no dependencies (Node 22). Design: docs/MULTI-AGENT-PHASES.md, "Phase 2".
 // The workflow calls the CLI at the bottom; the unit tests live in agent-checks.test.mjs.
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { parseStages } from "./next-stage-issue.mjs";
 
@@ -44,6 +45,47 @@ export function matchesProtected(file, patterns) {
 
 export function protectedTouched(files, patterns) {
   return files.filter((f) => matchesProtected(f, patterns));
+}
+
+// Path lists come from `git diff --no-renames --name-only -z`: NUL-separated, never quoted, with both sides of a rename.
+export function parsePathList(text) {
+  return String(text ?? "").split("\0").filter(Boolean);
+}
+
+// Scans every new commit and blob (binary ones too, merge resolutions included), not only the text of a patch.
+// `batch` is the output of `git cat-file --batch` for the objects of `git rev-list --objects <base>..<branch>`.
+export function scanObjectBatch(batch) {
+  const found = new Set();
+  let i = 0;
+  while (i < batch.length) {
+    const nl = batch.indexOf(10, i);
+    if (nl === -1) break;
+    const [, type, size] = batch.subarray(i, nl).toString("latin1").split(" ");
+    const len = Number(size);
+    if (!Number.isInteger(len)) throw new Error("Unreadable output of git cat-file --batch.");
+    if (type === "blob" || type === "commit" || type === "tag") for (const name of findSecrets(batch.subarray(nl + 1, nl + 1 + len).toString("latin1"))) found.add(name);
+    i = nl + 1 + len + 1;
+  }
+  return [...found];
+}
+
+export function scanRange(base, branch, cwd = process.cwd()) {
+  const git = (args, input) => execFileSync("git", args, { cwd, input, maxBuffer: 1 << 30 });
+  const ids = git(["rev-list", "--objects", "--no-object-names", `${base}..${branch}`]);
+  return scanObjectBatch(git(["cat-file", "--batch"], ids));
+}
+
+// The agent may ask for a draft (a blocked run, AGENTS.md rule 8). The reason is data: one short line.
+export function cleanDraftReason(text) {
+  return String(text ?? "").replace(/\s+/g, " ").trim().slice(0, 500);
+}
+
+export function finalizePublication(decision, requestedReason) {
+  const reason = cleanDraftReason(requestedReason);
+  const lines = [];
+  if (decision.action === "draft") lines.push(decision.reason);
+  if (reason) lines.push(`The agent asked for a draft: ${reason}`);
+  return { draft: lines.length > 0, warning: lines.join(" ") };
 }
 
 // Workflow files are a separate outcome: the App has no Workflows permission, so the run is rejected, not drafted.
@@ -146,8 +188,16 @@ export function checkPlanFollowUp(diff, prNumber) {
 export function linkPlan(planMd, stage, prNumber) {
   const link = `#${Number(prNumber)}`;
   const lines = String(planMd).split("\n");
+  // A log entry of this stage: "- <date> — Stage NN — ..." that has no PR link yet. Other entries may mention the stage.
+  const own = new RegExp(`^- [0-9]{4}-[0-9]{2}-[0-9]{2} — Stage ${stage} — (?!PR #)`);
   let inLog = false;
-  return lines.map((line) => {
+  let lastEntry = -1;
+  lines.forEach((line, i) => {
+    if (/^## /.test(line)) inLog = /^## Log/.test(line);
+    if (inLog && own.test(line)) lastEntry = i;
+  });
+  inLog = false;
+  return lines.map((line, i) => {
     if (/^## /.test(line)) inLog = /^## Log/.test(line);
     if (!inLog && line.startsWith(`| ${stage} |`)) {
       const cells = line.split("|");
@@ -155,9 +205,7 @@ export function linkPlan(planMd, stage, prNumber) {
       if (cells.length >= 9 && cells[6].trim() === "") { cells[6] = ` ${link} `; return cells.join("|"); }
       return line;
     }
-    if (inLog && line.startsWith("- ") && line.includes(`Stage ${stage}`) && !new RegExp(`${link}(?![0-9])`).test(line)) {
-      return line.replace(`Stage ${stage}`, `Stage ${stage} — PR ${link}`);
-    }
+    if (i === lastEntry) return line.replace(`Stage ${stage} — `, `Stage ${stage} — PR ${link} — `);
     return line;
   }).join("\n");
 }
@@ -181,7 +229,9 @@ export function decidePublication({ files, patterns, texts }) {
 //   node scripts/agent-checks.mjs pr-text <title-file> <body-file> <stage>
 //   node scripts/agent-checks.mjs link-plan <PLAN.md> <stage> <pr>
 //   node scripts/agent-checks.mjs check-follow-up <diff-file> <pr>
-//   node scripts/agent-checks.mjs decide <AGENTS.md> <files-file> <text-file>...
+//   node scripts/agent-checks.mjs scan-range <base> <branch>
+//   node scripts/agent-checks.mjs publish-plan <decision.json> <draft-reason-file> <warning-out>
+//   node scripts/agent-checks.mjs decide <AGENTS.md> <NUL-separated-files-file> <text-file>...
 async function main(argv) {
   const [cmd, ...args] = argv;
   if (cmd === "trusted") {
@@ -238,16 +288,31 @@ async function main(argv) {
     console.log(r.ok ? "ok" : r.reason);
     return r.ok ? 0 : 1;
   }
+  if (cmd === "scan-range") {
+    // scan-range <base> <branch>   scans every new commit and blob; prints kinds of secret, never values
+    const kinds = scanRange(args[0], args[1]);
+    console.log(kinds.length ? `Secret-like content in the outgoing objects: ${kinds.join(", ")}.` : "clean");
+    return kinds.length ? 1 : 0;
+  }
+  if (cmd === "publish-plan") {
+    // publish-plan <decision.json> <draft-reason-file or ""> <warning-out>   prints "draft" or "ready"
+    const decision = JSON.parse(await readFile(args[0], "utf8"));
+    const requested = args[1] ? await readFile(args[1], "utf8").catch(() => "") : "";
+    const r = finalizePublication(decision, requested);
+    await writeFile(args[2], r.warning);
+    console.log(r.draft ? "draft" : "ready");
+    return 0;
+  }
   if (cmd === "decide") {
     // decide <agents-md> <files-file> <text-file>...
     const patterns = parseProtectedPaths(await readFile(args[0], "utf8"));
-    const files = (await readFile(args[1], "utf8")).split("\n").filter(Boolean);
+    const files = parsePathList(await readFile(args[1], "utf8"));
     const texts = await Promise.all(args.slice(2).map((f) => readFile(f, "utf8")));
     const d = decidePublication({ files, patterns, texts });
     console.log(JSON.stringify(d));
     return d.action === "reject" ? 1 : 0;
   }
-  console.error("Usage: agent-checks.mjs trusted|stage|ref|open-stage-pr|plan|pr-text|link-plan|check-follow-up|decide ...");
+  console.error("Usage: agent-checks.mjs trusted|stage|ref|open-stage-pr|plan|pr-text|link-plan|check-follow-up|scan-range|publish-plan|decide ...");
   return 2;
 }
 

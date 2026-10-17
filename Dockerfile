@@ -22,6 +22,9 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 # Toolchain for checks and Playwright: the Chromium that matches the locked @playwright/test,
 # with its system libraries. Also the base of the dev container (.devcontainer/).
 FROM deps AS tools
+# Fixed browser location: job containers of GitHub Actions run with another HOME, so the default
+# ~/.cache/ms-playwright of this image would not be found there.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 # Git is not in the slim Node image; the dev container needs it for source control.
 RUN apt-get update && apt-get install -y --no-install-recommends git \
  && rm -rf /var/lib/apt/lists/*

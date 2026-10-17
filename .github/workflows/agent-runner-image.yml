@@ -1,0 +1,59 @@
+name: Agent runner image
+
+# Proposed workflow: Hugo copies it to .github/workflows/agent-runner-image.yml.
+# Builds the `agent-runner` target of the Dockerfile and publishes it to GitHub Container Registry.
+# It runs only on main (never on a PR) and uses plain docker commands, so no third-party action is needed.
+# The job summary prints the image reference with its digest; Hugo stores it in the repository variable
+# AGENT_RUNNER_IMAGE, which agent-run.yml uses. See docs/agents/adding-an-agent.md.
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - package.json
+      - package-lock.json
+      - .github/workflows/agent-runner-image.yml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: agent-runner-image
+  cancel-in-progress: false
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Only this workflow has packages: write. It holds no model key and no other credential.
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "IMAGE=ghcr.io/${OWNER}/artemis-ii-agent-runner" >> "$GITHUB_ENV"
+          docker build --target agent-runner --tag "ghcr.io/${OWNER}/artemis-ii-agent-runner:${GITHUB_SHA}" .
+
+      - name: Push and report the digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker push "${IMAGE}:${GITHUB_SHA}"
+          REF=$(docker inspect --format '{{index .RepoDigests 0}}' "${IMAGE}:${GITHUB_SHA}")
+          {
+            echo "### Agent runner image"
+            echo
+            echo "Set the repository variable \`AGENT_RUNNER_IMAGE\` to:"
+            echo
+            echo "\`${REF}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

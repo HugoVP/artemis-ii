@@ -1,0 +1,80 @@
+/*
+ * Design tokens: Figma variable `group/name` -> CSS variable `--group-name`.
+ * Source of truth: docs/specs/design.md. Values are px, exactly as in Figma.
+ * tests/tokens.spec.ts compares this file with design.md.
+ */
+
+/* Color: collection `Color`, modes dark (default, in the Tailwind theme) and light (override) */
+@theme static {
+  --color-*: initial;
+  --color-background: #0b0d12;
+  --color-surface: #151922;
+  --color-text: #f2f4f8;
+  --color-text-muted: #a9b1c0;
+  --color-accent: #7fb2ff;
+  --color-focus-ring: #ffd166;
+  --color-border: #68728a;
+}
+
+:root[data-theme='light'] {
+  --color-background: #fafaf7;
+  --color-surface: #eeede7;
+  --color-text: #14171f;
+  --color-text-muted: #4a5263;
+  --color-accent: #1f5fbf;
+  --color-focus-ring: #8a5a00;
+  --color-border: #707a8c;
+  color-scheme: light;
+}
+
+/* Density: collection `Density`, modes compact, comfortable (default) and spacious */
+:root,
+:root[data-density='comfortable'] {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+  --space-6: 72px;
+  --text-base: 16px;
+  --layout-content-max: 1040px;
+}
+
+:root[data-density='compact'] {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 40px;
+  --text-base: 15px;
+  --layout-content-max: 880px;
+}
+
+:root[data-density='spacious'] {
+  --space-1: 6px;
+  --space-2: 12px;
+  --space-3: 20px;
+  --space-4: 32px;
+  --space-5: 56px;
+  --space-6: 104px;
+  --text-base: 18px;
+  --layout-content-max: 1200px;
+}
+
+/* Type and shape: collection `Type`, one mode (also Tailwind theme values) */
+@theme static {
+  --text-caption: 13px;
+  --text-label: 14px;
+  --text-h3: 20px;
+  --text-h2: 28px;
+  --text-h1: 40px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --font-display: 'Fraunces Variable', Georgia, serif;
+  --font-ui: 'Inter Variable', system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}

@@ -1,0 +1,36 @@
+---
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/inter';
+import '../styles/global.css';
+import TopBar from '../components/TopBar.astro';
+import Footer from '../components/Footer.astro';
+import { ui } from '../i18n/ui';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description?: string;
+}
+const { lang, title, description } = Astro.props;
+const path = Astro.url.pathname;
+const fullTitle = title === ui[lang].siteName ? title : `${title} · ${ui[lang].siteName}`;
+---
+
+<!doctype html>
+<html lang={lang} data-theme="dark" data-density="comfortable">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    {description && <meta name="description" content={description} />}
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <a class="skip-link" href="#main">{ui[lang].skip}</a>
+    <TopBar lang={lang} path={path} />
+    <main id="main" class="flex-1 w-full max-w-content mx-auto px-4 py-5">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

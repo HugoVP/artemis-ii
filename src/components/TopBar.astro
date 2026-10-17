@@ -1,0 +1,87 @@
+---
+import { alternatePath, sectionPath, sections, type Lang } from '../i18n/routes';
+import { ui } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  path: string;
+}
+const { lang, path } = Astro.props;
+const t = ui[lang];
+const other: Lang = lang === 'es' ? 'en' : 'es';
+const current = (href: string) => (href === `/${lang}/` ? path === href : path.startsWith(href));
+---
+
+<header class="border-b border-border bg-background">
+  <div class="max-w-content mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <a href={`/${lang}/`} class="font-display text-h3 text-text no-underline">{t.siteName}</a>
+
+    <nav aria-label={t.navLabel} class="hidden md:block">
+      <ul class="flex gap-4 list-none m-0 p-0">
+        {
+          sections.map((s) => {
+            const href = sectionPath(lang, s);
+            return (
+              <li>
+                <a href={href} aria-current={current(href) ? 'page' : undefined} class="text-label">
+                  {t.nav[s]}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+
+    <!-- Settings (desktop) / Menu (mobile): a native popover, so no JavaScript is shipped. -->
+    <button
+      type="button"
+      popovertarget="prefs"
+      class="rounded-sm border border-border bg-surface text-text px-3 py-2 text-label cursor-pointer"
+    >
+      <span class="md:hidden">{t.menu}</span>
+      <span class="hidden md:inline">{t.settings}</span>
+    </button>
+  </div>
+
+  <div id="prefs" popover class="m-0 right-3 top-12 w-[min(22rem,calc(100vw-2rem))] rounded-md border border-border bg-surface text-text p-4">
+    <nav aria-label={t.navLabel} class="md:hidden mb-4">
+      <ul class="list-none m-0 p-0 grid gap-2">
+        {
+          sections.map((s) => (
+            <li>
+              <a href={sectionPath(lang, s)} class="text-label">
+                {t.nav[s]}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <h2 class="text-h3 mb-3">{t.preferences.title}</h2>
+    <p class="text-caption text-muted mb-3">{t.preferences.later}</p>
+    <dl class="grid gap-3 text-label m-0">
+      <div>
+        <dt class="text-muted">{t.preferences.language}</dt>
+        <dd class="m-0 flex gap-2">
+          <a href={alternatePath(path)} hreflang={other} lang={other}>{other === 'es' ? 'Español' : 'English'}</a>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-muted">{t.preferences.theme}</dt>
+        <dd class="m-0 text-muted">{t.preferences.dark} · {t.preferences.light}</dd>
+      </div>
+      <div>
+        <dt class="text-muted">{t.preferences.density}</dt>
+        <dd class="m-0 text-muted">{t.preferences.compact} · {t.preferences.comfortable} · {t.preferences.spacious}</dd>
+      </div>
+    </dl>
+  </div>
+</header>
+
+<style>
+  nav a[aria-current='page'] {
+    text-decoration: none;
+    font-weight: 600;
+  }
+</style>

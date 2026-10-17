@@ -1,0 +1,19 @@
+---
+interface Props {
+  label: string;
+  ratio?: string;
+  /** Inside a link or card that already has its own text: hide the placeholder from assistive technology. */
+  decorative?: boolean;
+}
+const { label, ratio = '16 / 9', decorative = false } = Astro.props;
+---
+
+<div
+  role={decorative ? undefined : 'img'}
+  aria-label={decorative ? undefined : label}
+  aria-hidden={decorative ? 'true' : undefined}
+  class="w-full rounded-sm border border-dashed border-border bg-surface text-muted text-caption flex items-center justify-center text-center p-3"
+  style={`aspect-ratio: ${ratio}`}
+>
+  {label}
+</div>

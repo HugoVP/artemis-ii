@@ -45,9 +45,9 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 
 **Job `prepare`:**
 
-- Has two start paths, both owner-validated:
-  - **Label path:** runs only if the label was added by the repository owner (`github.event.sender.login == github.repository_owner`) and the issue has the `agent-task` label.
-  - **Manual path (`workflow_dispatch`):** runs only if the actor is the repository owner. It has no issue to parse, so the `stage` input is validated against `^[0-9]{2}$`, the stage must be the next `pending` stage in `docs/PLAN.md`, and the job resolves its `Run Stage NN` issue by searching for the open issue with that title and the `agent-task` label. If none exists, the run stops. The kickoff and the issue comments of the later jobs use that issue.
+- Has three start paths (new run by label, manual run, and the continuation mode below), all validated against one explicitly configured trusted identity: the repository variable `AGENT_TRUSTED_LOGIN`, set to Hugo's GitHub login. It is not derived from the repository owner, so a transfer to an organization does not change who is trusted. A test checks that Hugo is accepted and any other actor is rejected, both before and after the transfer.
+  - **Label path:** runs only if the label was added by the trusted login (`github.event.sender.login == vars.AGENT_TRUSTED_LOGIN`) and the issue has the `agent-task` label.
+  - **Manual path (`workflow_dispatch`):** runs only if the actor is the trusted login (`github.actor == vars.AGENT_TRUSTED_LOGIN`). It has no issue to parse, so the `stage` input is validated against `^[0-9]{2}$`, the stage must be the next `pending` stage in `docs/PLAN.md`, and the job resolves its `Run Stage NN` issue by searching for the open issue with that title and the `agent-task` label. If none exists, the run stops. The kickoff and the issue comments of the later jobs use that issue.
 - Reads the stage number from the issue title. It treats the title as data: only `^Run Stage [0-9]{2}:` is accepted, and the number is passed on through an environment variable, never interpolated into a shell command.
 - Reads `agents/registry.yaml` (created in phase 2 with one entry) to find how to start that agent and which capabilities it has. If the stage's "Needs" column asks for a capability the agent lacks, the job comments on the issue and stops.
 - Refuses to start a new stage if a stage PR is already open (rule 3 of `AGENTS.md`). Follow-up requests on an existing PR use the separate continuation mode described below.
@@ -74,7 +74,7 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 
 **Follow-up runs (continuation mode).** When Hugo or a reviewer asks for changes, Hugo adds the label `agent:<id>` on the existing stage PR. This is a separate mode of the workflow with its own checks, so it does not bypass the guards of a new run:
 
-- The PR is open, comes from a branch of this repository (not a fork), has a title that starts with `Stage `, a head branch `agent/stage-NN-*` or the agent's own prefix, and the label was added by the repository owner.
+- The PR is open, comes from a branch of this repository (not a fork), has a title that starts with `Stage `, a head branch `agent/stage-NN-*` or the agent's own prefix, and the label was added by the trusted login (`AGENT_TRUSTED_LOGIN`).
 - The workflow checks out that branch at an exact commit SHA, passes the review comments to the agent as a file (`.agent/review.md`), and the `publish` job pushes the new commits only to that same branch, and only if its head is still that SHA.
 - Comments from anyone but Hugo are passed in a separate section marked as untrusted data, as `AGENTS.md` asks.
 - Project code runs in this job next to the model key (the agent runs the project's tests). `docs/DELIVERY.md` forbids running PR code with credentials, so this mode needs the narrow exception listed in "Rules that change before phase 2". The key is a dedicated one with a spending limit, and the job has no deployment or storage credentials.
@@ -117,6 +117,7 @@ Phase 2 needs one amendment before it is built, not after:
 ### What Hugo does
 
 1. Create the GitHub App (only for his account, installed only on this repository, with the permissions above and no webhook), and generate its private key.
+1b. Create the repository variable `AGENT_TRUSTED_LOGIN` with Hugo's GitHub login. The `prepare` job runs before the environment applies, so this is a repository variable, and the workflows trust it instead of the repository owner.
 2. Create the environment `agents`, restricted to `main`. Add the variable `AGENT_APP_ID` and the secrets `AGENT_APP_PRIVATE_KEY` and one model key per agent (for example `AGENT_KEY_<ID>`).
 3. Set a monthly spending limit for each key in its provider's console.
 4. Copy the proposed workflows into `.github/workflows/` in the phase 2 PR.
@@ -124,7 +125,7 @@ Phase 2 needs one amendment before it is built, not after:
 
 ### Acceptance criteria
 
-- **P2-1:** a label added by Hugo starts a run. The same label added by another account does not (checked with a test account, or by reading the `prepare` condition and its test).
+- **P2-1:** a label added by Hugo starts a run. The same label added by another account does not (checked with a test account, or by reading the `prepare` condition and its test). The same holds for manual and continuation runs, and again after a transfer to an organization, because the check uses `AGENT_TRUSTED_LOGIN` and not the repository owner.
 - **P2-2:** the `work` job has no GitHub write token. Checked in the job's permissions block, and by a step that fails if `git push` works.
 - **P2-3:** a run that touches a protected path not listed in the spec opens a draft PR with a warning. The test covers `AGENTS.md`, `public/_headers` and a scanner configuration file. A direct edit of `.github/workflows/**` is a separate outcome: the App has no Workflows permission, so `publish` does not try to push it. It rejects the run, escalates to Hugo (`needs-hugo`), and the proposed workflow goes through the `docs/agents/workflows/` route for Hugo to copy.
 - **P2-4:** the PR opened by the App starts CI and the preview.

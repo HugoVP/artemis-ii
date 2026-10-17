@@ -61,11 +61,16 @@ jobs:
         with:
           node-version: 22
 
+      # Both must be the trusted login: the actor of the original event, and whoever triggered this run. A re-run keeps
+      # the original actor but has a new triggering actor, so a collaborator cannot re-run Hugo's request.
       - name: Only the trusted login may start a run
         env:
           ACTOR: ${{ github.event_name == 'workflow_dispatch' && github.actor || github.event.sender.login }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           TRUSTED: ${{ vars.AGENT_TRUSTED_LOGIN }}
-        run: node scripts/agent-checks.mjs trusted "$ACTOR" "$TRUSTED"
+        run: |
+          node scripts/agent-checks.mjs trusted "$ACTOR" "$TRUSTED"
+          node scripts/agent-checks.mjs trusted "$TRIGGERING_ACTOR" "$TRUSTED"
 
       - name: Resolve the work order, the stage and the agent
         id: order
@@ -120,6 +125,8 @@ jobs:
 
   work:
     needs: prepare
+    # Gated again: re-running only the failed jobs can reuse a successful prepare. Comparison of strings is case-insensitive.
+    if: github.triggering_actor == vars.AGENT_TRUSTED_LOGIN
     runs-on: ubuntu-latest
     timeout-minutes: 90
     # The environment is restricted to main and holds the model keys. This job reads one of them, in one step.
@@ -183,7 +190,7 @@ jobs:
       - name: Commit the agent's changes
         run: |
           set -euo pipefail
-          [ -s .agent/pr-title.txt ] || { echo "The agent did not write .agent/pr-title.txt."; exit 1; }
+          [ -f .agent/pr-title.txt ] && [ ! -L .agent/pr-title.txt ] && [ -s .agent/pr-title.txt ] || { echo "The agent did not write a regular file .agent/pr-title.txt."; exit 1; }
           git add -A -- . ':!.agent' ':!node_modules'
           if git diff --cached --quiet; then echo "The agent changed nothing."; exit 1; fi
           git -c core.hooksPath=/dev/null commit -q -F .agent/pr-title.txt
@@ -203,37 +210,44 @@ jobs:
           set -euo pipefail
           git rev-parse --verify "$BRANCH" >/dev/null
           [ -n "$(git rev-list "origin/main..$BRANCH")" ] || { echo "There is nothing to publish."; exit 1; }
-          [ -s .agent/pr-title.txt ] && [ -s .agent/pr-body.md ] || { echo "The agent did not write .agent/pr-title.txt and .agent/pr-body.md."; exit 1; }
-          git bundle create .agent/work.bundle "$BRANCH" --not origin/main
+          # Everything the pipeline writes goes to a fresh random folder made after the agent ran, never to a path
+          # the agent controls: a symlink planted in .agent/ could otherwise make a redirection truncate a trusted file.
+          OUT=$(mktemp -d)
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          [ ! -L .agent ] || { echo ".agent is a symlink."; exit 1; }
+          # The agent's own files are copied once, after refusing symlinks. draft-reason.txt is optional.
+          for f in pr-title.txt pr-body.md draft-reason.txt; do
+            [ ! -L ".agent/$f" ] || { echo ".agent/$f is a symlink."; exit 1; }
+            if [ -f ".agent/$f" ]; then cp -P ".agent/$f" "$OUT/$f"; else : > "$OUT/$f"; fi
+          done
+          [ -s "$OUT/pr-title.txt" ] && [ -s "$OUT/pr-body.md" ] || { echo "The agent did not write .agent/pr-title.txt and .agent/pr-body.md."; exit 1; }
+          git bundle create "$OUT/work.bundle" "$BRANCH" --not origin/main
           # NUL-separated, no rename detection: both sides of a rename are listed and names are never quoted.
           # Three dots: the changes of the branch since it left main.
-          git diff --no-renames --name-only -z "origin/main...$BRANCH" > .agent/files.txt
+          git diff --no-renames --name-only -z "origin/main...$BRANCH" > "$OUT/files.txt"
           # Scan from the trusted copy. Every new commit and blob is scanned, binary ones and merge resolutions included.
           # Log transcripts are never uploaded. publish scans again.
-          # The agent writes .agent/draft-reason.txt only to ask for a draft; an empty file means no request.
-          touch .agent/draft-reason.txt
           TRUSTED="$RUNNER_TEMP/trusted/scripts/agent-checks.mjs"
           node "$TRUSTED" scan-range origin/main "$BRANCH"
-          node "$TRUSTED" decide "$RUNNER_TEMP/trusted/AGENTS.md" .agent/files.txt \
-            .agent/pr-title.txt .agent/pr-body.md .agent/draft-reason.txt > .agent/decision.json
-          cat .agent/decision.json
+          node "$TRUSTED" decide "$RUNNER_TEMP/trusted/AGENTS.md" "$OUT/files.txt" \
+            "$OUT/pr-title.txt" "$OUT/pr-body.md" "$OUT/draft-reason.txt" > "$OUT/decision.json"
+          cat "$OUT/decision.json"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: agent-bundle
           path: |
-            .agent/work.bundle
-            .agent/pr-title.txt
-            .agent/pr-body.md
-            .agent/files.txt
-            .agent/draft-reason.txt
-          # The files are inside a hidden directory, which the action skips by default.
-          include-hidden-files: true
+            ${{ env.OUT }}/work.bundle
+            ${{ env.OUT }}/pr-title.txt
+            ${{ env.OUT }}/pr-body.md
+            ${{ env.OUT }}/files.txt
+            ${{ env.OUT }}/draft-reason.txt
           retention-days: 7
           if-no-files-found: error
 
   publish:
     needs: [prepare, work]
+    if: github.triggering_actor == vars.AGENT_TRUSTED_LOGIN
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: agents
@@ -350,7 +364,7 @@ jobs:
   # Any failure after a successful prepare is reported on the work order and handed to Hugo.
   escalate:
     needs: [prepare, work, publish]
-    if: always() && needs.prepare.result == 'success' && (needs.work.result != 'success' || needs.publish.result != 'success')
+    if: always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' && (needs.work.result != 'success' || needs.publish.result != 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

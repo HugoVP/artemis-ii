@@ -88,8 +88,12 @@ test("the work job runs its steps with bash, not the container's default sh", ()
   assert.match(job(run, "work"), /defaults:\n      run:\n        shell: bash/);
 });
 
-test("the artifact keeps the hidden .agent files and is extracted where publish looks for them", () => {
-  assert.match(job(run, "work"), /include-hidden-files: true/);
+test("the artifact comes from a fresh folder outside the agent's paths and is extracted where publish looks for it", () => {
+  const work = job(run, "work");
+  assert.match(work, /OUT=\$\(mktemp -d\)/);
+  assert.match(work, /path: \|\n(\s+\$\{\{ env\.OUT \}\}\/[a-z.-]+\n)+/);
+  assert.doesNotMatch(work.split("- name: Bundle and scan the result")[1], />\s*\.agent\//, "no redirection into the agent's scratch folder");
+  assert.match(work, /\[ ! -L \.agent \]/);
   assert.match(job(run, "publish"), /path: \$\{\{ runner\.temp \}\}\/bundle\/\.agent/);
 });
 
@@ -131,4 +135,10 @@ test("path diffs use three dots, and the concurrency group mirrors the eligibili
   for (const m of run.matchAll(/git diff [^\n]*--name-only[^\n]*/g)) assert.match(m[0], /origin\/main\.\.\.\$/);
   const group = /^  group: (.*)$/m.exec(run)[1];
   for (const part of ["agent-task", "issue.pull_request == null", "startsWith(github.event.label.name, 'agent:')"]) assert.ok(group.includes(part), part);
+});
+
+test("a re-run by anyone but the trusted login is refused, in prepare and again in the later jobs", () => {
+  assert.match(job(run, "prepare"), /TRIGGERING_ACTOR: \$\{\{ github\.triggering_actor \}\}/);
+  assert.match(job(run, "prepare"), /trusted "\$TRIGGERING_ACTOR" "\$TRUSTED"/);
+  for (const name of ["work", "publish", "escalate"]) assert.match(job(run, name), /^    if: .*github\.triggering_actor == vars\.AGENT_TRUSTED_LOGIN/m, name);
 });

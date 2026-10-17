@@ -12,8 +12,11 @@ services:
     ports: ["4321:4321"]
     # The named volume outlives image rebuilds, so install against the current lockfile at every start.
     command: ["sh", "-c", "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0"]
+    # Passed through only when set, with no default, so values in a workspace .env file still apply
+    # (the app falls back to /media and to its own contact section by itself).
     environment:
-      MEDIA_BASE_URL: ${MEDIA_BASE_URL:-/media}
+      - MEDIA_BASE_URL
+      - CONTACT_URL
     volumes:
       - .:/app
       - node_modules:/app/node_modules

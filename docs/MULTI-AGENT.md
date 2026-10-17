@@ -32,7 +32,7 @@ The detailed design of phases 2 to 4 (jobs, permissions, acceptance criteria, ro
 
 - **Image `agent-runner`:** a new target in the `Dockerfile` based on `tools`, with the command-line agents installed at pinned versions. Each agent is added only after Hugo has set it up and its first test run is recorded in `docs/agents/other-agents.md`.
 - **Workflow `agent-run.yml`:** started by hand (`workflow_dispatch`) with inputs `agent` and `stage`, and later by the label that Hugo puts on a `Run Stage NN` issue. It checks out the default branch, runs the agent in the runner image on a new branch, and then a separate job with no project code checks the result and opens the PR with a GitHub App token. The agent itself never holds a GitHub write token.
-- **Permissions:** the job token can write contents (on its own branch only) and pull requests, and nothing else. It cannot change workflows, settings or secrets, and it cannot push to `main`.
+- **Permissions:** the `work` job has no GitHub write token. Only the `publish` job writes, through a GitHub App installation token. That token is scoped to the repository, not to one branch (GitHub cannot limit it further), so the branch boundary is enforced by `publish`, which pushes only to `agent/stage-NN-*` and checks the destination before pushing. Verifying that boundary is a Phase 2 prerequisite. The App cannot change workflows, settings or secrets, and it cannot push to `main`, because the `main` ruleset has no bypass.
 - **Secrets:** one API key per agent, in an environment called `agents`, restricted to `main`, and exposed only to the step that starts that agent.
 - **Triggers:** only Hugo can start a run. Comments or issues from other people never start an agent, and their text is treated as untrusted data.
 - **Limits:** a time limit per run, one run at a time per stage, and a log of what each run did. Cost limits are set in each provider's own console.
@@ -41,12 +41,13 @@ The detailed design of phases 2 to 4 (jobs, permissions, acceptance criteria, ro
 
 - **Registry** (`agents/registry.yaml`): for each agent, the capabilities of `docs/agents/README.md`, the provider, how to start it, its cost class and its quota notes.
 - **Orchestrator** (`scripts/`): reads `docs/PLAN.md` and the registry and picks, per stage, one leader and two reviewers from other providers. The score uses required capabilities first, then past results (green CI on the first try, findings in review), then cost and quota, then rotation so that no agent leads two stages in a row.
-- **Stage branches** (`stage/NN-*`) are merged into `iteration/N` by the pipeline when CI, security checks, source checks and the reviewers' verdict pass.
+- **Stage branches** (`stage/NN-*`) are merged into `iteration/N` by the pipeline when CI, security checks, source checks and the reviewers' verdict pass. Today's approvals and progression rules (`docs/specs/README.md`, `docs/PLAN.md`) and CI, which runs only on PRs to `main`, do not allow this. Phase 3 therefore starts with approved amendments of those rules and a CI trigger for `iteration/**`; until then every current gate stays as it is.
 - **Hugo's two gates:** the iteration plan (which stages or improvements enter) and the acceptance of `iteration/N` into `main`, reviewed once in a preview.
 - **Escalation to Hugo:** a check fails twice, a security finding, a fact that cannot be verified, a change to the approved design, or an exhausted budget.
 
 ## Decisions needed from Hugo
 
+0. A narrow exception in `AGENTS.md` and `docs/DELIVERY.md` that lets model API keys reach the agent's job (Phase 2 prerequisite). Deployment and storage credentials stay forbidden.
 1. Which agents are registered first and which of them have an API key (free or paid). Phase 2 adds one at a time.
 2. Whether the pipeline may merge stage branches into `iteration/N` (an `AGENTS.md` amendment, in Phase 3).
 3. The monthly budget per provider, set in each provider's console.

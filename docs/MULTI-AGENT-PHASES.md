@@ -48,7 +48,7 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 - Runs only if the label was added by the repository owner (`github.event.sender.login == github.repository_owner`) and the issue has the `agent-task` label.
 - Reads the stage number from the issue title. It treats the title as data: only `^Run Stage [0-9]{2}:` is accepted, and the number is passed on through an environment variable, never interpolated into a shell command.
 - Reads `agents/registry.yaml` (created in phase 2 with one entry) to find how to start that agent and which capabilities it has. If the stage's "Needs" column asks for a capability the agent lacks, the job comments on the issue and stops.
-- Refuses to start if a stage PR is already open (rule 3 of `AGENTS.md`).
+- Refuses to start a new stage if a stage PR is already open (rule 3 of `AGENTS.md`). Follow-up requests on an existing PR use the separate continuation mode described below.
 
 **Job `work`:**
 
@@ -65,12 +65,17 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 - Has no project code: it does not run npm or any repository script.
 - Downloads the bundle and checks it:
   - The diff does not touch protected paths (`.github/**`, `AGENTS.md`, `CLAUDE.md`, `REVIEW.md`, `docs/DELIVERY.md`, `docs/agents/**`, `public/_headers`), unless the stage spec lists them. When it does, the PR still opens, but as a draft with a warning.
-  - No commit message, file or PR text contains secret-like strings or session links. It reuses the privacy filter of `notion-sync.mjs`.
+  - No commit message, file or PR text contains secret-like strings or session links. A secret scanner runs over every commit in the bundle and over the PR text before anything is pushed, with patterns for the model keys of the registered providers and for private keys. The privacy filter of `notion-sync.mjs` (GitHub and Notion tokens, emails, session links) is a second check, not the main one, because it does not know model keys. If the scanner is a third-party tool, adding it is justified in the phase 2 PR.
   - The PR title starts with `Stage NN:` and the body follows the template.
 - Creates a token for the GitHub App with `actions/create-github-app-token`, scoped to this repository, valid for one hour.
-- Pushes the branch, opens the PR with the label `agent-authored`, and comments on the issue with the PR link.
+- Pushes only to a ref that matches `agent/stage-NN-*` for the validated stage number, opens the PR with the label `agent-authored`, and comments on the issue with the PR link. The App token is repository-wide, so this destination check is what keeps one run from touching another stage's branch.
 
-**Follow-up runs.** When Hugo or a reviewer asks for changes, Hugo adds the label `agent:<id>` again on the PR. The same workflow then checks out the PR branch, passes the review comments to the agent as a file (`.agent/review.md`), and pushes the new commits to the same branch. Comments from anyone but Hugo are passed in a separate section marked as untrusted data, as `AGENTS.md` asks.
+**Follow-up runs (continuation mode).** When Hugo or a reviewer asks for changes, Hugo adds the label `agent:<id>` on the existing stage PR. This is a separate mode of the workflow with its own checks, so it does not bypass the guards of a new run:
+
+- The PR is open, comes from a branch of this repository (not a fork), has a title that starts with `Stage `, a head branch `agent/stage-NN-*` or the agent's own prefix, and the label was added by the repository owner.
+- The workflow checks out that branch at an exact commit SHA, passes the review comments to the agent as a file (`.agent/review.md`), and the `publish` job pushes the new commits only to that same branch, and only if its head is still that SHA.
+- Comments from anyone but Hugo are passed in a separate section marked as untrusted data, as `AGENTS.md` asks.
+- Project code runs in this job next to the model key (the agent runs the project's tests). `docs/DELIVERY.md` forbids running PR code with credentials, so this mode needs the narrow exception listed in "Rules that change before phase 2". The key is a dedicated one with a spending limit, and the job has no deployment or storage credentials.
 
 ### Why a GitHub App
 
@@ -93,12 +98,19 @@ The App's private key lives only in the GitHub environment `agents`, which is re
 ### Security
 
 - **Who can start a run:** only Hugo, through a label (only people with triage access or more can add labels) or `workflow_dispatch`. The `prepare` job also checks the sender. Comments, issues and PRs from other people never start an agent.
+- **Write boundary:** the `main` and tag rulesets do not protect other working branches, and an App installation token is scoped to the repository, not to a branch. The boundary is enforced by the `publish` job (validated destination ref, exact-SHA checks) and verified before phase 2 is considered done (criterion P2-5).
 - **Secrets:** each model key is exposed to one step. An agent can still read its own key while it runs, so each key is a dedicated key with a spending limit set in the provider's console, and it is rotated if a run looks wrong.
 - **Branch protection:** the `main` ruleset already requires a PR, the required checks and Hugo's `approval`. The App is not on any bypass list, so it cannot merge.
 - **Workflow files:** the agent token has no Workflows permission, so agents cannot push changes to `.github/workflows/`. The workflows of this phase are proposed in the PR under `docs/agents/workflows/`, and Hugo copies them into `.github/workflows/` himself, as for Stage 03.
 - **Network:** GitHub-hosted runners have open outbound network. Optional hardening: an egress audit step such as `step-security/harden-runner`. It is a third-party action, so it needs its own justification before it is added.
 - **Logs:** GitHub masks registered secrets in logs. Artifacts with agent transcripts are kept 7 days and can be deleted by hand.
 - **Prompt injection:** the agent reads the repository, the spec and the issue that the pipeline wrote. Web pages, NASA metadata and comments from other people stay untrusted data, as `AGENTS.md` says.
+
+### Rules that change before phase 2
+
+Phase 2 needs one amendment before it is built, not after:
+
+- `AGENTS.md` (environment variables for agents) and `docs/DELIVERY.md` ("never run PR code with credentials") do not allow a model key in the agent's job. A narrow exception is proposed in its own PR: model API keys only, in the `work` job, in an environment restricted to `main`, dedicated and with a spending limit. The ban on deployment and storage credentials stays, and the rest of the amendment waits for phase 3.
 
 ### What Hugo does
 
@@ -114,7 +126,7 @@ The App's private key lives only in the GitHub environment `agents`, which is re
 - **P2-2:** the `work` job has no GitHub write token. Checked in the job's permissions block, and by a step that fails if `git push` works.
 - **P2-3:** a run that touches a protected path not listed in the spec opens a draft PR with a warning.
 - **P2-4:** the PR opened by the App starts CI and the preview.
-- **P2-5:** the App cannot merge into `main` and cannot push to `.github/workflows/`.
+- **P2-5:** the App cannot merge into `main` and cannot push to `.github/workflows/`, and `publish` refuses a destination ref outside `agent/stage-NN-*` and another stage's branch (test with a sandbox branch).
 - **P2-6:** two runs for the same stage never overlap.
 - **P2-7:** the checks of `publish` have unit tests in `scripts/*.test.mjs`, like the Notion and Linear scripts.
 
@@ -159,7 +171,7 @@ Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR tha
 
 ### Orchestrator
 
-`scripts/orchestrate.mjs`, with tests, runs in a workflow on `main` with read-only permissions. It writes its decision as a comment on the iteration issue, so every choice can be audited.
+`scripts/orchestrate.mjs`, with tests, runs in a workflow on `main` with read-only permissions and writes its decision as a file artifact. A second job, with `issues: write` and no project code, posts that decision as a comment on the iteration issue, so every choice can be audited.
 
 **Choosing the leader of a stage:**
 
@@ -181,7 +193,7 @@ Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR tha
 
 ```
 1. Hugo opens an "Iteration N" issue with the list of stages or improvements, and labels it iteration-approved
-2. The pipeline creates iteration/N from main and runs the orchestrator for the first stage
+2. The pipeline creates iteration/N from main, records its base commit SHA, and runs the orchestrator for the first stage
 3. The leader works (phase 2 run) and opens a stage PR against iteration/N
 4. Two reviewers comment (read-only jobs: they can comment, not push)
 5. The leader addresses the findings (at most 2 rounds)
@@ -191,6 +203,8 @@ Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR tha
 9. Hugo reviews the preview once and merges (or comments, and the flow goes back to step 3 for that stage)
 ```
 
+**Where each run reads its state.** Trusted workflow code always comes from `main`. The work checkout, `docs/PLAN.md` and the stage specs come from a validated iteration base: the ref `iteration/N` at an exact commit SHA that the pipeline records after each integrated stage. Without this, a run after the first stage would read an old plan from `main` and could not find the next spec.
+
 **Sequential first.** Stages run one after another, as today, because each spec is written by the previous stage. Running independent stages in parallel is a later option.
 
 **Reviewer verdict format.** Each reviewer ends with a structured block that the gate can read:
@@ -199,7 +213,7 @@ Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR tha
 <!-- agent-review: {"verdict": "pass" | "blocking", "findings": <count>} -->
 ```
 
-The gate trusts the block only on a comment posted by the App's review job, never on comments from other accounts.
+The gate trusts the block only on a comment posted by the App's review job, never on comments from other accounts. The block is bound to the facts the job knows, not to what the model says about itself: the reviewer id assigned by the orchestrator, the provider and the head SHA that was reviewed. The gate needs a fresh `pass` from both assigned reviewers for the current head SHA. If the leader pushes again, earlier passes no longer count, and the pipeline merges exactly the SHA that both reviewers passed.
 
 **Content stages (🔍).** A script checks that every fact in the content collections has a source ID that exists and a link that answers. A reviewer checks at least a sample of facts against their sources. A fact that cannot be verified escalates to Hugo.
 
@@ -220,7 +234,7 @@ Hugo gets a GitHub notification for the label. A Notion or messaging notice can 
 
 ### Rules that change (the amendment)
 
-These need a PR to `AGENTS.md` and `docs/DELIVERY.md` that Hugo approves before phase 3 is built:
+These need coordinated PRs that Hugo approves before phase 3 is built. Until they are approved, every current gate stays as it is:
 
 | Today | With iterations |
 | --- | --- |
@@ -229,12 +243,15 @@ These need a PR to `AGENTS.md` and `docs/DELIVERY.md` that Hugo approves before 
 | "If a stage PR is open, do not start another stage" | Same rule, per iteration |
 | Hugo approves each stage | Hugo approves the iteration plan and the iteration PR |
 | `PLAN.md` statuses: pending, in review, approved | Adds `integrated` (merged into `iteration/N`, not yet in `main`) |
+| Merging a stage PR approves the next stage's spec (`docs/specs/README.md`) | The spec written at the end of a stage is approved with the iteration PR, or by Hugo's iteration plan when it is part of it; the pipeline never treats its own merge as that approval |
+| Content and design review stages (🔍 🎨 in `docs/PLAN.md`) need Hugo's approval before later stages use the result | These stages keep Hugo's approval inside the iteration, or the iteration plan marks them as a stop where the pipeline waits for him |
+| CI runs only on pull requests to `main` | CI, security checks and previews also run on pull requests to `iteration/**`, and every check the gate requires is verified to run there |
 
 `linear-sync.yml` and `notion-sync.yml` keep running only on `main`, so Linear and Notion change when the iteration is accepted.
 
 ### Security
 
-- A ruleset on `iteration/*`: PR required, required checks, no force push, no deletion. The only actor that can merge is the App of the gate job, which runs on `main` and checks the gate.
+- A ruleset on `iteration/*`: PR required, required checks, no force push, no deletion. The only actor that can merge is the App of the gate job, which runs on `main` and checks the gate. The CI trigger migration (`iteration/**`) is part of the phase 3 PR, and it is verified that every required check runs on iteration PRs before the ruleset requires them.
 - Reviewer jobs get a token that can comment but not push (`contents: read`, `pull-requests: write`).
 - The gate job runs no project code. It reads check results and reviewer blocks through the API.
 - `main` keeps its ruleset and Hugo's `approval`. Nothing in phase 3 can merge into `main`.
@@ -327,10 +344,11 @@ Set the variable back to GitHub-hosted runners and remove the self-hosted runner
 | Step | Depends on | Who |
 | --- | --- | --- |
 | Phase 1 merged (Docker) | Stage 02 merged | Hugo merges |
-| Phase 2 PR (runner image, App, `agent-run.yml`) | Phase 1; Stage 03 pipeline for the `approval` check | Agent writes, Hugo creates the App and copies the workflows |
+| Phase 2 PR (runner image, App, `agent-run.yml`) | Phase 1; Stage 03 pipeline for the `approval` check; the model-key exception | Agent writes, Hugo creates the App and copies the workflows |
 | First pipeline run with one agent | Phase 2 | Hugo labels an issue |
-| Amendment of `AGENTS.md` and `DELIVERY.md` | Phase 2 working for at least one full stage | Agent proposes, Hugo approves |
-| Phase 3 PR (registry, orchestrator, review jobs, iteration flow) | Amendment | Agent writes, Hugo configures |
+| Narrow model-key exception in `AGENTS.md` and `DELIVERY.md` | Before the phase 2 PR is built | Agent proposes, Hugo approves |
+| Iteration amendments (approvals, progression, CI triggers) | Phase 2 working for at least one full stage | Agent proposes, Hugo approves |
+| Phase 3 PR (registry, orchestrator, review jobs, iteration flow, CI triggers) | Iteration amendments | Agent writes, Hugo configures |
 | First iteration | Phase 3 | Hugo writes the iteration plan |
 | Phase 4 | A real limit of GitHub-hosted runners | Hugo decides |
 

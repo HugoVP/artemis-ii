@@ -14,7 +14,7 @@ artemis-ii/
 │   ├── dependabot.yml         dependency updates (Stage 03)
 │   └── pull_request_template.md
 ├── docs/
-│   ├── PLAN.md  DELIVERY.md  SETUP.md  STRUCTURE.md  SITEMAP.md  MULTI-AGENT.md
+│   ├── PLAN.md  DELIVERY.md  SETUP.md  STRUCTURE.md  SITEMAP.md  MULTI-AGENT.md  MULTI-AGENT-PHASES.md
 │   ├── agents/                how to run stages with any agent
 │   ├── specs/                 product spec, design spec, one spec per stage
 │   └── content-review/        text drafts (Stage 08)

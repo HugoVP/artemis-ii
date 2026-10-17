@@ -19,6 +19,8 @@ How the project moves from "one agent per stage, started by hand" to a team of a
 
 ## Phases
 
+The detailed design of phases 2 to 4 (jobs, permissions, acceptance criteria, rollback) is in [`MULTI-AGENT-PHASES.md`](MULTI-AGENT-PHASES.md).
+
 | Phase | What it delivers | Where it runs | Status |
 | --- | --- | --- | --- |
 | 1 | Docker images and dev container (`Dockerfile`, `compose.yaml`) | Local, Codespaces | PR open |
@@ -29,7 +31,7 @@ How the project moves from "one agent per stage, started by hand" to a team of a
 ### Phase 2: runner image and workflow
 
 - **Image `agent-runner`:** a new target in the `Dockerfile` based on `tools`, with the command-line agents installed at pinned versions. Each agent is added only after Hugo has set it up and its first test run is recorded in `docs/agents/other-agents.md`.
-- **Workflow `agent-run.yml`:** started by hand (`workflow_dispatch`) with inputs `agent` and `stage`, and later by the label that Hugo puts on a `Run Stage NN` issue. It checks out the default branch, runs the agent in the runner image on a new branch, and lets the agent open the PR as the rules of `AGENTS.md` say.
+- **Workflow `agent-run.yml`:** started by hand (`workflow_dispatch`) with inputs `agent` and `stage`, and later by the label that Hugo puts on a `Run Stage NN` issue. It checks out the default branch, runs the agent in the runner image on a new branch, and then a separate job with no project code checks the result and opens the PR with a GitHub App token. The agent itself never holds a GitHub write token.
 - **Permissions:** the job token can write contents (on its own branch only) and pull requests, and nothing else. It cannot change workflows, settings or secrets, and it cannot push to `main`.
 - **Secrets:** one API key per agent, in an environment called `agents`, restricted to `main`, and exposed only to the step that starts that agent.
 - **Triggers:** only Hugo can start a run. Comments or issues from other people never start an agent, and their text is treated as untrusted data.

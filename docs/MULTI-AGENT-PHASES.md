@@ -275,7 +275,10 @@ These need coordinated PRs that Hugo approves before phase 3 is built. Until the
 
 ### Rollback
 
-Remove the label `iteration-approved` to stop an iteration. Stage PRs can always be retargeted to `main` and handled as today.
+Remove the label `iteration-approved` to stop an iteration. Going back to one stage per PR into `main` is not just a retarget: a later stage PR carries the earlier stages that are already integrated in `iteration/N` but not in `main`. Hugo chooses one of two ways, in stage order:
+- **Accept the integrated work:** open a partial iteration PR from `iteration/N` at the last stage he accepts, review it once, and merge it into `main`. Only after that, retarget the remaining stage PRs to `main`, which is safe because their prerequisites are now there.
+- **Replay it:** discard `iteration/N` and run the stages again one by one with PRs into `main`, as today, in their original order.
+A stage PR is never retargeted to `main` while a stage before it is still only in `iteration/N`.
 
 ### Open points
 
@@ -304,12 +307,14 @@ A small Linux server that runs **self-hosted GitHub Actions runners**. The workf
 
 - The runner connects to GitHub (outbound only): the server needs no open inbound port.
 - Runners are **ephemeral**: each job gets a fresh container that is deleted after the job, so nothing from one run reaches the next.
-- Runners are in a runner group allowed only for this repository and only for `agent-run.yml` and the orchestrator workflows.
+- **Isolation of the runner.** Runner groups are an organization or enterprise control, so a repository owned by a personal account cannot restrict a runner to specific workflows with them. A supported setup is a Phase 4 prerequisite, and one of these is chosen and tested before the runner is registered:
+  - Move the repository to a GitHub organization (a free one is enough, **to verify**) and use a runner group limited to this repository and to the agent workflows.
+  - Or, on a personal repository, register a repository-level runner with a label that only the agent workflows request, require approval for every outside collaborator's workflow run, never run on `pull_request` events from forks, and verify with a test fork PR that it cannot reach the runner.
 - Docker runs rootless, or the runner runs in its own VM, so a job cannot reach the host.
 
 ### Security
 
-- Self-hosted runners must never run jobs from fork PRs (GitHub warns about this for public repositories). These workflows start only from Hugo's labels and from `main`, and the runner group is limited to them.
+- Self-hosted runners must never run jobs from fork PRs (GitHub warns about this for public repositories). These workflows start only from Hugo's labels and from `main`, and the isolation chosen in "How it works" (organization runner group, or a workflow-only label with approval required for outside collaborators) enforces it.
 - Secrets stay in GitHub environments. The server stores none, apart from the runner's registration.
 - Automatic security updates, SSH with keys only, and no other services on the server.
 - If the server is compromised, Hugo removes the runner in GitHub, rotates the model keys and the App key, and rebuilds the server from its setup script.
@@ -328,13 +333,13 @@ To compare when phase 4 starts. Prices and free tiers change, so all of them are
 
 1. Choose the host and create the server.
 2. Run the setup script from the phase 4 PR (installs Docker and the runner, hardens SSH).
-3. Register the runner in the repository settings, in a runner group limited to the agent workflows.
+3. Choose the isolation from "How it works" (organization with a runner group, or a repository-level runner with a workflow-only label and approval required for outside collaborators), then register the runner.
 4. Set the repository variable that switches `runs-on`.
 
 ### Acceptance criteria
 
 - **P4-1:** a job on the self-hosted runner leaves no files or containers after it ends.
-- **P4-2:** a fork PR cannot run a job on the self-hosted runner.
+- **P4-2:** with the isolation that was chosen (organization runner group, or workflow-only label with approval required for outside collaborators), a test fork PR cannot run a job on the self-hosted runner, and a workflow that is not an agent workflow cannot request it.
 - **P4-3:** switching the variable back moves every job to GitHub-hosted runners without other changes.
 
 ### Rollback

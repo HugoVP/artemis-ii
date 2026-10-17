@@ -155,7 +155,9 @@ test("single-line run: values contain no colon followed by a space, which is inv
     for (const m of text.matchAll(/^\s*(?:- )?run: ([^|>\n].*)$/gm)) {
       const value = m[1];
       const quoted = /^["'].*["']$/.test(value);
-      assert.ok(quoted || !/: /.test(value.replace(/\$\{\{.*?\}\}/g, "")), `${name}: ${value}`);
+      // The whole value is checked: YAML is parsed before Actions expressions are evaluated, so a colon and a space
+      // inside an expression is just as invalid.
+      assert.ok(quoted || !/: /.test(value), `${name}: ${value}`);
     }
   }
 });

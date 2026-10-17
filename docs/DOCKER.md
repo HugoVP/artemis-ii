@@ -38,7 +38,7 @@ Without compose: `docker build --target test -t artemis:test . && docker run --r
 
 ## Configuration
 
-- **Environment:** only the variables of `AGENTS.md` are meant for these containers. `MEDIA_BASE_URL` defaults to `/media` (the preview layout); `dev` reads it at run time and `preview` at build time. Never put Cloudflare, R2, Notion, Linear or model API keys in an image or in `compose.yaml`; images can be shared, and build arguments stay in their history.
+- **Environment:** only the variables of `AGENTS.md` are meant for these containers. `MEDIA_BASE_URL` defaults to `/media` (the preview layout); `dev` reads it at run time and `preview` at build time. `CONTACT_URL` is also passed to the `preview` build, because the About page bakes it into the HTML. In the dev container, put these values in a `.env` file in the workspace: the container does not copy variables from the host, so an unset host variable can never override the file. Never put Cloudflare, R2, Notion, Linear or model API keys in an image or in `compose.yaml`; images can be shared, and build arguments stay in their history.
 - **Base images:** `NODE_IMAGE` and `NGINX_IMAGE` are build arguments, so a registry mirror can replace Docker Hub when it rate-limits pulls, for example `NODE_IMAGE=mirror.gcr.io/library/node:22-bookworm-slim docker compose build`.
 - **Shared memory:** Chromium needs more than Docker's default, so `test` uses `ipc: host` and the dev container passes `--ipc=host`.
 - **Base image versions:** `node:22-bookworm-slim` follows the latest Node 22 release (the project needs 22.22.0 or later). Pinning by digest is a later hardening step, together with Dependabot for Docker in Stage 03.

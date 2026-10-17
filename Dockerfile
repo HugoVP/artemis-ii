@@ -22,6 +22,9 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 # Toolchain for checks and Playwright: the Chromium that matches the locked @playwright/test,
 # with its system libraries. Also the base of the dev container (.devcontainer/).
 FROM deps AS tools
+# Git is not in the slim Node image; the dev container needs it for source control.
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+ && rm -rf /var/lib/apt/lists/*
 RUN npx playwright install --with-deps chromium
 
 # Runs the same checks as CI on a copy of the source.
@@ -33,6 +36,9 @@ CMD ["sh", "-c", "npm run check && npm run test"]
 FROM deps AS build
 ARG MEDIA_BASE_URL=/media
 ENV MEDIA_BASE_URL=${MEDIA_BASE_URL}
+# Link of the About page's contact button. Empty means the button points to its own section.
+ARG CONTACT_URL=
+ENV CONTACT_URL=${CONTACT_URL}
 COPY . .
 RUN npm run build
 

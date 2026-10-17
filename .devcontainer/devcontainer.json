@@ -11,9 +11,6 @@
   "containerEnv": {
     "ASTRO_TELEMETRY_DISABLED": "1"
   },
-  "remoteEnv": {
-    "MEDIA_BASE_URL": "${localEnv:MEDIA_BASE_URL}"
-  },
   "runArgs": ["--ipc=host"],
   "customizations": {
     "vscode": {

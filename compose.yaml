@@ -25,13 +25,14 @@ services:
     ipc: host
 
   preview:
-    # MEDIA_BASE_URL is baked into the pages at build time, so it is a build argument here.
+    # MEDIA_BASE_URL and CONTACT_URL are baked into the pages at build time, so they are build arguments here.
     build:
       context: .
       target: preview
       args:
         <<: *images
         MEDIA_BASE_URL: ${MEDIA_BASE_URL:-/media}
+        CONTACT_URL: ${CONTACT_URL:-}
     profiles: [preview]
     ports: ["8080:80"]
 

@@ -42,7 +42,7 @@ jobs:
           node scripts/serve-dist.ts > reports/lighthouse/server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for attempt in {1..30}; do
+          for ((attempt = 0; attempt < 30; attempt++)); do
             if curl -fsS http://127.0.0.1:4321/es/ > /dev/null; then break; fi
             sleep 1
           done

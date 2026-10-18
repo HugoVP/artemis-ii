@@ -53,6 +53,12 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
+      - name: Reject Pages Worker entrypoints
+        run: |
+          if [ -e site/_worker.js ] || [ -L site/_worker.js ]; then
+            echo "Refusing a Pages Worker entrypoint in the static artifact."
+            exit 1
+          fi
       - run: rm -f site/wrangler.toml site/wrangler.json site/wrangler.jsonc
       - name: Upload to the staging Pages project
         run: npx --yes wrangler@4.151.1 pages deploy site --project-name=artemis-ii-staging --branch=main --commit-hash="${GITHUB_SHA}" --commit-dirty=true

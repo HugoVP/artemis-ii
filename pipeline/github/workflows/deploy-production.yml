@@ -51,8 +51,8 @@ jobs:
           [ "${sha}" = "${RUN_SHA}" ] || { echo "Release tag does not match the triggering commit"; exit 1; }
           status=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${sha}...main" --jq .status)
           case "${status}" in identical|ahead) ;; *) echo "Commit ${sha} is not on main"; exit 1;; esac
-          ok=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-staging.yml/runs?head_sha=${sha}&status=success" --jq '.total_count')
-          [ "${ok}" -ge 1 ] || { echo "No successful staging run for ${sha}"; exit 1; }
+          ok=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-staging.yml/runs?head_sha=${sha}&status=success&event=push&branch=main" --jq '.total_count')
+          [ "${ok}" -ge 1 ] || { echo "No successful main push staging run for ${sha}"; exit 1; }
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 

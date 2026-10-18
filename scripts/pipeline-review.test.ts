@@ -174,16 +174,28 @@ test(`SEC-04: ${folder}/deploy-production uses the triggering commit only after 
         */releases/tags/*) echo '{"draft":false}';;
         */commits/*) echo "$TEST_RESOLVED_SHA";;
         */compare/*) echo ahead;;
-        */actions/workflows/*) echo 1;;
+        */actions/workflows/*)
+          case "$*" in
+            *'event=push'*) if [ "$TEST_STAGING_EVENT" != push ]; then echo 0; return; fi;;
+          esac
+          case "$*" in
+            *'branch=main'*) if [ "$TEST_STAGING_BRANCH" != main ]; then echo 0; return; fi;;
+          esac
+          echo 1;;
         *) return 1;;
       esac
     }\n`;
-    const run = (resolved: string) => execFileSync('bash', ['-eu', '-c', mock + script], {
+    const run = (resolved: string, event = 'push', branch = 'main') => execFileSync('bash', ['-eu', '-c', mock + script], {
       env: { ...process.env, TAG: 'v1.2.3', RUN_SHA: 'verified-commit', TEST_RESOLVED_SHA: resolved,
+        TEST_STAGING_EVENT: event, TEST_STAGING_BRANCH: branch,
         GITHUB_REPOSITORY: 'example/site', GITHUB_OUTPUT: join(dir, 'output') }, stdio: 'pipe',
     });
     assert.throws(() => run('different-commit'));
     assert.doesNotThrow(() => run('verified-commit'));
+    assert.throws(() => run('verified-commit', 'pull_request', 'main'), 'a PR success cannot prove staging');
+    assert.throws(() => run('verified-commit', 'workflow_dispatch', 'main'), 'a manual run cannot prove staging');
+    assert.throws(() => run('verified-commit', 'push', 'agent/feature'), 'a feature branch push cannot prove staging');
+    assert.throws(() => run('verified-commit', 'pull_request', 'agent/feature'));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

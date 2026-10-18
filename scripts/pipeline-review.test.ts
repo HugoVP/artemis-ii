@@ -214,6 +214,35 @@ test('OPS-03/04: Pages preparation and disabling automatic deploys precede boots
 });
 
 for (const folder of ['pipeline/github/workflows', '.github/workflows']) {
+  test(`OPS-02: ${folder}/deploy-preview refuses stale builds before they can replace the latest pending job`, async () => {
+    const text = await readFile(new URL(`../${folder}/deploy-preview.yml`, import.meta.url), 'utf8');
+    const eligibility = job(text, 'eligibility');
+    const deploy = job(text, 'deploy');
+    assert.doesNotMatch(eligibility, /concurrency:|environment:|secrets\./);
+    assert.match(deploy, /needs: eligibility\n    if: needs.eligibility.outputs.current == 'true'/);
+    assert.match(deploy, /Check current PR head\n/); // Recheck after the deployment slot is acquired.
+    const script = runBlock(text, 'Check current PR head before queuing');
+    const dir = await mkdtemp(join(tmpdir(), 'preview-eligibility-'));
+    const output = join(dir, 'output');
+    const run = async (built: string, sameRepo = 'true') => {
+      await writeFile(output, '');
+      execFileSync('bash', ['-eu', '-c', 'gh() { echo "$TEST_HEAD"; }\n' + script], {
+        env: { ...process.env, HEAD_SHA: built, TEST_HEAD: 'latest', SAME_REPO: sameRepo,
+          PR_NUMBER: '14', GITHUB_REPOSITORY: 'example/site', GITHUB_OUTPUT: output }, stdio: 'pipe',
+      });
+      return (await readFile(output, 'utf8')).includes('current=true');
+    };
+    try {
+      // One deployment is running and the latest head is pending; an older build completes last.
+      let pending = '';
+      if (await run('latest')) pending = 'latest';
+      if (await run('older')) pending = 'older';
+      assert.equal(pending, 'latest', 'a stale build never enters the group and evicts the latest head');
+      assert.equal(await run('fork-head', 'false'), true, 'forks still reach the non-deploy status reporter');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
   test(`OPS-06 AC-7: ${folder}/approval uses a status-only App after environment approval and no project code`, async () => {
     const text = await readFile(new URL(`../${folder}/approval.yml`, import.meta.url), 'utf8');
     assert.match(text, /pull_request_target:/);

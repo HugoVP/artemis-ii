@@ -153,30 +153,44 @@ function filterJsonText(text, policy) {
   return f === null ? null : JSON.stringify(f);
 }
 
+// Writes to the client and waits for it to drain when its buffer is full, so a slow reader slows the upstream read
+// down instead of piling events up in memory. A client that goes away ends the wait with an error.
+function write(res, text) {
+  if (res.destroyed) throw new Error("client gone");
+  if (res.write(text)) return undefined;
+  return new Promise((resolve, reject) => {
+    const done = (err) => { res.off("drain", onDrain); res.off("close", onClose); if (err) reject(err); else resolve(); };
+    const onDrain = () => done();
+    const onClose = () => done(new Error("client gone"));
+    res.once("drain", onDrain);
+    res.once("close", onClose);
+  });
+}
+
 // Rewrites a server-sent event stream one event at a time.
 async function pipeEvents(body, res, policy) {
   const decoder = new TextDecoder();
   let buf = "";
-  const flush = (block) => {
+  const flush = async (block) => {
     const lines = block.split(/\r?\n/);
     const data = lines.filter((l) => l.startsWith("data:")).map((l) => l.slice(5).replace(/^ /, "")).join("\n");
     const other = lines.filter((l) => !l.startsWith("data:") && l !== "");
-    if (!data) { if (other.length) res.write(`${other.join("\n")}\n\n`); return; }
+    if (!data) { if (other.length) await write(res, `${other.join("\n")}\n\n`); return; }
     const filtered = filterJsonText(data, policy);
     if (filtered === null) return;
-    res.write(`${[...other, ...filtered.split("\n").map((l) => `data: ${l}`)].join("\n")}\n\n`);
+    await write(res, `${[...other, ...filtered.split("\n").map((l) => `data: ${l}`)].join("\n")}\n\n`);
   };
   for await (const chunk of body) {
     buf += decoder.decode(chunk, { stream: true });
     if (buf.length > MAX_RESPONSE) throw new Error("event too large");
     let m;
     while ((m = /\r?\n\r?\n/.exec(buf))) {
-      flush(buf.slice(0, m.index));
+      await flush(buf.slice(0, m.index));
       buf = buf.slice(m.index + m[0].length);
     }
   }
   buf += decoder.decode();
-  if (buf.trim()) flush(buf);
+  if (buf.trim()) await flush(buf);
 }
 
 // Reads a web stream as text, up to a limit.
@@ -216,6 +230,8 @@ export function createGateway({ token, policy, hostnames, upstream = UPSTREAM, f
 
   const server = http.createServer(async (req, res) => {
     const started = Date.now();
+    const cancel = new AbortController();
+    let disconnected = false;
     try {
       // Only requests addressed to the gateway's own name, and never from a browser page.
       const port = server.address().port;
@@ -270,7 +286,9 @@ export function createGateway({ token, policy, hostnames, upstream = UPSTREAM, f
       state.inflight += 1;
       let up;
       try {
-        up = await fetchImpl(upstream, { method: req.method, headers, body, redirect: "error", signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
+        // A client that disconnects before the response is complete cancels the upstream request and its stream.
+        res.on("close", () => { if (!res.writableFinished) { disconnected = true; cancel.abort(); } });
+        up = await fetchImpl(upstream, { method: req.method, headers, body, redirect: "error", signal: AbortSignal.any([cancel.signal, AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)]) });
         log({ t: new Date().toISOString(), ...entry, status: up.status, ms: Date.now() - started });
         // An expired or revoked token must not look like an auth challenge: the client would try OAuth against the gateway.
         if (up.status === 401 || up.status === 403) return send(res, 502, "Figma refused the gateway's token");
@@ -300,7 +318,7 @@ export function createGateway({ token, policy, hostnames, upstream = UPSTREAM, f
         else if (up?.body?.locked && !res.writableEnded) res.destroy();
       }
     } catch (e) {
-      log({ t: new Date().toISOString(), method: "error", decision: "error", reason: e?.name === "TimeoutError" ? "timeout" : "gateway" });
+      log({ t: new Date().toISOString(), method: "error", decision: "error", reason: disconnected ? "disconnect" : e?.name === "TimeoutError" ? "timeout" : "gateway" });
       if (!res.headersSent) send(res, 502, "Gateway error");
       else res.destroy();
     }
@@ -318,11 +336,12 @@ async function main([bind]) {
   const env = { ...process.env };
   for (const k of ["FIGMA_MCP_CLIENT_ID", "FIGMA_MCP_CLIENT_SECRET", "FIGMA_MCP_REFRESH_TOKEN"]) delete process.env[k];
   const policy = { fileKey: fileKeyFromUrl(env.FIGMA_FILE_URL ?? ""), tools: toolsFor(env.FIGMA_ACCESS), maxCalls: MAX_CALLS };
-  const { accessToken } = await refresh({
+  const { accessToken, rotated } = await refresh({
     clientId: env.FIGMA_MCP_CLIENT_ID,
     clientSecret: env.FIGMA_MCP_CLIENT_SECRET || undefined,
     refreshToken: env.FIGMA_MCP_REFRESH_TOKEN,
   });
+  if (rotated) console.log("::warning::Figma returned a new refresh token. Update FIGMA_MCP_REFRESH_TOKEN, or the next run will fail.");
   const server = createGateway({ token: accessToken, policy, hostnames: [HOSTNAME] });
   server.listen(PORT, bind, () => console.log(JSON.stringify({ t: new Date().toISOString(), listening: `${bind}:${PORT}`, tools: policy.tools, maxCalls: policy.maxCalls })));
 }

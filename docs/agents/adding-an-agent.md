@@ -11,7 +11,7 @@ How the `agent-run` workflow runs an agent on a stage, how Hugo sets it up, and 
 | `docs/agents/workflows/agent-runner-image.yml` | Proposed workflow that builds and publishes the runner image. Hugo copies it too |
 | `Dockerfile`, target `agent-runner` | The CI toolchain plus the pinned agent CLIs (Codex and Claude Code) and Claude Code's shell sandbox |
 | `scripts/figma-mcp-gateway.mjs` | The run's Figma MCP gateway: holds the access token and forwards only the stage's tools, on the design file only ("Figma in the pipeline") |
-| `scripts/figma-mcp-token.mjs`, `scripts/figma-mcp-credentials.mjs` | Issue and replace the run's Figma MCP access token; extract the one-time grant on Hugo's machine |
+| `scripts/figma-mcp-token.mjs`, `scripts/figma-mcp-credentials.mjs` | Exchange the refresh token for an access token and replace the run's token at the end; extract the one-time grant on Hugo's machine |
 | `scripts/agent-checks.mjs` | The checks of `prepare`, `work` and `publish`, with unit tests in `scripts/agent-checks.test.mjs` and `scripts/agent-workflows.test.mjs` |
 
 Agents cannot push to `.github/workflows/`, so the workflows live in `docs/agents/workflows/` and Hugo copies them. Copy them again whenever they change.

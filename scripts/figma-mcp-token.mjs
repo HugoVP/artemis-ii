@@ -2,10 +2,10 @@
 // Short-lived access to Figma's MCP server (mcp.figma.com) for agents in the pipeline.
 // The MCP server does not accept personal access tokens: it takes OAuth access tokens issued to an approved client
 // (Codex, Claude Code, …). Hugo signs in once with such a client on his machine; the pipeline keeps that grant's
-// client id and refresh token as secrets of the environment `agents`, and this script exchanges the refresh token
-// for a fresh access token at the start of a run (`issue`) and once more at the end (`revoke`), which replaces the
-// token the agent saw. No dependencies (Node 22). Setup: docs/agents/adding-an-agent.md, "Figma in the pipeline".
-import { writeFile } from "node:fs/promises";
+// client id and refresh token as secrets of the environment `agents`. `refresh` exchanges the refresh token for an
+// access token: the Figma gateway (figma-mcp-gateway.mjs) calls it at the start of a run and keeps the token in
+// memory, and the CLI's `revoke` calls it once more at the end, which replaces the token the gateway held. The token
+// is never written to a file. No dependencies (Node 22). Setup: docs/agents/adding-an-agent.md, "Figma in the pipeline".
 import { fileURLToPath } from "node:url";
 
 export const DISCOVERY_URL = "https://api.figma.com/.well-known/oauth-authorization-server";
@@ -48,25 +48,16 @@ function fromEnv() {
 }
 
 // CLI used by agent-run.yml.
-//   figma-mcp-token.mjs issue <out-file>   writes a fresh access token to <out-file> (mode 0600) and masks it in the log
-//   figma-mcp-token.mjs revoke             refreshes once more and drops the result, so the agent's token stops working
-async function main([cmd, outFile]) {
-  if (cmd === "issue") {
-    if (!outFile) throw new Error("Usage: figma-mcp-token.mjs issue <out-file>");
-    const r = await refresh(fromEnv());
-    console.log(`::add-mask::${r.accessToken}`);
-    await writeFile(outFile, r.accessToken, { mode: 0o600 });
-    console.log(`Figma MCP token issued${r.expiresIn ? `, valid for ${Math.round(r.expiresIn / 3600)} h` : ""}.`);
-    if (r.rotated) console.log("::warning::Figma returned a new refresh token. Update FIGMA_MCP_REFRESH_TOKEN, or the next run will fail.");
-    return 0;
-  }
+//   figma-mcp-token.mjs revoke   refreshes once more and drops the result, so the token the gateway held stops working
+async function main([cmd]) {
   if (cmd === "revoke") {
     const r = await refresh(fromEnv());
     console.log(`::add-mask::${r.accessToken}`);
     console.log("Figma MCP token replaced; the token used in this run no longer works.");
+    if (r.rotated) console.log("::warning::Figma returned a new refresh token. Update FIGMA_MCP_REFRESH_TOKEN, or the next run will fail.");
     return 0;
   }
-  console.error("Usage: figma-mcp-token.mjs issue <out-file> | revoke");
+  console.error("Usage: figma-mcp-token.mjs revoke");
   return 2;
 }
 

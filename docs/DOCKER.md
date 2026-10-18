@@ -50,4 +50,4 @@ Open the repository in VS Code with the Dev Containers extension, or create a Gi
 
 ## The agent runner
 
-The `agent-runner` target is the image in which the pipeline runs an agent: the CI toolchain plus the pinned agent CLIs. It is not meant to be run by hand, because it needs a model key and a workspace prepared by `agent-run.yml`. The `agent-runner-image` workflow builds it on `main` and publishes it to GitHub Container Registry; the run pins it by digest. Details: `docs/agents/adding-an-agent.md`.
+The `agent-runner` target is the image in which the pipeline runs an agent: the CI toolchain plus the pinned agent CLIs. It is not meant to be run by hand, because it needs a model key and a workspace prepared by `agent-run.yml`, which starts it with `docker run` as the runner's user, without the Docker socket and with `.git` read-only. The `agent-runner-image` workflow builds it on `main` and publishes it to GitHub Container Registry; the run pins it by digest. Details: `docs/agents/adding-an-agent.md`.

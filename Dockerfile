@@ -37,7 +37,7 @@ CMD ["sh", "-c", "npm run check && npm run test"]
 
 # Runner of the agent-run workflow (docs/MULTI-AGENT-PHASES.md, Phase 2): the CI toolchain plus the pinned agent CLIs.
 # Built and published by the agent-runner-image workflow; the agent job pins the image by digest.
-# It runs as root inside a throwaway container: the container, not a user account, is the isolation.
+# agent-run.yml starts it with `docker run` as the runner's user (not root), with no added privileges and no Docker socket.
 FROM tools AS agent-runner
 ARG CODEX_VERSION=0.163.0
 ARG CLAUDE_CODE_VERSION=2.1.302

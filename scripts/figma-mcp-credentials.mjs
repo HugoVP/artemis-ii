@@ -46,9 +46,11 @@ export function findGrants(value, parents = []) {
 
 export function figmaGrant(json) {
   const grants = findGrants(json);
-  const figma = grants.filter((g) => /figma\.com/.test(g.text));
-  const list = figma.length > 0 ? figma : grants;
-  if (list.length === 0) throw new Error("No refresh token found in this file. Sign in first (see docs/agents/adding-an-agent.md).");
+  // Only a grant for Figma's server counts: a grant of another server must never be printed as if it were Figma's.
+  const list = grants.filter((g) => /^https:\/\/mcp\.figma\.com(?:\/|$)/.test(g.text));
+  if (list.length === 0) throw new Error(grants.length === 0
+    ? "No refresh token found in this file. Sign in first (see docs/agents/adding-an-agent.md)."
+    : "No grant for https://mcp.figma.com in this file. Sign in to Figma's MCP server first (see docs/agents/adding-an-agent.md).");
   if (list.length > 1) throw new Error("More than one grant found. Use a folder that only has the Figma sign-in.");
   if (!list[0].client_id) throw new Error("A refresh token was found but no client id. The steps in docs/agents/adding-an-agent.md need to be checked against this client version.");
   const { text, ...grant } = list[0];

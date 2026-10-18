@@ -196,3 +196,14 @@ test('OPS-04/06: setup protects v* tags and enables new checks only after bootst
   assert.match(setup, /Merge the installation PR under the existing protections/);
   assert.match(setup, /After the workflows are on `main`[\s\S]*?test PR[\s\S]*?required checks/);
 });
+
+test('OPS-06: agent workflow-write denial is a mandatory prerequisite to bootstrap and the approval gate', () => {
+  const permissionCheck = setup.indexOf('Verify agent workflow-write restrictions before bootstrap');
+  const bootstrap = setup.indexOf('Bootstrap on main');
+  const requiredChecks = setup.indexOf('Verify and enable the new rules');
+  assert.ok(permissionCheck >= 0 && permissionCheck < bootstrap && permissionCheck < requiredChecks);
+  assert.match(setup, /590305e/);
+  assert.match(setup, /rejected workflow push/);
+  assert.match(setup, /Do not proceed to steps 6–7 until this verification passes/);
+  assert.doesNotMatch(setup, /Agents cannot push workflow files/);
+});

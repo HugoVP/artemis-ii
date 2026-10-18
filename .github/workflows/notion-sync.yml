@@ -29,6 +29,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install test dependencies
+        run: npm ci
+
       - name: Unit tests (no network, no credentials)
         run: node --test scripts/*.test.ts
 

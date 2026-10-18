@@ -8,6 +8,9 @@ const production = await workflow('deploy-production');
 const staging = await workflow('deploy-staging');
 const security = await workflow('security');
 const preview = await workflow('preview-build');
+const ci = await workflow('ci');
+const previewDeploy = await workflow('deploy-preview');
+const dast = await workflow('dast');
 const media = await workflow('media');
 const setup = await readFile(new URL('../docs/SETUP.md', import.meta.url), 'utf8');
 const gitleaks = await readFile(new URL('../.gitleaks.toml', import.meta.url), 'utf8');
@@ -95,4 +98,33 @@ test('QA-03: preview reports mobile Lighthouse scores for Home, chapter and phot
   assert.match(preview, /node scripts\/lighthouse-pages.ts/);
   assert.match(preview, /if: always\(\)/);
   assert.match(preview, /path: reports\/lighthouse/);
+});
+
+test('SEC-06: ZAP keeps diagnostics after a scan error without hiding the error', () => {
+  assert.match(dast, /- name: ZAP baseline scan of staging[\s\S]*?docker run --rm/);
+  assert.match(dast, /- uses: actions\/upload-artifact@[^\n]+\n        if: always\(\)\n        with:\n          name: zap-report/);
+  assert.doesNotMatch(dast, /continue-on-error: true/);
+});
+
+test('OPS-02: a failed preview upload or missing URL cannot report success', () => {
+  const upload = /- name: Upload to the staging Pages project \(branch preview\)[\s\S]*?(?=\n      - name:|$)/.exec(previewDeploy)?.[0];
+  assert.ok(upload);
+  assert.match(upload, /set -o pipefail/);
+  assert.match(upload, /wrangler@4\.151\.1 pages deploy[^\n]*\| tee deploy\.log/);
+  assert.match(upload, /URL=\$\(grep[^\n]*\| tail -1\)/);
+  assert.match(upload, /test -n "\$\{URL\}"/);
+});
+
+test('OPS-02: preview deploys are serialized per PR and stale commits do not deploy or report success', () => {
+  const deploy = job(previewDeploy, 'deploy');
+  assert.match(deploy, /concurrency:\n      group: preview-\$\{\{ github\.event\.workflow_run\.pull_requests\[0\]\.number \}\}\n      cancel-in-progress: false/);
+  assert.match(deploy, /gh api "repos\/\$\{GITHUB_REPOSITORY\}\/pulls\/\$\{PR_NUMBER\}" --jq '\.head\.sha'/);
+  assert.match(deploy, /"\$\{CURRENT_SHA\}" = "\$\{HEAD_SHA\}"/);
+  assert.match(deploy, /if: env\.SAME_REPO == 'true' && steps\.current\.outputs\.current == 'true'/);
+});
+
+test('OPS-02: CI build is the only PR job named build', () => {
+  assert.match(ci, /jobs:\n  build:/);
+  assert.match(preview, /jobs:\n  preview-build:/);
+  assert.doesNotMatch(preview, /jobs:\n  build:/);
 });

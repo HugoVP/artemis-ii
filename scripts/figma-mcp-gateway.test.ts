@@ -273,11 +273,11 @@ test("a JSON response holds its slot until a slow client has taken it, and a dis
     req.on("end", () => { res.writeHead(200, { "content-type": "application/json" }); res.end(big); });
   }).listen(0, "127.0.0.1");
   await new Promise((r) => up.once("listening", r));
-  const gw = createGateway({ token: "t", policy: readPolicy(), hostnames: ["127.0.0.1"], upstream: `http://127.0.0.1:${up.address().port}/mcp`, log: () => {} });
-  await new Promise((r) => gw.listen(0, "127.0.0.1", r));
+  const gw = createGateway({ token: "t", policy: readPolicy(), hostnames: ["127.0.0.1"], upstream: `http://127.0.0.1:${(up.address() as AddressInfo).port}/mcp`, log: () => {} });
+  await new Promise<void>((r) => gw.listen(0, "127.0.0.1", r));
   try {
     // A client that connects and never reads.
-    const req = http.request({ host: "127.0.0.1", port: gw.address().port, path: "/mcp", method: "POST", headers: { "content-type": "application/json" } }, (res) => res.pause());
+    const req = http.request({ host: "127.0.0.1", port: (gw.address() as AddressInfo).port, path: "/mcp", method: "POST", headers: { "content-type": "application/json" } }, (res) => res.pause());
     req.on("error", () => {});
     req.end(JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }));
     await new Promise((r) => setTimeout(r, 800));

@@ -308,7 +308,9 @@ export function createGateway({ token, policy, hostnames, upstream = UPSTREAM, f
           const filtered = filterJsonText(await readText(up.body, MAX_RESPONSE), policy);
           if (filtered === null) { res.writeHead(202, out); return res.end(); }
           res.writeHead(up.status, { ...out, "content-type": "application/json" });
-          return res.end(filtered);
+          // The slot is held until a slow client has taken the whole payload, as for event streams.
+          await write(res, filtered);
+          return res.end();
         }
         return send(res, 502, "Unexpected response from Figma");
       } finally {

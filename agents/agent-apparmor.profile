@@ -48,6 +48,7 @@ profile "artemis-ii-agent-bwrap" flags=(attach_disconnected,mediate_deleted) {
 
   # Bubblewrap mounts only inside its unprivileged user and mount namespaces.
   mount,
+  pivot_root,
 
   deny /sys/[^f]*/** wklx,
   deny /sys/f[^s]*/** wklx,

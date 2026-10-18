@@ -65,3 +65,18 @@ test("refresh refuses a discovery document that points the secrets at another ho
   m.server.close();
   assert.ok(!m.calls.some((c) => c.method === "POST"));
 });
+
+test("refresh does not follow a redirect that would resend the secrets to another origin", async () => {
+  const other = { hits: 0 };
+  const evil = http.createServer((req, res) => { other.hits++; res.end("{}"); }).listen(0);
+  const evilUrl = `http://127.0.0.1:${evil.address().port}/steal`;
+  const server = http.createServer((req, res) => {
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    if (req.url === "/.well-known/oauth-authorization-server") { res.setHeader("content-type", "application/json"); return res.end(JSON.stringify({ token_endpoint: `${origin}/v1/oauth/token` })); }
+    res.statusCode = 307; res.setHeader("location", evilUrl); res.end();
+  }).listen(0);
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  await assert.rejects(refresh({ clientId: "cid", refreshToken: "rt", discoveryUrl: `${origin}/.well-known/oauth-authorization-server`, allowedOrigin: origin }));
+  server.close(); evil.close();
+  assert.equal(other.hits, 0);
+});

@@ -103,6 +103,8 @@ const SECRET_PATTERNS = [
   ["GitHub token", /(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})/],
   ["Google API key", /AIza[0-9A-Za-z_-]{35}/],
   ["Notion token", /(?:ntn_|secret_)[A-Za-z0-9]{40,}/],
+  // Figma: personal access tokens (figd_) and OAuth tokens (figu_, figur_), including the MCP access token of a run.
+  ["Figma token", /(?:figd|figu|figur)_[A-Za-z0-9_-]{20,}/],
   ["private key", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
   ["session link", /claude\.ai\/code\/session_[A-Za-z0-9]{8,}|chatgpt\.com\/codex\/tasks\/[A-Za-z0-9_-]{8,}/],
 ];

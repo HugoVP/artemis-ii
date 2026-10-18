@@ -482,8 +482,12 @@ jobs:
         run: node scripts/figma-mcp-token.mjs revoke
 
   escalate:
-    needs: [prepare, work, publish]
-    if: always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' && (needs.work.result != 'success' || needs.publish.result != 'success')
+    needs: [prepare, work, publish, figma-revoke]
+    # figma-revoke is skipped on purpose for stages without Figma; only a failure or cancellation of it counts.
+    if: >-
+      always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' &&
+      (needs.work.result != 'success' || needs.publish.result != 'success' ||
+       needs.figma-revoke.result == 'failure' || needs.figma-revoke.result == 'cancelled')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -495,6 +499,15 @@ jobs:
           REPO: ${{ github.repository }}
           ISSUE: ${{ needs.prepare.outputs.issue }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PUBLISHED: ${{ needs.work.result == 'success' && needs.publish.result == 'success' }}
+          REVOKE: ${{ needs.figma-revoke.result }}
         run: |
-          gh issue comment "$ISSUE" --repo "$REPO" --body "The agent result was not published. The reason is in the log: $RUN_URL"
+          set -euo pipefail
+          if [ "$PUBLISHED" = true ]; then
+            MSG="The agent result was published, but the Figma MCP access token of this run was not replaced ($REVOKE). Check the log, and revoke the grant in Figma if in doubt: $RUN_URL"
+          else
+            MSG="The agent result was not published. The reason is in the log: $RUN_URL"
+            if [ "$REVOKE" = failure ] || [ "$REVOKE" = cancelled ]; then MSG="$MSG (The Figma MCP access token was not replaced either.)"; fi
+          fi
+          gh issue comment "$ISSUE" --repo "$REPO" --body "$MSG"
           gh issue edit "$ISSUE" --repo "$REPO" --add-label needs-hugo || true

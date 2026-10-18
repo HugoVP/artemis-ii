@@ -144,7 +144,7 @@ test("path diffs use three dots, and the concurrency group mirrors the eligibili
 test("a re-run by anyone but the trusted login is refused, in prepare and again in the later jobs", () => {
   assert.match(job(run, "prepare"), /TRIGGERING_ACTOR: \$\{\{ github\.triggering_actor \}\}/);
   assert.match(job(run, "prepare"), /trusted "\$TRIGGERING_ACTOR" "\$TRUSTED"/);
-  for (const name of ["work", "publish", "escalate"]) assert.match(job(run, name), /^    if: .*github\.triggering_actor == vars\.AGENT_TRUSTED_LOGIN/m, name);
+  for (const name of ["work", "publish", "figma-revoke", "escalate"]) assert.match(job(run, name), /^    if: (?:>-\n\s+)?.*github\.triggering_actor == vars\.AGENT_TRUSTED_LOGIN/m, name);
 });
 
 test("the agent step never asks the CLI to write to a path of the agent's choosing, and never bypasses the sandbox", () => {
@@ -208,4 +208,12 @@ test("project dependencies are installed after the Figma token step and before t
   assert.ok(at("Get a Figma MCP access token") < at("Install the project dependencies"));
   assert.ok(at("Install the project dependencies") < at("Run the agent"));
   assert.equal([...run.matchAll(/npm ci/g)].length, 1);
+});
+
+test("a failed or cancelled token replacement is escalated, and its intended skip is not", () => {
+  const esc = job(run, "escalate");
+  assert.match(esc, /needs: \[prepare, work, publish, figma-revoke\]/);
+  assert.match(esc, /needs\.figma-revoke\.result == 'failure' \|\| needs\.figma-revoke\.result == 'cancelled'/);
+  assert.doesNotMatch(esc, /figma-revoke\.result != 'success'/);
+  assert.match(esc, /was not replaced/);
 });

@@ -20,6 +20,13 @@ function pick(obj, names) {
 
 // Walks the parsed JSON (strings that are JSON themselves included) and returns every object with a refresh token,
 // with the client id found on the object itself or on one of its parents.
+// The server URL of a grant may sit on the grant's object or on an enclosing one (for example a `token_response`
+// inside an entry that holds `server_url`), so the nearest URL in the chain decides which server the grant is for.
+function nearestUrl(chain) {
+  for (const o of chain) for (const k of ["server_url", "serverUrl", "url", "resource"]) if (typeof o?.[k] === "string") return o[k];
+  return "";
+}
+
 export function findGrants(value, parents = []) {
   let node = value;
   if (typeof node === "string") {
@@ -31,7 +38,7 @@ export function findGrants(value, parents = []) {
   if (refresh) {
     const chain = [node, ...parents];
     const first = (names) => chain.map((o) => pick(o, names)).find(Boolean);
-    found.push({ client_id: first(FIELDS.client_id), client_secret: first(FIELDS.client_secret), refresh_token: refresh, text: JSON.stringify(node) });
+    found.push({ client_id: first(FIELDS.client_id), client_secret: first(FIELDS.client_secret), refresh_token: refresh, text: nearestUrl(chain) || JSON.stringify(node) });
   }
   for (const child of Object.values(node)) found.push(...findGrants(child, [node, ...parents]));
   return found;

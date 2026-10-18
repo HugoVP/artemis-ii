@@ -19,13 +19,14 @@ export function checkTokenEndpoint(url, allowedOrigin = "https://api.figma.com")
 
 export async function refresh({ clientId, clientSecret, refreshToken, discoveryUrl = DISCOVERY_URL, allowedOrigin, fetchImpl = fetch }) {
   if (!clientId || !refreshToken) throw new Error("FIGMA_MCP_CLIENT_ID and FIGMA_MCP_REFRESH_TOKEN must be set.");
-  const meta = await fetchImpl(discoveryUrl);
+  // No redirects: a redirect could take the request, and the secrets of the POST below, to another origin.
+  const meta = await fetchImpl(discoveryUrl, { redirect: "error" });
   if (!meta.ok) throw new Error(`Figma OAuth discovery failed with ${meta.status}.`);
   const tokenEndpoint = checkTokenEndpoint((await meta.json()).token_endpoint, allowedOrigin);
 
   const body = new URLSearchParams({ grant_type: "refresh_token", client_id: clientId, refresh_token: refreshToken });
   if (clientSecret) body.set("client_secret", clientSecret);
-  const res = await fetchImpl(tokenEndpoint, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body });
+  const res = await fetchImpl(tokenEndpoint, { method: "POST", redirect: "error", headers: { "content-type": "application/x-www-form-urlencoded" }, body });
   let json = {};
   try { json = await res.json(); } catch { /* no body */ }
   // Status and the OAuth error code only: never the request body.

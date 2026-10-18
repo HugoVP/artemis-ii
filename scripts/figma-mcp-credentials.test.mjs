@@ -24,3 +24,11 @@ test("figmaGrant prefers the Figma grant and refuses ambiguous or incomplete fil
   assert.throws(() => figmaGrant({ url: "https://mcp.figma.com/mcp", refresh_token: "r" }), /no client id/);
   assert.equal(findGrants("not json").length, 0);
 });
+
+test("figmaGrant uses the server URL of an enclosing entry, so a nested Figma grant is told apart from other grants", () => {
+  const mixed = {
+    "figma|abc": { server_url: "https://mcp.figma.com/mcp", client_id: "cid", token_response: { access_token: "a", refresh_token: "rt-figma" } },
+    "other|def": { server_url: "https://mcp.example.com/mcp", client_id: "oid", token_response: { access_token: "b", refresh_token: "rt-other" } },
+  };
+  assert.deepEqual(figmaGrant(mixed), { client_id: "cid", client_secret: undefined, refresh_token: "rt-figma" });
+});

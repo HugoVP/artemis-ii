@@ -256,13 +256,14 @@ test("keys glued to other bytes are still found, and ordinary words with sk- are
     "GitHub token": ["ghp_" + "d".repeat(36), "github_pat_" + "e".repeat(60)],
     "Google API key": ["AIza" + "f".repeat(35)],
     "Notion token": ["ntn_" + "g".repeat(40), "secret_" + "h".repeat(43)],
+    "Figma token": ["figd_" + "i".repeat(40), "figu_" + "j".repeat(40), "figur_" + "k".repeat(40)],
   };
   for (const [kind, list] of Object.entries(keys)) {
     for (const key of list) {
       for (const text of [key, `x${key}`, `text${key}more`, `\u0000\u0001${key}\u0002`]) assert.ok(findSecrets(text).includes(kind), `${kind}: ${text.slice(0, 20)}`);
     }
   }
-  for (const ok of ["risk-management-framework-for-the-agents", "task-description-with-many-words-in-it", "ask-me-anything-about-the-pipeline-please", "secret_sync_workflow_and_settings", "ntn_short"]) {
+  for (const ok of ["risk-management-framework-for-the-agents", "task-description-with-many-words-in-it", "ask-me-anything-about-the-pipeline-please", "secret_sync_workflow_and_settings", "ntn_short", "figure_caption_for_the_launch_photo_one", "configure_figma_tokens"]) {
     assert.deepEqual(findSecrets(ok), [], ok);
   }
 });

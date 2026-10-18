@@ -239,7 +239,7 @@ test("a response holds its concurrency slot until its body is relayed, so a nint
     assert.equal(gw.state.inflight, 8);
     assert.equal((await post()).status, 429);
     // A tool call refused as busy does not use up the run's quota.
-    const busy = await fetch(`http://127.0.0.1:${gw.address().port}/mcp`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(call("get_metadata", { fileKey: KEY })) });
+    const busy = await fetch(`http://127.0.0.1:${(gw.address() as AddressInfo).port}/mcp`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(call("get_metadata", { fileKey: KEY })) });
     assert.equal(busy.status, 429);
     assert.equal(gw.state.calls, 0);
     for (const res of open) res.end();

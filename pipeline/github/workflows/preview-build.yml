@@ -20,8 +20,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Stage 06 adds media generation here; until then the folder only holds what the build needs.
-      - run: mkdir -p public/media
+      - name: Generate media without credentials
+        run: |
+          mkdir -p media-out
+          if [ -f scripts/ingest.ts ]; then
+            npm run ingest -- --build --out media-out
+          else
+            echo '{"photos":[]}' > media-out/manifest.json
+          fi
       - name: Build with the preview media layout
         run: npm run build
         env:
@@ -29,6 +35,8 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL_STAGING }}
       - name: Record the PR number (data only)
         run: echo "${{ github.event.pull_request.number }}" > dist/.pr-number
+      - name: Package and validate the complete static site
+        run: node scripts/package-media.ts media-out dist
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: preview-dist

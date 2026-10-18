@@ -79,6 +79,33 @@ jobs:
         with:
           node-version: 22
       # The artifact is data: nothing in it is executed, and its configuration files are ignored.
+      - name: Validate Pages artifact limits without executing artifact code
+        if: env.SAME_REPO == 'true' && steps.current.outputs.current == 'true'
+        run: |
+          node --input-type=module-typescript <<'TYPESCRIPT'
+          import { lstat, readdir } from 'node:fs/promises';
+          import { join } from 'node:path';
+          const root = 'site';
+          let count = 0;
+          async function walk(directory: string): Promise<void> {
+            for (const name of await readdir(directory)) {
+              const path = join(directory, name);
+              const info = await lstat(path);
+              if (info.isSymbolicLink() || (!info.isDirectory() && !info.isFile())) {
+                throw new Error(`Non-regular entry forbidden: ${path}`);
+              }
+              if (info.isDirectory()) await walk(path);
+              else {
+                if (info.size > 26214400) throw new Error(`Pages file exceeds 25 MiB: ${path}`);
+                if (++count > 20000) throw new Error('Pages file count exceeds 20000');
+              }
+            }
+          }
+          await walk(root);
+          if (!(await lstat(join(root, 'index.html'))).isFile()) throw new Error('Missing site/index.html');
+          if ((await readdir(root)).includes('functions')) throw new Error('Pages Functions forbidden');
+          console.log(`Validated ${count} static files`);
+          TYPESCRIPT
       - name: Reject Pages Worker entrypoints
         if: env.SAME_REPO == 'true' && steps.current.outputs.current == 'true'
         run: |

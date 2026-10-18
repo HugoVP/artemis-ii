@@ -47,7 +47,7 @@ Nothing here has been run on this project yet. "Confirmed" means found in OpenAI
 2. Create a cloud environment for the repository:
    - Setup script: `if [ -f package.json ]; then npm ci; fi`.
    - Internet access: allowlist the domains in `docs/SETUP.md`.
-   - Variables: only `FIGMA_FILE_URL`, `MEDIA_BASE_URL` (staging value) and `CONTACT_URL`. No secrets, no Cloudflare or R2 credentials.
+   - Variables: only `FIGMA_FILE_URL`, `MEDIA_BASE_URL=/media` and `CONTACT_URL`. No secrets, no Cloudflare or R2 credentials.
 3. Run a small documentation-only task with the kickoff prompt (`Read AGENTS.md and follow docs/agents/next-stage.md.`) and check: which account opens the PR, which permissions it has, and that it follows `AGENTS.md`.
 4. Record the results in the "Known agents" table in `README.md`, with the date.
 

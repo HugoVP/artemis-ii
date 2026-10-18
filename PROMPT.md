@@ -21,7 +21,7 @@ All data (dates, times, distances, records, firsts) is verified against official
 
 ## Media: own storage
 
-- Images do not depend on NASA's servers. They are downloaded once and served from our own storage.
+- Optimized images are served with the static site on Cloudflare Pages. NASA is used only as an explicit external download for originals larger than 25 MiB, as authorized by Hugo on 2026-10-18.
 - Write a script (for example, `scripts/ingest.ts`) that:
   1. Downloads the originals of the approved photos, including the launch ones.
   2. Generates optimized variants with sharp (AVIF and WebP at several widths, plus a thumbnail and a 1200×630 Open Graph image).
@@ -29,8 +29,8 @@ All data (dates, times, distances, records, firsts) is verified against official
   4. Is idempotent: if a photo is already processed, it is not downloaded again.
 - Storage configurable with an environment variable (for example, `MEDIA_BASE_URL`):
   - Development: local file system, outside the bundle if it is heavy.
-  - Production: Cloudflare R2. The script produces what gets uploaded; the upload itself is done by the pipeline (a trusted workflow with a pinned storage tool), so no project code ever runs with storage credentials.
-- Keep the high-resolution original in our own storage so it can be offered as a download from the site.
+  - All environments: `/media` in the same static Pages deployment as the HTML. Generation has no secrets; a separate deployment job uploads only the finished artifact.
+- Bundle unchanged originals up to 26,214,400 bytes for download. Larger originals have an explicit external NASA download link with their measured byte size; never relabel a recompressed image as the original.
 - Each photo also stores the link to the original NASA resource, and it is shown on the page.
 - Launch video: embed NASA's official video with a lightweight player that loads nothing from third parties until the user clicks. If useful, keep a few short clips or frames in our own storage to use as covers.
 
@@ -73,7 +73,7 @@ Controls in the top bar, accessible and remembered between visits (localStorage,
 ## Gallery structure
 
 - Chapters by mission moment: the launch, toward the Moon, the far side, the eclipse and the return.
-- A page per photo with the large image, the story or caption, the date, the camera if known, the original NASA ID, the link to the original, and the download from our own storage.
+- A page per photo with the large image, the story or caption, the date, the camera if known, the original NASA ID, the link to the original, and the original download (local when at most 25 MiB, otherwise explicitly on NASA).
 - Open Graph images per photo, so they look good when shared on WhatsApp.
 - Sober design centered on the photo. Responsive and mobile first, because most people will see it on their phone.
 
@@ -114,4 +114,4 @@ Mandatory review points, each in its own PR:
 
 In the end, the static build must work in both languages, with the three density modes and the three gallery views.
 
-**Do it with Astro and deploy on Cloudflare (Pages for the site, R2 for the media).**
+**Do it with Astro and deploy the site and media together on Cloudflare Pages. Do not activate R2 or use Functions, Workers or billed image transformations to serve media.**

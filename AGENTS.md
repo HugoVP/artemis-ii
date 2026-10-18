@@ -137,8 +137,8 @@ Applies to any agent asked to review a pull request (for example Codex reviewing
   - Scripts run directly with Node's type stripping (`node scripts/<name>.ts`, tests with `npm run test:scripts`), so they use only erasable syntax (no enums, namespaces or parameter properties; `erasableSyntaxOnly` is on) and import local files with their `.ts` extension.
 - Node.js 22 (22.22 or later, which runs TypeScript directly) and npm, with `package-lock.json` in the repo. `check`, `build` and `test` scripts in `package.json` (the pipeline uses them).
 - Content collections with Zod schemas for photos, stories, chapters and sources.
-- Media served from our own storage via `MEDIA_BASE_URL`, which differs per environment. Never hotlink images on NASA servers (only "view original" links).
-- Heavy images and binaries stay out of git: the pipeline uploads them to R2. The repo only keeps metadata and, at most, very light thumbnails.
+- Media is bundled with the static site on Cloudflare Pages under `/media` (`MEDIA_BASE_URL=/media`). Never embed NASA-hosted images. Original downloads larger than 25 MiB link explicitly to their verified HTTPS NASA source; smaller originals are bundled unchanged.
+- Heavy images and binaries stay out of git: the pipeline generates and packages them with HTML in one static Pages artifact. Do not use or activate R2, Functions, Workers or billed image transformations for media serving. The repo only keeps metadata and, at most, very light thumbnails.
 - Secrets only in the pipeline (see `docs/DELIVERY.md`). Never write keys, tokens or private endpoints in repo files, commits or PRs.
 - `localStorage` always inside try/catch.
 - Acceptance tests with Playwright against the static build.
@@ -150,7 +150,7 @@ Applies to any agent asked to review a pull request (for example Codex reviewing
 | Variable | Use |
 | --- | --- |
 | `FIGMA_FILE_URL` | URL of the project's Figma design file (not a secret) |
-| `MEDIA_BASE_URL` | Public URL of the staging media, for local development |
+| `MEDIA_BASE_URL` | Same-origin `/media` path, including local development |
 | `CONTACT_URL` | Link or email for the AI notice |
 
 Nothing else, except the model API key that the pipeline gives to the job that runs an agent (see the Credentials rule above); it is never present in vendor environments or on a local machine. Pipeline secrets and per-environment values are listed in `docs/DELIVERY.md`. If a stage needs a variable that is not defined, stop and ask for it in the PR (rule 8).

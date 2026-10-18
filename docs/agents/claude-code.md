@@ -7,7 +7,7 @@ How Claude Code runs this project. Nothing here is a project rule; the rules are
 Created at claude.ai/code:
 
 - **Network access:** Custom, with "Also include default list of common package managers" turned on, and the domains listed in `docs/SETUP.md`.
-- **Environment variables:** only `FIGMA_FILE_URL`, `MEDIA_BASE_URL` (staging value) and `CONTACT_URL`. No Cloudflare or R2 credentials: those live in GitHub Actions (`docs/DELIVERY.md`).
+- **Environment variables:** only `FIGMA_FILE_URL`, `MEDIA_BASE_URL=/media` and `CONTACT_URL`. No Cloudflare credentials: those live in GitHub Actions; R2 is not used (`docs/DELIVERY.md`).
 - **Setup script:**
   ```
   if [ -f package.json ]; then npm ci; fi

@@ -54,10 +54,9 @@ for (const [tool, variable, platform] of [['gitleaks', 'GITLEAKS', 'linux_x64'],
   });
 }
 
-test('OPS-03/04: media upload accepts deployment targets without relying on the caller event name', () => {
-  const upload = job(media, 'upload');
-  assert.match(upload, /if: inputs.target == 'staging' \|\| inputs.target == 'production'/);
-  assert.doesNotMatch(upload, /github.event_name/);
+test('OPS-03/04: media generation has no credentialed upload or promotion job', () => {
+  assert.match(media, /generate:/);
+  assert.doesNotMatch(media, /upload:|environment:|secrets\.|workflow_call:/);
 });
 
 test('OPS-04/05: rollback validation rejects main or a different tag before release API calls', () => {

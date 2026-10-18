@@ -6,3 +6,6 @@ playwright-report/
 test-results/
 .env
 .agent/
+# Generated Pages media and local ingestion downloads; binaries never belong in Git.
+media-out/
+public/media/

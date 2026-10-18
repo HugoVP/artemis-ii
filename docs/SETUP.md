@@ -26,7 +26,7 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
 ### Stage 03 steps (pipeline)
 
 1. **Prepare the environments first** (Settings → Environments), with deployment branch policies: `preview` and `staging` (`main` only), `production` (tags `v*` only, Hugo as required reviewer), `approval` (`main` only, Hugo as required reviewer).
-2. **Secrets and variables** as listed in "Secrets and configuration" of `docs/DELIVERY.md`: `CLOUDFLARE_API_TOKEN` in `preview`, `staging` and `production`; R2 keys in `staging` and `production`; the `*_STAGING` / `*_PRODUCTION` variables and `CLOUDFLARE_ACCOUNT_ID` at repository level. Check `SITE_URL_STAGING` points at the staging Pages URL for smoke tests and DAST.
+2. **Secrets and variables** as listed in "Secrets and configuration" of `docs/DELIVERY.md`: `CLOUDFLARE_API_TOKEN` in `preview`, `staging` and `production`; the `SITE_URL_STAGING` / `SITE_URL_PRODUCTION` variables and `CLOUDFLARE_ACCOUNT_ID` at repository level. Check `SITE_URL_STAGING` points at the staging Pages URL for smoke tests and DAST.
 3. **Protect release tags.** In Settings → Rules → Rulesets, create an active **tag ruleset** targeting `v*`. Enable **Restrict updates** and **Restrict deletions**, with an **empty bypass list** (including for Hugo). Leave tag creation available for publishing releases. Record the ruleset configuration in the Stage 03 manual checks; existing release tags must not move or disappear (OPS-04, OPS-05).
 4. **Prepare Cloudflare before the bootstrap merge (blocking prerequisite).** Create or configure the Direct Upload Pages projects `artemis-ii-staging` and `artemis-ii`, and verify their deployment credentials and variables. Disable automatic Git deployments for both production and preview branches of the existing Git integration before any merge of the installation PR. Confirm that a push to `main` can no longer publish production through that integration. The staging project must exist before the merge starts its workflow; production must change only through a published release.
 5. **Prepare the dedicated approval App before bootstrap (blocking prerequisite).** Follow "Dedicated approval App" below: Hugo creates a separate status-only App, installs it only on this repository, and stores its key and App ID only in the protected `approval` environment. Verify each agent connection cannot approve protected environments, change rulesets/settings or read their secrets. The ChatGPT Codex Connector can write workflows; Hugo chose to keep it and replace the previous workflow-write-denial assumption with an App-bound approval. GitHub's installed-app screen offers repository selection, not arbitrary removal of an app's requested permissions. Do not rely on the old GitHub Actions approval reporter. AC-5 stays unchecked until the new environment and source binding are verified.
@@ -60,12 +60,13 @@ The secret scan keeps the complete Git history and all default gitleaks rules. `
 ## 2. Cloudflare
 
 1. **Pages:** the project connected to the repo (already done). Until Stage 03 it deploys previews and `main` on its own; the production URL is not shared with anyone yet. **(Stage 03)** Two projects in the same Cloudflare account: `artemis-ii` for production and `artemis-ii-staging` for staging and previews (see "Cloudflare Pages setup" in `docs/DELIVERY.md`).
-2. **(Stage 03) R2:** two buckets, for example `artemis-ii-media-staging` and `artemis-ii-media`, each with public read access (an `r2.dev` subdomain or a custom domain).
-3. **(Stage 03) Tokens**, each with the minimum scope:
-   - An API token with "Cloudflare Pages: Edit" only, for deployments. Cloudflare scopes it to the account, not to one Pages project; see "Secrets and configuration" in `docs/DELIVERY.md` for how it is protected.
-   - One R2 token per bucket, read and write on that bucket only.
+2. **No R2:** do not activate R2 or create buckets/tokens for Artemis II. Media is generated without secrets and bundled at `/media` with the HTML on Pages. Do not enable Functions, Workers or paid image transformations for this purpose.
+3. **Pages token:** create a Cloudflare API token with Account → Cloudflare Pages → Edit, limited to the intended account. Store `CLOUDFLARE_API_TOKEN` only in GitHub environments `preview`, `staging` and `production`; never as a repository secret or in an agent shell. `preview` and `staging` permit main only; `production` permits release tags `v*` only and requires Hugo, with administrative bypass disabled.
+4. **Variables:** repository variables `CLOUDFLARE_ACCOUNT_ID`, `SITE_URL_STAGING`, `SITE_URL_PRODUCTION`. The pipeline fixes `MEDIA_BASE_URL=/media`; `MEDIA_BASE_URL_STAGING` and `MEDIA_BASE_URL_PRODUCTION` are no longer consumed.
+5. **Disable automatic Git deployments:** Workers & Pages → existing `artemis-ii` project → Settings → Builds / Branch control. Disable automatic production branch deployments and set preview branches to None; save before the bootstrap merge. Cancel pending automatic builds. The existing Git-integrated project can accept Wrangler direct uploads without converting or deleting it. Create missing staging with `npx --yes wrangler@4.151.1 pages project create artemis-ii-staging --production-branch=main`. Keep production's current domain (the project name can differ from the pages.dev hostname).
+6. **Manual cleanup only (Hugo):** after confirming nothing else uses them, remove obsolete `R2_STAGING_ACCESS_KEY_ID`, `R2_STAGING_SECRET_ACCESS_KEY`, `R2_PRODUCTION_ACCESS_KEY_ID`, `R2_PRODUCTION_SECRET_ACCESS_KEY`, `R2_STAGING_BUCKET`, `R2_PRODUCTION_BUCKET` and environment-specific `MEDIA_BASE_URL_*` configuration if it was created. Review/revoke unused R2 credentials and review any existing R2 resources/subscription yourself; agents neither delete resources nor change settings. If R2 was never activated, leave it inactive.
+7. **Live verification:** after bootstrap, check actual optimized image responses and local original downloads when Stage 06 ingestion exists. Verify release-only production and restore an earlier production Pages deployment to prove HTML/media roll back together. Limits and local fixture tests do not prove deployment behavior. Follow the approval App verification above; this media amendment does not close AC-5 or AC-7.
 
-   These go into GitHub environment secrets (see "Secrets and configuration" in `docs/DELIVERY.md`), **never** into an agent environment or a repository-level secret.
 
 ## 3. Figma
 
@@ -82,7 +83,7 @@ Each agent runs in its own sandbox with the same rules (`AGENTS.md`). Setup per 
 
 Every agent environment gets:
 
-- **Variables:** only `FIGMA_FILE_URL`, `MEDIA_BASE_URL` (staging value) and `CONTACT_URL`. If `R2_*` variables were added to the Claude Code environment earlier, remove them: storage credentials belong to the pipeline.
+- **Variables:** only `FIGMA_FILE_URL`, `MEDIA_BASE_URL=/media` and `CONTACT_URL`. Hugo removes any obsolete `R2_*` configuration manually; R2 is not used.
 - **Network domains**, on top of the package managers:
   - `eol.jsc.nasa.gov`
   - `pds-imaging.jpl.nasa.gov`

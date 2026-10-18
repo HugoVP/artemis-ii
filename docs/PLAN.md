@@ -17,7 +17,7 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | [stage-03-pipeline](specs/stage-03-pipeline.md) | in review | #14 | `HUG-7` |
 | 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | [stage-04-preferences](specs/stage-04-preferences.md) | pending | | |
 | 05 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | `web` | written in 04 | pending | | |
-| 06 | Ingestion: script, variants with sharp, upload through the pipeline | `node`, `web` | written in 05 | pending | | |
+| 06 | Ingestion: script, variants with sharp, static Pages packaging | `node`, `web` | written in 05 | pending | | |
 | 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | written in 06 | pending | | |
 | 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | written in 07 | pending | | |
 | 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | | |
@@ -41,14 +41,14 @@ Entries that end with `<!-- notion -->` are published to the Notion page by `not
 - The four mandatory review points are covered by stages 00 (plan), 01 (design), 05 (photos) and 08 (texts). Production releases are a fifth, separate gate. <!-- notion -->
 - Design comes right after the plan, so the project base (Stage 02) is built on approved tokens and layout. Design uses placeholders instead of NASA photos, because curation comes later. <!-- notion -->
 - The pipeline (Stage 03) comes right after the project base: it needs a buildable project, and every later stage then gets previews, staging and security checks. <!-- notion -->
-- Media upload runs in the pipeline, not in agents: agents never hold storage credentials.
+- Media generation is secret-free; the pipeline packages media and HTML into one Pages deployment. Agents never hold deployment credentials.
 - Every PR carries the spec of the next stage (look-ahead cycle), so merging a PR approves both the result and the next plan. <!-- notion -->
 - Stages 07 and 09 do not integrate unapproved content: 07 comes after 05–06, and 09 after 08. <!-- notion -->
 - Stage 10 includes the footer with the short AI notice; the Stage 02 layout reserves the space. <!-- notion -->
 - Work is tracked in Linear (one issue per stage, in the "Issue" column), the decision log and notes live in Notion and Obsidian is a personal reader over `docs/` (Hugo, 2026-10-15). The repo stays the source of truth; see "Task tracking and knowledge tools" in `AGENTS.md`. <!-- notion -->
-- Production keeps two credential-only jobs in the `production` environment, media promotion and then the Pages deploy (Hugo's decision, 2026-10-15); Stage 03 confirms how many approvals GitHub asks for.
+- Production keeps one credential-only Pages deploy job behind Hugo's approval; media generation stays in the no-secrets build (amended 2026-10-18).
 - Until Stage 03 is merged, Cloudflare Pages' Git integration keeps deploying every merge to `main` straight to production (Hugo's decision, 2026-10-15); the production URL is not announced.
-- Cloudflare: one account, two Pages projects (`artemis-ii` for production, `artemis-ii-staging` for staging and previews) and two R2 buckets (Hugo's decision, 2026-10-14); a separate account for production is a possible later change, described in `DELIVERY.md`.
+- Cloudflare: one account, two Pages projects; no R2 activation. HTML and media share each deployment, including rollback (Hugo, 2026-10-18; supersedes the bucket design).
 - The default-branch approval workflow reports `approval` through a dedicated status-only GitHub App; the ruleset must require that App as the expected source (Hugo's decision, 2026-10-18). This replaces the earlier workflow-write-denial assumption; setup and verification are in `DELIVERY.md` and `SETUP.md`.
 
 ## Detail by stage
@@ -74,7 +74,7 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 ### 03 Delivery pipeline and security baseline
 - The workflows, gates and controls in `DELIVERY.md`: CI, security checks, preview, staging and production deploys, rollback, Dependabot, `public/_headers`, smoke tests.
 - Applies the decisions in `DELIVERY.md` (public repository, limited agent token with approval clicks, Pages setup), runs the agent-identity verification tests, and documents the exact setup steps in `SETUP.md`.
-- **Possible blocker:** Cloudflare API token, buckets or GitHub settings not ready; the stage opens as a draft with the steps Hugo must take.
+- **Possible blocker:** Cloudflare API token, Pages projects or GitHub settings not ready; the stage opens as a draft with the steps Hugo must take.
 
 ### 04 Preferences
 - React island in the top bar: theme, language, density and, only in galleries, gallery view, as designed in Figma.
@@ -85,7 +85,7 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 - `CURATION.md` with 20–30 mission photos and 5–8 launch photos: NASA ID, link to the original, chapter, justification, verified rights, candidate stories. No downloads.
 
 ### 06 Ingestion
-- `scripts/ingest.ts` only generates media and manifests, and never holds credentials: a local mode (agents: download, variants, metadata into content collections) and a build mode (pipeline, no secrets: the same variants and the manifest as an artifact). Uploading to the staging bucket and promoting to production on release is done by `media.yml` with a pinned storage tool that consumes that artifact and runs no project code (`docs/DELIVERY.md`). Idempotent, keyed by NASA ID plus content hash (same source bytes and variant settings: no-op; changed content: a new immutable path, per `MEDIA-03`).
+- Stage 06 implements the contract in `docs/ingestion.md`: secret-free approved-source downloads and variants, content hashes/checksums, unchanged local originals up to 25 MiB and explicit external NASA originals above it. All environments bundle media under `/media` with HTML; no bucket uploads or promotion. Stage 03 only supplies the shell, manifest, packaging and bounds checks.
 
 ### 07 Gallery
 - Chapters, three views (mosaic, gallery, immersive) and the per-photo page, per Figma; Open Graph image per photo.
@@ -130,3 +130,5 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-17 — Stage 02 approved (PR #8 merged); Stage 03 — PR #14 — Delivery pipeline: workflows ready in `pipeline/github/` for Hugo to copy into `.github/`, security headers, smoke test script and setup steps; Stage 04 spec written.
 - 2026-10-18 — Process (requested by Hugo) — TypeScript only, on TypeScript 7: scripts and configuration converted from JavaScript, with a test that refuses JavaScript files; one branch prefix, `agent/`, for every agent. <!-- notion -->
 - 2026-10-18 — Stage 03 — PR #14 — Hugo authorized retaining the Codex Connector and replacing the workflow-write-denial assumption with a dedicated approval App, protected environment and source-bound ruleset. Account-side setup and live verification remain pending.
+
+- 2026-10-18 — Stage 03 — PR #14 — Hugo replaced R2 with static Pages media, approved external NASA downloads for originals above 25 MiB, and required complete-artifact limits and rollback of HTML/media together. Evaluation is illustrative, not final curation or visual approval.

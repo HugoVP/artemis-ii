@@ -1,5 +1,7 @@
 // Post-deploy smoke test (OPS-07): `node scripts/smoke.ts <base-url>`. No dependencies.
-export {};
+import { existsSync } from 'node:fs';
+import { parseManifest } from './pages-media.ts';
+import { checkMedia } from './smoke-media.ts';
 
 const base = process.argv[2]?.replace(/\/+$/, '');
 if (!base) {
@@ -28,5 +30,17 @@ for (const [path, test] of checks) {
     console.log(`FAIL ${path} (${message})`);
     failed++;
   }
+}
+try {
+  const response = await fetch(base + '/media/manifest.json');
+  if (!response.ok) throw new Error('Missing deployed media manifest');
+  const value: unknown = await response.json();
+  const manifest = parseManifest(value);
+  if (existsSync('scripts/ingest.ts') && manifest.photos.length === 0) throw new Error('Ingestion exists but no deployed photos');
+  await checkMedia(base, manifest);
+  console.log(`ok   media (${manifest.photos.length} photos; empty shell before Stage 06)`);
+} catch (error) {
+  console.error('FAIL media', error instanceof Error ? error.message : String(error));
+  failed++;
 }
 process.exit(failed ? 1 : 0);

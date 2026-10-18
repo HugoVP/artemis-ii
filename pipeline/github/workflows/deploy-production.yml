@@ -69,24 +69,27 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Generate media without credentials
+        run: |
+          mkdir -p media-out
+          if [ -f scripts/ingest.ts ]; then
+            npm run ingest -- --build --out media-out
+          else
+            echo '{"photos":[]}' > media-out/manifest.json
+          fi
       - run: npm run build
         env:
-          MEDIA_BASE_URL: ${{ vars.MEDIA_BASE_URL_PRODUCTION }}
+          MEDIA_BASE_URL: /media
           SITE_URL: ${{ vars.SITE_URL_PRODUCTION }}
+      - name: Package and validate the complete static site
+        run: node scripts/package-media.ts media-out dist
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: production-dist
           path: dist
 
-  media:
-    needs: [gate, build]
-    uses: ./.github/workflows/media.yml
-    with:
-      target: production
-    secrets: inherit
-
   deploy:
-    needs: [gate, build, media]
+    needs: [gate, build]
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -101,6 +104,32 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
+      - name: Validate Pages artifact limits without executing artifact code
+        run: |
+          node --input-type=module-typescript <<'TYPESCRIPT'
+          import { lstat, readdir } from 'node:fs/promises';
+          import { join } from 'node:path';
+          const root = 'site';
+          let count = 0;
+          async function walk(directory: string): Promise<void> {
+            for (const name of await readdir(directory)) {
+              const path = join(directory, name);
+              const info = await lstat(path);
+              if (info.isSymbolicLink() || (!info.isDirectory() && !info.isFile())) {
+                throw new Error(`Non-regular entry forbidden: ${path}`);
+              }
+              if (info.isDirectory()) await walk(path);
+              else {
+                if (info.size > 26214400) throw new Error(`Pages file exceeds 25 MiB: ${path}`);
+                if (++count > 20000) throw new Error('Pages file count exceeds 20000');
+              }
+            }
+          }
+          await walk(root);
+          if (!(await lstat(join(root, 'index.html'))).isFile()) throw new Error('Missing site/index.html');
+          if ((await readdir(root)).includes('functions')) throw new Error('Pages Functions forbidden');
+          console.log(`Validated ${count} static files`);
+          TYPESCRIPT
       - name: Reject Pages Worker entrypoints
         run: |
           if [ -e site/_worker.js ] || [ -L site/_worker.js ]; then

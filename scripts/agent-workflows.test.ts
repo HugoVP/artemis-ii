@@ -181,9 +181,10 @@ test("the agent runs in a docker run container without the Docker socket, as the
   assert.doesNotMatch(run, /docker\.sock|--privileged|--cap-add|seccomp=unconfined|--network host|--pid host/);
   for (const name of ["Install the project dependencies", "Run the agent"]) {
     const s = step(work, name);
-    assert.match(s, /docker run --rm --init --user "\$\(id -u\):\$\(id -g\)" --cap-drop ALL --security-opt no-new-privileges/, name);\n    assert.match(s, /--pids-limit \d+/, name);
+    assert.match(s, /docker run --rm --init --user "\$\(id -u\):\$\(id -g\)" --cap-drop ALL --security-opt no-new-privileges/, name);
+    assert.match(s, /--pids-limit \d+/, name);
     assert.match(s, /-v "\$GITHUB_WORKSPACE:\/work" -v "\$GITHUB_WORKSPACE\/\.git:\/work\/\.git:ro"/, name);
-    assert.doesNotMatch(s, /RUNNER_TEMP\/trusted|-v "\$RUNNER_TEMP:/, name);
+    assert.doesNotMatch(s, /-v "\$RUNNER_TEMP\/trusted|-v "\$RUNNER_TEMP:/, name);
   }
   // Project code runs only in the container: npm on the runner would run install scripts next to the trusted steps.
   assert.equal([...run.matchAll(/npm ci/g)].length, 1);

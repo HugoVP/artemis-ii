@@ -195,15 +195,23 @@ test("the agent runs in a docker run container without the Docker socket, as the
 
 test("the sandbox smoke workflow has no secrets and tests bwrap and Codex on the PR image", () => {
   assert.match(smoke, /pull_request:/);
+  assert.match(smoke, /runs-on: ubuntu-22\.04/);
+  assert.match(smoke, /apparmor=artemis-ii-agent-bwrap/);
+  assert.match(smoke, /sudo apparmor_parser -r agents\/agent-apparmor\.profile/);
   assert.match(smoke, /permissions:\n  contents: read/);
   assert.match(smoke, /head\.repo\.full_name == github\.repository/);
-  assert.doesNotMatch(smoke, /secrets\.|packages: write|--privileged|seccomp=unconfined/);
+  assert.doesNotMatch(smoke, /secrets\.|packages: write|--privileged|seccomp=unconfined|apparmor=unconfined/);
   assert.match(smoke, /bwrap --unshare-user --unshare-pid/);
   assert.match(smoke, /codex sandbox -- \/bin\/true/);
 });
 
 test("the nested sandbox uses a trusted, bounded seccomp profile", async () => {
   const installed = await readFile(new URL("../.github/workflows/agent-run.yml", import.meta.url), "utf8");
+  const apparmor = await readFile(new URL("../agents/agent-apparmor.profile", import.meta.url), "utf8");
+  assert.match(apparmor, /profile "artemis-ii-agent-bwrap"/);
+  assert.match(apparmor, /  mount,/);
+  assert.match(apparmor, /  pivot_root,/);
+  assert.doesNotMatch(apparmor, /deny mount,/);
   const profile = JSON.parse(await readFile(new URL("../agents/agent-seccomp.json", import.meta.url), "utf8")) as {
     defaultAction: string;
     syscalls: Array<{ names: string[]; action: string; args?: Array<{ index: number; value: number; valueTwo?: number; op: string }> }>;
@@ -220,10 +228,16 @@ test("the nested sandbox uses a trusted, bounded seccomp profile", async () => {
     const install = step(work, "Install the project dependencies");
     const agent = step(work, "Run the agent");
     assert.match(prepare, /cp agents\/agent-seccomp\.json "\$RUNNER_TEMP\/trusted\/agent-seccomp\.json"/);
+    assert.match(prepare, /cp agents\/agent-apparmor\.profile "\$RUNNER_TEMP\/trusted\/agent-apparmor\.profile"/);
+    assert.match(work, /runs-on: ubuntu-22\.04/);
+    assert.match(work, /sudo apparmor_parser -r "\$RUNNER_TEMP\/trusted\/agent-apparmor\.profile"/);
+    assert.match(work, /sudo apparmor_parser -R "\$RUNNER_TEMP\/trusted\/agent-apparmor\.profile"/);
     assert.match(agent, /--security-opt "seccomp=\$RUNNER_TEMP\/trusted\/agent-seccomp\.json"/);
+    assert.match(agent, /--security-opt apparmor=artemis-ii-agent-bwrap/);
     assert.doesNotMatch(install, /agent-seccomp\.json/);
     assert.doesNotMatch(agent, /-v "\$RUNNER_TEMP\/trusted/);
     assert.ok(work.indexOf("cp agents/agent-seccomp.json") < work.indexOf("npm ci"));
+    assert.ok(work.indexOf("cp agents/agent-apparmor.profile") < work.indexOf("npm ci"));
   }
 });
 

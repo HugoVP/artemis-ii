@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Run by Hugo on his own machine, once, after signing in to Figma's MCP server with an approved client (Codex) in a
+// Run by Hugo on his own machine, once, after signing in to Figma's MCP server with an approved client in a
 // separate folder. Finds that grant's client id, client secret and refresh token in the client's credentials file
-// and prints one field, so it can be piped into `gh secret set` without being shown on screen.
+// and checks the complete grant before printing one field, so it can be piped into `gh secret set` without being shown on screen.
 // The file layout of each client is not documented, so the search is by field name: it looks for the object that holds
 // a refresh token for mcp.figma.com. No dependencies (Node 22). Steps: docs/agents/adding-an-agent.md.
 import { readFile } from "node:fs/promises";
@@ -25,7 +25,7 @@ const FIELDS: Record<Field, string[]> = {
 function pick(obj: Node | undefined, names: string[]): string | undefined {
   for (const n of names) {
     const v = obj?.[n];
-    if (typeof v === "string" && v !== "") return v;
+    if (typeof v === "string" && v.trim() !== "") return v;
   }
   return undefined;
 }
@@ -69,19 +69,30 @@ export function figmaGrant(json: unknown): Grant {
     : "No grant for https://mcp.figma.com in this file. Sign in to Figma's MCP server first (see docs/agents/adding-an-agent.md).");
   if (list.length > 1) throw new Error("More than one grant found. Use a folder that only has the Figma sign-in.");
   if (!list[0].client_id) throw new Error("A refresh token was found but no client id. The steps in docs/agents/adding-an-agent.md need to be checked against this client version.");
+  if (!list[0].client_secret) throw new Error("No client secret in this Figma grant. It cannot renew tokens for the pipeline. Do not upload partial credentials or rerun Agent run; the original OAuth registration secret must be preserved by the client. See docs/agents/adding-an-agent.md.");
   const { text, ...grant } = list[0];
   return grant;
 }
 
 async function main([file, field]: string[]): Promise<number> {
-  if (!file || !(field in FIELDS)) {
-    console.error("Usage: figma-mcp-credentials.ts <credentials file> client_id|client_secret|refresh_token");
+  if (!file || (field !== "check" && !Object.hasOwn(FIELDS, field))) {
+    console.error("Usage: figma-mcp-credentials.ts <credentials file> check|client_id|client_secret|refresh_token");
     return 2;
   }
-  const grant = figmaGrant(JSON.parse(await readFile(file, "utf8")));
+  const contents = await readFile(file, "utf8");
+  let json: unknown;
+  try { json = JSON.parse(contents); } catch {
+    // JSON parse errors can quote credential bytes. Never send the parser's message to a terminal or job log.
+    throw new Error("Credentials file is not valid JSON. Do not share its contents.");
+  }
+  const grant = figmaGrant(json);
+  if (field === "check") {
+    console.log("Figma grant has a client id, client secret and refresh token. Live refresh and MCP access are not yet verified.");
+    return 0;
+  }
   const value = grant[field as Field];
   if (!value) {
-    console.error(`No ${field} in this grant.${field === "client_secret" ? " That is normal for a public client: skip FIGMA_MCP_CLIENT_SECRET." : ""}`);
+    console.error(`No ${field} in this grant.`);
     return 1;
   }
   process.stdout.write(value);

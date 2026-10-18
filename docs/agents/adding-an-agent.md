@@ -73,7 +73,7 @@ Agents in the pipeline use Figma's own MCP server (`https://mcp.figma.com/mcp`),
 
 **How the pipeline uses it: the gateway.** The agent never gets a Figma credential. It talks to a small MCP server of our own, `scripts/figma-mcp-gateway.ts`, which holds the token and forwards to Figma only what the stage may do.
 
-1. Hugo signs in once with Codex on his machine (below). The grant's client id and refresh token become secrets of the environment `agents`.
+1. Hugo obtains a complete grant using an approved client that preserves its registration secret (see the bootstrap blocker below). The grant's client id, client secret and refresh token become secrets of the environment `agents`.
 2. For stages that need `figma-read` or `figma-write`, the step "Start the Figma MCP gateway" runs the gateway from the trusted copy of `main`'s scripts, on the runner itself, after the project's dependencies are installed (so their install scripts never find it running) and before the agent starts. It exchanges the refresh token for the run's access token, removes the secrets from its environment and keeps the token in memory. It listens on the address of Docker's bridge, so only containers on the runner reach it.
 3. The agent runs in its own container, which reaches the gateway as `http://figma-gateway:8787/mcp`, with no `Authorization` header. The container has no Docker socket and does not see the runner's folders or processes, so the agent cannot read the gateway's token, its environment or its secrets.
 4. The gateway checks every message:
@@ -90,29 +90,49 @@ Agents in the pipeline use Figma's own MCP server (`https://mcp.figma.com/mcp`),
 
 **Rate limits.** Figma's MCP server allows up to 200 tool calls a day, and around 10 a minute, for a Dev or Full seat on a Professional or Organization plan; Starter plans and View or Collab seats get 6 a month ([rate limits and access](https://developers.figma.com/docs/figma-mcp-server/rate-limits-access/), checked 2026-10-17). A stage uses a few dozen calls.
 
-**Setup (Hugo, once)**
+**Bootstrap blocker observed on 2026-10-18.** A successful Codex browser login did not produce a renewable grant for this pipeline. Runs `39144193897` and `39146849604` failed before the agent started: Figma rejected refresh with HTTP 400 because the client secret was absent. Figma's [authorization-server metadata](https://api.figma.com/.well-known/oauth-authorization-server) advertises `client_secret_basic` and `client_secret_post`, not `none`. The original secret must belong to the same registration as the client id and refresh token; an unrelated app's secret cannot repair this grant.
 
-Requirements: Codex CLI and Node 22 on your machine, the `gh` CLI signed in to GitHub, and a clone of this repository with this change merged.
+Codex's inspected [credential snapshot](https://github.com/openai/codex/blob/main/codex-rs/rmcp-client/src/oauth.rs) stores the client id and tokens but has no field for the dynamically registered client secret; [Codex issue #43216](https://github.com/openai/codex/issues/43216) tracks that persistence gap. The missing secret cannot be reconstructed from a refresh token. Do not repeat `codex mcp login` on the same unverified client version and assume renewal is fixed. There is currently **no verified bootstrap from the stock Codex credential file used in these runs**. A supported client must preserve and export the complete registration, or its persistence implementation must first be fixed. Do not impersonate another catalog client, switch to a PAT, hand the agent a static access token, or disable the token-replacement job to bypass this blocker.
 
-1. Sign in with Codex in a folder of its own, so this grant is not shared with your everyday Codex (Git Bash):
+**Setup (Hugo, once a complete grant is available)**
+
+Requirements: Node 22.22 or later, `gh` signed in, and an approved Figma MCP client that preserves the complete OAuth registration. Account sign-in and GitHub secrets remain Hugo's work; never send the credential file to an agent.
+
+1. Use an isolated client profile for the pipeline, separate from everyday Figma use. Confirm that its exporter retains the client id, original client secret and refresh token for `https://mcp.figma.com/mcp`. A REST OAuth app is not automatically an approved MCP client. If any field is absent, stop; a browser-login success alone is insufficient.
+   **Candidate on Hugo's Windows machine: Claude Code as the bootstrap client.** This changes only who obtains the Figma grant; the remote stage can still run with `agent=codex`. Figma documents [Claude Code's manual OAuth setup](https://help.figma.com/hc/en-us/articles/39888612464151-Claude-Code-and-Figma-Set-up-the-MCP-server). The official `@anthropic-ai/claude-code` 2.1.0 distribution's `saveClientInformation` implementation persists `clientId`, `clientSecret` and `serverUrl` in `mcpOAuth`; that is evidence for a candidate exporter, not live acceptance of the installed version. Use the current official client already installed, and make the local check below decisive rather than downgrading or assuming the storage shape is unchanged.
+
+   In Git Bash, create an isolated profile and add Figma without editing the repository:
+   ```bash
+   FIGMA_AUTH_DIR="$HOME/.claude-artemis-figma-pipeline"
+   mkdir -p "$FIGMA_AUTH_DIR"
+   CLAUDE_CONFIG_DIR="$FIGMA_AUTH_DIR" claude mcp add --scope user --transport http figma-pipeline https://mcp.figma.com/mcp
+   (
+     cd "$FIGMA_AUTH_DIR"
+     CLAUDE_CONFIG_DIR="$FIGMA_AUTH_DIR" claude
+   )
    ```
-   export CODEX_HOME="$HOME/.codex-figma-pipeline"
-   mkdir -p "$CODEX_HOME"
-   codex mcp add figma --url https://mcp.figma.com/mcp
-   codex -c mcp_oauth_credentials_store=file mcp login figma
+   In the interactive client, finish any account setup it requires, enter `/mcp`, select `figma-pipeline`, select **Authenticate**, and allow access in Figma's browser page. Exit the client after authentication; no model task is needed. On Windows the candidate credential file is `$FIGMA_AUTH_DIR/.credentials.json`. If it is absent or lacks the registration secret, stop and report only the client version and sanitized error. Do not copy an everyday profile or export the full account credential store.
+
+2. From the updated repository clone in Git Bash, check the file locally, without printing any field:
+   ```bash
+   FIGMA_GRANT="$FIGMA_AUTH_DIR/.credentials.json"
+   node scripts/figma-mcp-credentials.ts "$FIGMA_GRANT" check
    ```
-   A browser window opens: sign in with the Figma account the agents should use and allow access.
-2. Store the grant as secrets of the environment `agents`, straight from the file, without showing them:
+   This checks field presence and Figma-server binding only. It does **not** prove Figma accepts the grant, that MCP works or that token replacement invalidates an old token. On failure, share only the sanitized error and client version, never the file.
+3. Only after the check succeeds, store all three fields from that same file in `agents`. Run the whole subshell; it checks again before any secret is written and stops if a command fails:
+   ```bash
+   (
+     set -euo pipefail
+     node scripts/figma-mcp-credentials.ts "$FIGMA_GRANT" check
+     for FIELD in client_id client_secret refresh_token; do
+       node scripts/figma-mcp-credentials.ts "$FIGMA_GRANT" "$FIELD" |
+         gh secret set "FIGMA_MCP_${FIELD^^}" --repo HugoVP/artemis-ii --env agents
+     done
+   )
    ```
-   F="$CODEX_HOME/.credentials.json"
-   node scripts/figma-mcp-credentials.ts "$F" client_id | gh secret set FIGMA_MCP_CLIENT_ID --env agents
-   node scripts/figma-mcp-credentials.ts "$F" refresh_token | gh secret set FIGMA_MCP_REFRESH_TOKEN --env agents
-   node scripts/figma-mcp-credentials.ts "$F" client_secret | gh secret set FIGMA_MCP_CLIENT_SECRET --env agents
-   ```
-   The last line may say there is no client secret: that is normal for Codex, skip it. If the first line says it cannot find the grant, the credentials file of your Codex version has another name or layout; send the error (not the file).
-3. Create the repository variable `FIGMA_FILE_URL` (Settings → Secrets and variables → Actions → Variables) with the link of the design file. The first run of a stage that needs Figma checks it all: its step "Start the Figma MCP gateway" must say "Figma MCP gateway ready".
-4. Delete the local folder: `rm -r "$HOME/.codex-figma-pipeline"`. The grant stays valid on Figma's side.
-5. Copy the updated `agent-run.yml` from `docs/agents/workflows/` to `.github/workflows/`.
+   Never mix fields from different registrations. Do not omit `FIGMA_MCP_CLIENT_SECRET` or upload empty placeholder values.
+4. Confirm repository variable `FIGMA_FILE_URL` matches `docs/specs/design.md`. Start one run with `gh workflow run agent-run.yml --repo HugoVP/artemis-ii --ref main -f stage=04 -f agent=codex`. The gateway must say `Figma MCP gateway ready`, the agent must make an allowed call with an upstream success, and the separate token-replacement job must succeed. If any fails, stop before another run and inspect the sanitized error.
+5. Delete only the isolated local credential profile after successful setup. Removing the local file does not revoke the grant on Figma's side. Keep the installed workflow and `docs/agents/workflows/agent-run.yml` coherent when workflow changes are required.
 
 To revoke the grant: Figma → **Settings** → **Security** → connected apps, remove the Codex entry, and delete the three secrets.
 

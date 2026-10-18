@@ -42,7 +42,10 @@ FROM tools AS agent-runner
 ARG CODEX_VERSION=0.163.0
 ARG CLAUDE_CODE_VERSION=2.1.302
 # bubblewrap and socat: the sandbox that Claude Code uses for shell commands on Linux.
-RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap socat \
+# Codex uses the system CA store for its OpenAI HTTPS and WebSocket connections; the slim base
+# removes ca-certificates after building Node, so the agent image must install it explicitly.
+RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap socat ca-certificates \
+ && test -s /etc/ssl/certs/ca-certificates.crt \
  && rm -rf /var/lib/apt/lists/*
 RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION} @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 

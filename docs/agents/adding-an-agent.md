@@ -10,9 +10,9 @@ How the `agent-run` workflow runs an agent on a stage, how Hugo sets it up, and 
 | `docs/agents/workflows/agent-run.yml` | Proposed workflow. Hugo copies it to `.github/workflows/agent-run.yml` |
 | `docs/agents/workflows/agent-runner-image.yml` | Proposed workflow that builds and publishes the runner image. Hugo copies it too |
 | `Dockerfile`, target `agent-runner` | The CI toolchain plus the pinned agent CLIs (Codex and Claude Code) and Claude Code's shell sandbox |
-| `scripts/figma-mcp-gateway.mjs` | The run's Figma MCP gateway: holds the access token and forwards only the stage's tools, on the design file only ("Figma in the pipeline") |
-| `scripts/figma-mcp-token.mjs`, `scripts/figma-mcp-credentials.mjs` | Exchange the refresh token for an access token and replace the run's token at the end; extract the one-time grant on Hugo's machine |
-| `scripts/agent-checks.mjs` | The checks of `prepare`, `work` and `publish`, with unit tests in `scripts/agent-checks.test.mjs` and `scripts/agent-workflows.test.mjs` |
+| `scripts/figma-mcp-gateway.ts` | The run's Figma MCP gateway: holds the access token and forwards only the stage's tools, on the design file only ("Figma in the pipeline") |
+| `scripts/figma-mcp-token.ts`, `scripts/figma-mcp-credentials.ts` | Exchange the refresh token for an access token and replace the run's token at the end; extract the one-time grant on Hugo's machine |
+| `scripts/agent-checks.ts` | The checks of `prepare`, `work` and `publish`, with unit tests in `scripts/agent-checks.test.ts` and `scripts/agent-workflows.test.ts` |
 
 Agents cannot push to `.github/workflows/`, so the workflows live in `docs/agents/workflows/` and Hugo copies them. Copy them again whenever they change.
 
@@ -71,7 +71,7 @@ Agents in the pipeline use Figma's own MCP server (`https://mcp.figma.com/mcp`),
 
 **How the server authenticates (checked 2026-10-17).** It does not accept personal access tokens: Figma's support and staff have said so on its forum ([thread](https://forum.figma.com/suggest-a-feature-11/support-for-pat-personal-access-token-based-auth-in-figma-remote-mcp-47465)), and tests by users with `Authorization: Bearer <PAT>` and `X-Figma-Token` get `Unauthorized`. It accepts OAuth access tokens issued to clients on Figma's approved list, which includes Codex and Claude Code ([Figma's guide](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server)); registering any other client is refused. An access token is an ordinary bearer token: once issued, any MCP client can send it in an `Authorization` header, with no browser. So a person signs in once with an approved client, and the pipeline keeps that grant.
 
-**How the pipeline uses it: the gateway.** The agent never gets a Figma credential. It talks to a small MCP server of our own, `scripts/figma-mcp-gateway.mjs`, which holds the token and forwards to Figma only what the stage may do.
+**How the pipeline uses it: the gateway.** The agent never gets a Figma credential. It talks to a small MCP server of our own, `scripts/figma-mcp-gateway.ts`, which holds the token and forwards to Figma only what the stage may do.
 
 1. Hugo signs in once with Codex on his machine (below). The grant's client id and refresh token become secrets of the environment `agents`.
 2. For stages that need `figma-read` or `figma-write`, the step "Start the Figma MCP gateway" runs the gateway from the trusted copy of `main`'s scripts, on the runner itself, after the project's dependencies are installed (so their install scripts never find it running) and before the agent starts. It exchanges the refresh token for the run's access token, removes the secrets from its environment and keeps the token in memory. It listens on the address of Docker's bridge, so only containers on the runner reach it.
@@ -84,7 +84,7 @@ Agents in the pipeline use Figma's own MCP server (`https://mcp.figma.com/mcp`),
    - **Its own name only:** requests must be addressed to `figma-gateway`, and requests from a browser (`Origin`) are refused.
    Blocked calls get an error that says why, so the agent can explain it in the PR.
 5. The gateway logs each decision (method, tool, node id, allowed or blocked, status), never the arguments, the code or the token. The step "Stop the Figma MCP gateway" stops it right after the agent and prints that log in the job.
-6. A separate job, `figma-revoke`, on a fresh runner with a clean checkout of `main`, runs `scripts/figma-mcp-token.mjs revoke`: it refreshes once more and so replaces the token the gateway had. Figma keeps one access token per app and user, so the old one stops working (**to verify** for MCP grants; documented for Figma's OAuth apps). It runs even when the `work` job failed or was cancelled.
+6. A separate job, `figma-revoke`, on a fresh runner with a clean checkout of `main`, runs `scripts/figma-mcp-token.ts revoke`: it refreshes once more and so replaces the token the gateway had. Figma keeps one access token per app and user, so the old one stops working (**to verify** for MCP grants; documented for Figma's OAuth apps). It runs even when the `work` job failed or was cancelled.
 
 **What remains possible.** Inside the design file, a `figma-write` stage can change anything through `use_figma`: that is its job, and Figma's version history can undo it. The token itself still carries the permissions of the account that signed in, but only the gateway holds it, and it stops working at the end of the run. For a second layer, sign in with a Figma account that only has access to the design file (it needs a Dev or Full seat: View and Collab seats get 6 tool calls a month).
 
@@ -105,9 +105,9 @@ Requirements: Codex CLI and Node 22 on your machine, the `gh` CLI signed in to G
 2. Store the grant as secrets of the environment `agents`, straight from the file, without showing them:
    ```
    F="$CODEX_HOME/.credentials.json"
-   node scripts/figma-mcp-credentials.mjs "$F" client_id | gh secret set FIGMA_MCP_CLIENT_ID --env agents
-   node scripts/figma-mcp-credentials.mjs "$F" refresh_token | gh secret set FIGMA_MCP_REFRESH_TOKEN --env agents
-   node scripts/figma-mcp-credentials.mjs "$F" client_secret | gh secret set FIGMA_MCP_CLIENT_SECRET --env agents
+   node scripts/figma-mcp-credentials.ts "$F" client_id | gh secret set FIGMA_MCP_CLIENT_ID --env agents
+   node scripts/figma-mcp-credentials.ts "$F" refresh_token | gh secret set FIGMA_MCP_REFRESH_TOKEN --env agents
+   node scripts/figma-mcp-credentials.ts "$F" client_secret | gh secret set FIGMA_MCP_CLIENT_SECRET --env agents
    ```
    The last line may say there is no client secret: that is normal for Codex, skip it. If the first line says it cannot find the grant, the credentials file of your Codex version has another name or layout; send the error (not the file).
 3. Create the repository variable `FIGMA_FILE_URL` (Settings → Secrets and variables → Actions → Variables) with the link of the design file. The first run of a stage that needs Figma checks it all: its step "Start the Figma MCP gateway" must say "Figma MCP gateway ready".

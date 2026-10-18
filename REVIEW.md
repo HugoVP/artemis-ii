@@ -11,6 +11,7 @@ You are a reviewer, not the builder. Report findings with the file and line, mos
 3. **Consistency.** Flag contradictions between `AGENTS.md`, `docs/DELIVERY.md`, `docs/PLAN.md` and the specs, and any rule that depends on one AI vendor.
 4. **Content.** Flag facts without a source link, literal Spanish/English translations, NASA logos, wording that suggests NASA endorsement, and any advertising.
 5. **Language.** All Markdown must be English; flag any Spanish or bilingual copy of a Markdown file.
+5b. **TypeScript.** Flag any JavaScript file (`.js`, `.mjs`, `.cjs`, `.jsx`) and any `<script is:inline>` without a stated reason.
 6. **Design.** Flag hard-coded colors, spacing or font sizes where design tokens exist.
 7. **Accessibility.** Flag missing alt text in either language, low contrast, and missing focus styles.
 

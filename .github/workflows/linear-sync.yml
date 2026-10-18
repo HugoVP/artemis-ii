@@ -8,8 +8,8 @@ on:
     branches: [main]
     paths:
       - docs/PLAN.md
-      - scripts/linear-sync.mjs
-      - scripts/next-stage-issue.mjs
+      - scripts/linear-sync.ts
+      - scripts/next-stage-issue.ts
   workflow_dispatch:
     inputs:
       dry_run:
@@ -37,7 +37,7 @@ jobs:
           node-version: 22
 
       - name: Unit tests (mock server, no network, no credentials)
-        run: node --test scripts/linear-sync.test.mjs scripts/next-stage-issue.test.mjs
+        run: node --test scripts/linear-sync.test.ts scripts/next-stage-issue.test.ts
 
       - name: Move the Linear issues forward to match docs/PLAN.md
         env:
@@ -45,4 +45,4 @@ jobs:
           # Writes are off until the variable LINEAR_SYNC_APPLY is `true` in the `linear` environment.
           # A manual run is also a dry run while its box is ticked.
           DRY_RUN: ${{ (vars.LINEAR_SYNC_APPLY != 'true' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)) && '1' || '' }}
-        run: node scripts/linear-sync.mjs
+        run: node scripts/linear-sync.ts

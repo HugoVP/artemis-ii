@@ -1,26 +1,26 @@
 // Checks that the agent-run workflow applies before it lets an agent's result leave the runner.
 // Pure functions, no dependencies (Node 22). Design: docs/MULTI-AGENT-PHASES.md, "Phase 2".
-// The workflow calls the CLI at the bottom; the unit tests live in agent-checks.test.mjs.
+// The workflow calls the CLI at the bottom; the unit tests live in agent-checks.test.ts.
 import { readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { parseStages } from "./next-stage-issue.mjs";
+import { parseStages, type Stage } from "./next-stage-issue.ts";
 
 // Who may start a run. The trusted login is a repository variable, never derived from the repository owner.
-export function isTrusted(actor, trustedLogin) {
+export function isTrusted(actor: unknown, trustedLogin: unknown): boolean {
   if (typeof actor !== "string" || typeof trustedLogin !== "string") return false;
   const trusted = trustedLogin.trim().toLowerCase();
   return trusted !== "" && actor.trim().toLowerCase() === trusted;
 }
 
 // The issue title is data: only this exact shape is accepted, and only the two digits are used.
-export function parseWorkOrderTitle(title) {
+export function parseWorkOrderTitle(title: string | null | undefined): string | null {
   const m = /^Run Stage ([0-9]{2}):/.exec(String(title ?? ""));
   return m ? m[1] : null;
 }
 
 // The only refs a run may push to: agent/stage-NN-<slug> for the validated stage number.
-export function validateDestRef(ref, stage) {
+export function validateDestRef(ref: string | null | undefined, stage: string | number): boolean {
   if (!/^[0-9]{2}$/.test(String(stage))) return false;
   const m = /^agent\/stage-([0-9]{2})-[a-z0-9][a-z0-9-]{0,40}$/.exec(String(ref ?? ""));
   return m !== null && m[1] === String(stage);
@@ -30,7 +30,7 @@ export function validateDestRef(ref, stage) {
 export const SCANNER_CONFIGS = [".gitleaks.toml", ".gitleaks.yml", ".gitleaksignore", ".trivyignore", ".semgrepignore", ".zap/**"];
 
 // Reads the protected paths from the "Protected paths" line of AGENTS.md on main, so a change there changes the check.
-export function parseProtectedPaths(agentsMd) {
+export function parseProtectedPaths(agentsMd: string): string[] {
   const line = String(agentsMd).split("\n").find((l) => l.includes("**Protected paths:**"));
   if (!line) throw new Error("AGENTS.md has no 'Protected paths' line.");
   const items = [...line.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
@@ -38,24 +38,24 @@ export function parseProtectedPaths(agentsMd) {
   return [...new Set([...items, ...SCANNER_CONFIGS])];
 }
 
-export function matchesProtected(file, patterns) {
+export function matchesProtected(file: string, patterns: string[]): boolean {
   const f = String(file).replace(/^\.\//, "");
   return patterns.some((p) => (p.endsWith("/**") ? f.startsWith(p.slice(0, -2)) : f === p));
 }
 
-export function protectedTouched(files, patterns) {
+export function protectedTouched(files: string[], patterns: string[]): string[] {
   return files.filter((f) => matchesProtected(f, patterns));
 }
 
 // Path lists come from `git diff --no-renames --name-only -z`: NUL-separated, never quoted, with both sides of a rename.
-export function parsePathList(text) {
+export function parsePathList(text: string | null | undefined): string[] {
   return String(text ?? "").split("\0").filter(Boolean);
 }
 
 // Scans every new commit and blob (binary ones too, merge resolutions included), not only the text of a patch.
 // `batch` is the output of `git cat-file --batch` for the objects of `git rev-list --objects <base>..<branch>`.
-export function scanObjectBatch(batch) {
-  const found = new Set();
+export function scanObjectBatch(batch: Buffer): string[] {
+  const found = new Set<string>();
   let i = 0;
   while (i < batch.length) {
     const nl = batch.indexOf(10, i);
@@ -70,32 +70,33 @@ export function scanObjectBatch(batch) {
   return [...found];
 }
 
-export function scanRange(base, branch, cwd = process.cwd()) {
-  const git = (args, input) => execFileSync("git", args, { cwd, input, maxBuffer: 1 << 30 });
+export function scanRange(base: string, branch: string, cwd = process.cwd()): string[] {
+  const git = (args: string[], input?: Buffer) => execFileSync("git", args, { cwd, input, maxBuffer: 1 << 30 });
   const ids = git(["rev-list", "--objects", "--no-object-names", `${base}..${branch}`]);
   return scanObjectBatch(git(["cat-file", "--batch"], ids));
 }
 
 // The agent may ask for a draft (a blocked run, AGENTS.md rule 8). The reason is data: one short line.
-export function cleanDraftReason(text) {
+export function cleanDraftReason(text: string | null | undefined): string {
   return String(text ?? "").replace(/\s+/g, " ").trim().slice(0, 500);
 }
 
-export function finalizePublication(decision, requestedReason) {
+// Only the action and, for a draft, its reason are read.
+export function finalizePublication(decision: { action: "draft"; reason: string } | { action: "reject" | "publish"; reason?: string }, requestedReason: string | null | undefined): { draft: boolean; warning: string } {
   const reason = cleanDraftReason(requestedReason);
-  const lines = [];
+  const lines: string[] = [];
   if (decision.action === "draft") lines.push(decision.reason);
   if (reason) lines.push(`The agent asked for a draft: ${reason}`);
   return { draft: lines.length > 0, warning: lines.join(" ") };
 }
 
 // Workflow files are a separate outcome: the App has no Workflows permission, so the run is rejected, not drafted.
-export function touchesWorkflows(files) {
+export function touchesWorkflows(files: string[]): boolean {
   return files.some((f) => String(f).replace(/^\.\//, "").startsWith(".github/workflows/"));
 }
 
 // Names of the kinds of secret found, never the matched text, so the report cannot leak the value.
-const SECRET_PATTERNS = [
+const SECRET_PATTERNS: [name: string, pattern: RegExp][] = [
   // No word boundaries: a key glued to other bytes (text, binary data) is still a key. The shapes are distinctive
   // enough for that: a bare `sk-` needs 32 or more letters and digits in a row, so words like "risk-management" pass.
   ["OpenAI-style API key", /sk-(?:(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}|[A-Za-z0-9]{32,})/],
@@ -109,7 +110,7 @@ const SECRET_PATTERNS = [
   ["session link", /claude\.ai\/code\/session_[A-Za-z0-9]{8,}|chatgpt\.com\/codex\/tasks\/[A-Za-z0-9_-]{8,}/],
 ];
 
-export function findSecrets(text) {
+export function findSecrets(text: string | null | undefined): string[] {
   const s = String(text ?? "");
   return SECRET_PATTERNS.filter(([, re]) => re.test(s)).map(([name]) => name);
 }
@@ -117,10 +118,19 @@ export function findSecrets(text) {
 // How agent-run.yml can start an agent; each value has a branch in its "Run the agent" step.
 export const RUNNERS = ["codex-exec", "claude-print"];
 
+// One entry of agents/registry.yaml, after the checks of parseRegistry.
+export interface Agent {
+  id: string;
+  key_secret: string;
+  runner: string;
+  capabilities: string[];
+  [field: string]: string | string[];
+}
+
 // agents/registry.yaml is a flat list of entries with scalar values and inline lists, so no YAML library is needed.
-export function parseRegistry(yaml) {
-  const agents = [];
-  let cur = null;
+export function parseRegistry(yaml: string): Agent[] {
+  const agents: Record<string, string | string[]>[] = [];
+  let cur: Record<string, string | string[]> | null = null;
   for (const raw of String(yaml).split("\n")) {
     const line = raw.replace(/\s+#.*$/, "").trimEnd();
     if (line.trim() === "" || line.trim().startsWith("#")) continue;
@@ -135,21 +145,21 @@ export function parseRegistry(yaml) {
   }
   for (const a of agents) {
     for (const k of ["id", "key_secret", "runner", "capabilities"]) if (a[k] === undefined) throw new Error(`Agent ${a.id ?? "?"} has no "${k}" in agents/registry.yaml.`);
-    if (!/^[a-z0-9-]{1,30}$/.test(a.id)) throw new Error(`Agent id "${a.id}" is not a short lowercase slug.`);
+    if (!/^[a-z0-9-]{1,30}$/.test(String(a.id))) throw new Error(`Agent id "${a.id}" is not a short lowercase slug.`);
     // A registry entry can never point the work job at the App key or any other secret.
-    if (!RUNNERS.includes(a.runner)) throw new Error(`Agent ${a.id} has the unknown runner "${a.runner}" (known: ${RUNNERS.join(", ")}).`);
-    if (!/^AGENT_KEY_[A-Z0-9_]{1,40}$/.test(a.key_secret)) throw new Error(`key_secret "${a.key_secret}" of agent ${a.id} must look like AGENT_KEY_<ID>.`);
+    if (!RUNNERS.includes(String(a.runner))) throw new Error(`Agent ${a.id} has the unknown runner "${a.runner}" (known: ${RUNNERS.join(", ")}).`);
+    if (!/^AGENT_KEY_[A-Z0-9_]{1,40}$/.test(String(a.key_secret))) throw new Error(`key_secret "${a.key_secret}" of agent ${a.id} must look like AGENT_KEY_<ID>.`);
   }
-  return agents;
+  return agents as Agent[];
 }
 
-export function missingCapabilities(needs, capabilities) {
+export function missingCapabilities(needs: string[], capabilities: string[]): string[] {
   return needs.filter((n) => !capabilities.includes(n));
 }
 
 // Rule 3 of AGENTS.md: a stage PR is an open PR from a branch of this repository whose title starts with "Stage ".
 // `prs` is the JSON of `gh pr list --state open --json title,isCrossRepository`.
-export function hasOpenStagePr(prs) {
+export function hasOpenStagePr(prs: { title: string; isCrossRepository: boolean }[]): boolean {
   return prs.some((p) => p.isCrossRepository === false && String(p.title).startsWith("Stage "));
 }
 
@@ -157,7 +167,7 @@ export function hasOpenStagePr(prs) {
 // `pending`, run it. If it is `in review` and its PR is merged, the run marks it approved and moves on; if its PR
 // is open or was closed without merging, stop, so a later stage never starts before an earlier one is approved.
 // `merged` is the set of merged PR numbers.
-export function selectStage(stages, merged) {
+export function selectStage(stages: Stage[], merged: Set<number>): { stage: Stage; stop?: undefined } | { stop: string; stage?: undefined } {
   for (const s of stages) {
     if (s.status === "approved") continue;
     if (s.status === "pending") return { stage: s };
@@ -183,8 +193,8 @@ export const PR_BODY_HEADINGS = [
 ];
 
 // Returns a list of problems; empty means the PR text can be published.
-export function validatePrText(title, body, stage) {
-  const problems = [];
+export function validatePrText(title: string | null | undefined, body: string | null | undefined, stage: string): string[] {
+  const problems: string[] = [];
   if (!String(title ?? "").startsWith(`Stage ${stage}:`)) problems.push(`The PR title must start with "Stage ${stage}:".`);
   const text = String(body ?? "");
   if (text.trim() === "") problems.push("The PR body is empty.");
@@ -194,7 +204,7 @@ export function validatePrText(title, body, stage) {
 
 // The follow-up commit of AGENTS.md rule 4 may only add the PR link to the stage row and its log line.
 // `diff` is the output of `git diff -U0 <before> <after>`.
-export function checkPlanFollowUp(diff, prNumber) {
+export function checkPlanFollowUp(diff: string, prNumber: string | number): { ok: true } | { ok: false; reason: string } {
   const files = [...String(diff).matchAll(/^diff --git a\/(\S+) b\//gm)].map((m) => m[1]);
   if (files.length !== 1 || files[0] !== "docs/PLAN.md") return { ok: false, reason: "The follow-up commit must change only docs/PLAN.md." };
   const body = String(diff).split("\n").filter((l) => !l.startsWith("+++") && !l.startsWith("---"));
@@ -208,7 +218,7 @@ export function checkPlanFollowUp(diff, prNumber) {
 
 // Adds the PR link to the stage's row (PR column) and to its log line in docs/PLAN.md, as AGENTS.md rule 4 asks.
 // Only these two lines change; anything it cannot place is left alone and reported by checkPlanFollowUp.
-export function linkPlan(planMd, stage, prNumber) {
+export function linkPlan(planMd: string, stage: string, prNumber: string | number): string {
   const link = `#${Number(prNumber)}`;
   const lines = String(planMd).split("\n");
   // A log entry of this stage: "- <date> — Stage NN — ..." that has no PR link yet. Other entries may mention the stage.
@@ -233,8 +243,13 @@ export function linkPlan(planMd, stage, prNumber) {
   }).join("\n");
 }
 
+export type Decision =
+  | { action: "reject"; reason: string }
+  | { action: "draft"; reason: string; protectedFiles: string[] }
+  | { action: "publish" };
+
 // Protected paths touched: draft with a warning. Workflow files or secrets: reject.
-export function decidePublication({ files, patterns, texts }) {
+export function decidePublication({ files, patterns, texts }: { files: string[]; patterns: string[]; texts: string[] }): Decision {
   const secrets = findSecrets(texts.join("\n"));
   if (secrets.length > 0) return { action: "reject", reason: `Secret-like content found: ${secrets.join(", ")}.` };
   if (touchesWorkflows(files)) return { action: "reject", reason: "The run changed .github/workflows/**, which the App cannot push. Escalate to Hugo." };
@@ -244,18 +259,18 @@ export function decidePublication({ files, patterns, texts }) {
 }
 
 // CLI used by the workflow. Each command prints one line and exits non-zero on failure.
-//   node scripts/agent-checks.mjs trusted <actor> <trustedLogin>
-//   node scripts/agent-checks.mjs stage <issue title>
-//   node scripts/agent-checks.mjs ref <ref> <stage>
-//   node scripts/agent-checks.mjs open-stage-pr <json-file>
-//   node scripts/agent-checks.mjs plan <PLAN.md> <registry.yaml> <stage> <agent-id> <merged-prs.json>
-//   node scripts/agent-checks.mjs pr-text <title-file> <body-file> <stage>
-//   node scripts/agent-checks.mjs link-plan <PLAN.md> <stage> <pr>
-//   node scripts/agent-checks.mjs check-follow-up <diff-file> <pr>
-//   node scripts/agent-checks.mjs scan-range <base> <branch>
-//   node scripts/agent-checks.mjs publish-plan <decision.json> <draft-reason-file> <warning-out>
-//   node scripts/agent-checks.mjs decide <AGENTS.md> <NUL-separated-files-file> <text-file>...
-async function main(argv) {
+//   node scripts/agent-checks.ts trusted <actor> <trustedLogin>
+//   node scripts/agent-checks.ts stage <issue title>
+//   node scripts/agent-checks.ts ref <ref> <stage>
+//   node scripts/agent-checks.ts open-stage-pr <json-file>
+//   node scripts/agent-checks.ts plan <PLAN.md> <registry.yaml> <stage> <agent-id> <merged-prs.json>
+//   node scripts/agent-checks.ts pr-text <title-file> <body-file> <stage>
+//   node scripts/agent-checks.ts link-plan <PLAN.md> <stage> <pr>
+//   node scripts/agent-checks.ts check-follow-up <diff-file> <pr>
+//   node scripts/agent-checks.ts scan-range <base> <branch>
+//   node scripts/agent-checks.ts publish-plan <decision.json> <draft-reason-file> <warning-out>
+//   node scripts/agent-checks.ts decide <AGENTS.md> <NUL-separated-files-file> <text-file>...
+async function main(argv: string[]): Promise<number> {
   const [cmd, ...args] = argv;
   if (cmd === "trusted") {
     const ok = isTrusted(args[0], args[1]);
@@ -282,9 +297,9 @@ async function main(argv) {
   if (cmd === "plan") {
     // plan <PLAN.md> <registry.yaml> <stage> <agent-id>  -> prints JSON {stage, name, agent}; fails if not allowed
     // plan <PLAN.md> <registry.yaml> <stage> <agent-id> <merged-prs.json>
-    const merged = new Set(JSON.parse(await readFile(args[4], "utf8")).map(Number));
+    const merged = new Set<number>((JSON.parse(await readFile(args[4], "utf8")) as unknown[]).map(Number));
     const picked = selectStage(parseStages(await readFile(args[0], "utf8")), merged);
-    if (picked.stop) { console.error(picked.stop); return 1; }
+    if (!picked.stage) { console.error(picked.stop); return 1; }
     const stage = picked.stage;
     if (stage.number !== args[2]) { console.error(`Stage ${args[2]} is not the next stage to run (${stage.number} is).`); return 1; }
     const agent = parseRegistry(await readFile(args[1], "utf8")).find((a) => a.id === args[3]);
@@ -339,7 +354,7 @@ async function main(argv) {
     console.log(JSON.stringify(d));
     return d.action === "reject" ? 1 : 0;
   }
-  console.error("Usage: agent-checks.mjs trusted|stage|ref|open-stage-pr|plan|pr-text|link-plan|check-follow-up|scan-range|publish-plan|decide ...");
+  console.error("Usage: agent-checks.ts trusted|stage|ref|open-stage-pr|plan|pr-text|link-plan|check-follow-up|scan-range|publish-plan|decide ...");
   return 2;
 }
 

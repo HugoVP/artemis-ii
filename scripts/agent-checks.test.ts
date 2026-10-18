@@ -1,11 +1,11 @@
-// Run with: node --test scripts/*.test.mjs
+// Run with: node --test scripts/*.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
   isTrusted, parseWorkOrderTitle, validateDestRef, parseProtectedPaths, matchesProtected, protectedTouched,
   touchesWorkflows, findSecrets, validatePrText, checkPlanFollowUp, decidePublication, PR_BODY_HEADINGS,
-} from "./agent-checks.mjs";
+} from "./agent-checks.ts";
 
 const agentsMd = await readFile(new URL("../AGENTS.md", import.meta.url), "utf8");
 const patterns = parseProtectedPaths(agentsMd);
@@ -92,7 +92,7 @@ test("the PR text must start with Stage NN: and follow the template", () => {
   assert.ok(validatePrText("Stage 03: x", "## What was done", "03").some((p) => p.includes("Security-relevant")));
 });
 
-const planDiff = (lines) => `diff --git a/docs/PLAN.md b/docs/PLAN.md\n--- a/docs/PLAN.md\n+++ b/docs/PLAN.md\n@@ -1 +1 @@\n${lines.join("\n")}\n`;
+const planDiff = (lines: string[]) => `diff --git a/docs/PLAN.md b/docs/PLAN.md\n--- a/docs/PLAN.md\n+++ b/docs/PLAN.md\n@@ -1 +1 @@\n${lines.join("\n")}\n`;
 
 test("the follow-up commit may only add the PR link to one or two lines of PLAN.md", () => {
   const ok = planDiff(["-| 03 | Pipeline | in review |  |", "+| 03 | Pipeline | in review | #21 |", "-- 2026-10-17 — Stage 03 — x", "+- 2026-10-17 — Stage 03 — PR #21 — x"]);
@@ -105,8 +105,8 @@ test("the follow-up commit may only add the PR link to one or two lines of PLAN.
   assert.equal(checkPlanFollowUp(two, 21).ok, false, "another file");
 });
 
-import { parseRegistry, missingCapabilities, hasOpenStagePr, selectStage } from "./agent-checks.mjs";
-import { parseStages } from "./next-stage-issue.mjs";
+import { parseRegistry, missingCapabilities, hasOpenStagePr, selectStage } from "./agent-checks.ts";
+import { parseStages } from "./next-stage-issue.ts";
 
 test("the registry parser reads scalars and inline lists, and rejects incomplete entries", async () => {
   const real = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
@@ -132,14 +132,14 @@ test("P2-6: the open-stage-PR guard counts same-repository PRs titled Stage, and
 });
 
 test("stage selection runs the first unapproved stage, skips merged in-review stages, and stops at unresolved ones", () => {
-  const rows = (...r) => parseStages(["| # | Stage | Needs | Spec | Status | PR | Issue |", "| --- | --- | --- | --- | --- | --- | --- |", ...r.map(([n, st, pr]) => `| ${n} | S${n} | \`node\` | w | ${st} | ${pr} | — |`)].join("\n"));
-  const none = new Set();
-  assert.equal(selectStage(rows(["01", "approved", "#4"], ["02", "pending", ""]), none).stage.number, "02");
-  assert.equal(selectStage(rows(["01", "in review", "#4"], ["02", "pending", ""]), new Set([4])).stage.number, "02", "merged stage is approved by the run");
-  assert.match(selectStage(rows(["01", "in review", "#4"], ["02", "pending", ""]), none).stop, /Stage 01 is in review/, "open or closed-unmerged PR stops the run");
-  assert.match(selectStage(rows(["01", "in review", ""], ["02", "pending", ""]), none).stop, /no PR/);
-  assert.match(selectStage(rows(["01", "approved", "#4"]), none).stop, /Every stage is approved/);
-  assert.match(selectStage(rows(["01", "weird", ""]), none).stop, /unknown status/);
+  const rows = (...r: [string, string, string][]) => parseStages(["| # | Stage | Needs | Spec | Status | PR | Issue |", "| --- | --- | --- | --- | --- | --- | --- |", ...r.map(([n, st, pr]) => `| ${n} | S${n} | \`node\` | w | ${st} | ${pr} | — |`)].join("\n"));
+  const none = new Set<number>();
+  assert.equal(selectStage(rows(["01", "approved", "#4"], ["02", "pending", ""]), none).stage!.number, "02");
+  assert.equal(selectStage(rows(["01", "in review", "#4"], ["02", "pending", ""]), new Set([4])).stage!.number, "02", "merged stage is approved by the run");
+  assert.match(selectStage(rows(["01", "in review", "#4"], ["02", "pending", ""]), none).stop!, /Stage 01 is in review/, "open or closed-unmerged PR stops the run");
+  assert.match(selectStage(rows(["01", "in review", ""], ["02", "pending", ""]), none).stop!, /no PR/);
+  assert.match(selectStage(rows(["01", "approved", "#4"]), none).stop!, /Every stage is approved/);
+  assert.match(selectStage(rows(["01", "weird", ""]), none).stop!, /unknown status/);
 });
 
 test("the real PLAN.md parses into stages that selectStage can walk", async () => {
@@ -148,10 +148,10 @@ test("the real PLAN.md parses into stages that selectStage can walk", async () =
   assert.ok(r.stage ? /^[0-9]{2}$/.test(r.stage.number) : typeof r.stop === "string");
 });
 
-import { linkPlan } from "./agent-checks.mjs";
+import { linkPlan } from "./agent-checks.ts";
 
 test("a registry entry cannot point the work job at a secret that is not a model key", () => {
-  const bad = (k) => `- id: x\n  key_secret: ${k}\n  runner: codex-exec\n  capabilities: [git]\n`;
+  const bad = (k: string) => `- id: x\n  key_secret: ${k}\n  runner: codex-exec\n  capabilities: [git]\n`;
   assert.throws(() => parseRegistry(bad("AGENT_APP_PRIVATE_KEY")), /AGENT_KEY_/);
   assert.throws(() => parseRegistry(bad("GITHUB_TOKEN")), /AGENT_KEY_/);
   assert.equal(parseRegistry(bad("AGENT_KEY_OTHER"))[0].key_secret, "AGENT_KEY_OTHER");
@@ -172,7 +172,7 @@ test("linkPlan adds the PR link to the stage row and its log line, and nothing e
   assert.deepEqual(checkPlanFollowUp(diff, 21), { ok: true });
 });
 
-import { parsePathList, scanRange, finalizePublication, cleanDraftReason } from "./agent-checks.mjs";
+import { parsePathList, scanRange, finalizePublication, cleanDraftReason } from "./agent-checks.ts";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -199,7 +199,7 @@ test("path lists are NUL separated, so unusual names and both sides of a rename 
 
 test("scanRange finds a key in a binary blob and in a commit message, and passes a clean branch", () => {
   const dir = mkdtempSync(join(tmpdir(), "scan-"));
-  const git = (...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" });
+  const git = (...a: string[]) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" });
   git("init", "-q", "-b", "main");
   writeFileSync(join(dir, "a.txt"), "base\n");
   git("add", "."); git("commit", "-q", "-m", "base");
@@ -237,7 +237,7 @@ test("a session link needs an identifier: the placeholders in AGENTS.md and REVI
 
 test("scanRange also finds a key in a file name, and decide scans the path list", () => {
   const dir = mkdtempSync(join(tmpdir(), "scan-"));
-  const git = (...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" });
+  const git = (...a: string[]) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" });
   git("init", "-q", "-b", "main");
   writeFileSync(join(dir, "a.txt"), "base\n");
   git("add", "."); git("commit", "-q", "-m", "base");
@@ -270,7 +270,7 @@ test("keys glued to other bytes are still found, and ordinary words with sk- are
 
 test("the work and publish diffs use the merge base, so a main that moved is not counted as the agent's changes", async () => {
   const dir = mkdtempSync(join(tmpdir(), "scan-"));
-  const git = (...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" }).toString();
+  const git = (...a: string[]) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir, stdio: "pipe" }).toString();
   git("init", "-q", "-b", "main");
   writeFileSync(join(dir, "a.txt"), "base\n");
   git("add", "."); git("commit", "-q", "-m", "base");
@@ -290,7 +290,7 @@ test("Codex and Claude Code can take every stage of the plan, Figma ones include
   const registry = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
   const plan = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
   for (const id of ["codex", "claude"]) {
-    const agent = registry.find((a) => a.id === id);
+    const agent = registry.find((a) => a.id === id)!;
     for (const s of parseStages(plan)) assert.deepEqual(missingCapabilities(s.needs, agent.capabilities), [], `${id}, Stage ${s.number}`);
   }
 });

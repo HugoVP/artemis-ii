@@ -127,3 +127,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-15 — Process (requested by Hugo) — Task tracking and knowledge tools: Linear issues per stage ("Issue" column), status mapping, Notion as a public-safe readable layer and Obsidian as a personal reader, documented in `AGENTS.md`, `docs/agents/` and `docs/SETUP.md`.
 - 2026-10-15 — Stage 00 approved (PR #1 merged); Stage 01 — PR #4 — Figma design built (variables, components, screens) and `design.md`; Stage 02 spec written.
 - 2026-10-16 — Stage 01 approved (PR #4 merged); Stage 02 — PR #8 — Astro + Tailwind base with design tokens, es/en routes, layout, content collections and Playwright tests; Stage 03 spec written.
+- 2026-10-18 — Process (requested by Hugo) — TypeScript only, on TypeScript 7: scripts and configuration converted from JavaScript, with a test that refuses JavaScript files; one branch prefix, `agent/`, for every agent. <!-- notion -->

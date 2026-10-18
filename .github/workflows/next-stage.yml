@@ -34,10 +34,10 @@ jobs:
           node-version: 22
 
       - name: Unit tests (mock server, no network)
-        run: node --test scripts/next-stage-issue.test.mjs
+        run: node --test scripts/next-stage-issue.test.ts
 
       - name: Open the work order for the next stage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: node scripts/next-stage-issue.mjs
+        run: node scripts/next-stage-issue.ts

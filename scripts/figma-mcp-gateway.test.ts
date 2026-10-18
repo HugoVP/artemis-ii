@@ -266,6 +266,33 @@ test("a slow reader slows the upstream down instead of filling the gateway's mem
   }
 });
 
+test("a JSON response holds its slot until a slow client has taken it, and a disconnect frees it", async () => {
+  const big = JSON.stringify({ jsonrpc: "2.0", id: 1, result: { pad: "x".repeat(24 * 1024 * 1024) } });
+  const up = http.createServer((req, res) => {
+    req.resume();
+    req.on("end", () => { res.writeHead(200, { "content-type": "application/json" }); res.end(big); });
+  }).listen(0, "127.0.0.1");
+  await new Promise((r) => up.once("listening", r));
+  const gw = createGateway({ token: "t", policy: readPolicy(), hostnames: ["127.0.0.1"], upstream: `http://127.0.0.1:${up.address().port}/mcp`, log: () => {} });
+  await new Promise((r) => gw.listen(0, "127.0.0.1", r));
+  try {
+    // A client that connects and never reads.
+    const req = http.request({ host: "127.0.0.1", port: gw.address().port, path: "/mcp", method: "POST", headers: { "content-type": "application/json" } }, (res) => res.pause());
+    req.on("error", () => {});
+    req.end(JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }));
+    await new Promise((r) => setTimeout(r, 800));
+    assert.equal(gw.state.inflight, 1, "the slot was released while the payload was still queued for a client that reads nothing");
+    req.destroy();
+    for (let i = 0; i < 100 && gw.state.inflight > 0; i++) await new Promise((r) => setTimeout(r, 20));
+    assert.equal(gw.state.inflight, 0);
+  } finally {
+    gw.closeAllConnections();
+    up.closeAllConnections();
+    gw.close();
+    up.close();
+  }
+});
+
 test("a response holds its concurrency slot until its body is relayed, so a ninth open stream is refused", async () => {
   const open: ServerResponse[] = [];
   const up = http.createServer((req, res) => {

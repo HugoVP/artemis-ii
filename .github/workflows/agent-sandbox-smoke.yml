@@ -17,7 +17,7 @@ permissions:
 jobs:
   sandbox:
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,22 +30,11 @@ jobs:
       - name: Check the nested Codex sandbox
         run: |
           set -euo pipefail
-          echo "Host namespace settings:"
-          cat /proc/sys/kernel/unprivileged_userns_clone /proc/sys/user/max_user_namespaces || true
-          docker info --format '{{json .SecurityOptions}}'
-          echo "Container identity and unshare:"
-          docker run --rm --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
-            --security-opt apparmor=unconfined --security-opt "seccomp=$GITHUB_WORKSPACE/agents/agent-seccomp.json" \
-            artemis-ii-sandbox-smoke sh -c 'id; stat -c "%a %u:%g %n" /usr/bin/bwrap; cat /proc/self/uid_map; unshare -Ur true' || true
-          echo "Bubblewrap without no-new-privileges (diagnostic container has no credentials):"
-          docker run --rm --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt apparmor=unconfined \
-            --security-opt "seccomp=$GITHUB_WORKSPACE/agents/agent-seccomp.json" \
-            artemis-ii-sandbox-smoke bwrap --unshare-user --unshare-pid --ro-bind / / -- true || true
-          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --security-opt apparmor=unconfined \
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
             --security-opt "seccomp=$GITHUB_WORKSPACE/agents/agent-seccomp.json" --pids-limit 4096 \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
             artemis-ii-sandbox-smoke bwrap --unshare-user --unshare-pid --ro-bind / / -- true
-          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --security-opt apparmor=unconfined \
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
             --security-opt "seccomp=$GITHUB_WORKSPACE/agents/agent-seccomp.json" --pids-limit 4096 \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
             -e HOME=/tmp artemis-ii-sandbox-smoke codex sandbox -- /bin/true

@@ -37,6 +37,8 @@ test("a tool call must target the design file, and no argument may name another 
   assert.match(checkArguments({ fileKey: KEY, url: `https://www.figma.com/design/${KEY}/x` }, KEY), /url/);
   assert.match(checkArguments({ fileKey: KEY, code: `// see https://www.figma.com/design/${OTHER}/Other` }, KEY), /another Figma file/);
   assert.match(checkArguments({ fileKey: KEY, code: `https://www.figma.com/design/${KEY}/x/branch/${OTHER}/y` }, KEY), /another Figma file/);
+  assert.match(checkArguments({ fileKey: KEY, code: `https://www.figma.com/design/${KEY}/branch/${OTHER}/y` }, KEY), /another Figma file/);
+  assert.match(checkArguments({ fileKey: KEY, code: `https://www.figma.com/design/${KEY}/branch/${OTHER}` }, KEY), /another Figma file/);
   assert.equal(checkArguments({ fileKey: KEY, code: `// frame https://www.figma.com/design/${KEY}/Artemis?node-id=1-2` }, KEY), null);
 });
 
@@ -197,4 +199,38 @@ test("notifications are forwarded and answered with 202", async () => {
     assert.equal((await post({ jsonrpc: "2.0", method: "notifications/roots/list_changed" })).status, 202);
     assert.equal(up.calls.length, 1);
   });
+});
+
+test("a response holds its concurrency slot until its body is relayed, so a ninth open stream is refused", async () => {
+  const open = [];
+  const up = http.createServer((req, res) => {
+    req.resume();
+    req.on("end", () => {
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      res.write(": open\n\n");
+      open.push(res);
+    });
+  }).listen(0, "127.0.0.1");
+  await new Promise((r) => up.once("listening", r));
+  const gw = createGateway({ token: "t", policy: readPolicy(), hostnames: ["127.0.0.1"], upstream: `http://127.0.0.1:${up.address().port}/mcp`, log: () => {} });
+  await new Promise((r) => gw.listen(0, "127.0.0.1", r));
+  const post = () => fetch(`http://127.0.0.1:${gw.address().port}/mcp`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }) });
+  try {
+    const streams = [];
+    for (let i = 0; i < 8; i++) streams.push(await post());
+    assert.ok(streams.every((r) => r.status === 200));
+    assert.equal(gw.state.inflight, 8);
+    assert.equal((await post()).status, 429);
+    for (const res of open) res.end();
+    await Promise.all(streams.map((r) => r.text()));
+    assert.equal(gw.state.inflight, 0);
+    const again = post();
+    await new Promise((r) => setTimeout(r, 50));
+    open.at(-1).end();
+    assert.equal((await again).status, 200);
+  } finally {
+    for (const res of open) res.end();
+    gw.close();
+    up.close();
+  }
 });

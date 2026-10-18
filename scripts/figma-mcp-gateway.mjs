@@ -40,14 +40,15 @@ export function toolsFor(access) {
 
 // Argument names that could point a call at another file, team or plan. Only the top-level fileKey is allowed.
 const OTHER_TARGET = /^(?:file_?keys?|file_?urls?|urls?|plan_?keys?|team_?ids?|project_?ids?|branch_?keys?|org_?ids?)$/i;
-const FIGMA_LINK = /figma\.com\/(?:design|file|board|make|slides|proto|deck)\/([A-Za-z0-9]+)(?:\/[^/\s"'?#]*)?(?:\/branch\/([A-Za-z0-9]+))?/gi;
+// The key, then the rest of the path: a branch (/branch/<key>) may come right after the key or after the file name.
+const FIGMA_LINK = /figma\.com\/(?:design|file|board|make|slides|proto|deck)\/([A-Za-z0-9]+)([^\s"'?#]*)/gi;
 
 export function checkArguments(args, fileKey) {
   if (!args || typeof args !== "object" || Array.isArray(args)) return "the call has no arguments";
   if (args.fileKey !== fileKey) return "fileKey must be the project's design file (FIGMA_FILE_URL)";
   const walk = (value, top) => {
     if (typeof value === "string") {
-      for (const m of value.matchAll(FIGMA_LINK)) if (m[1] !== fileKey || m[2]) return "an argument links to another Figma file";
+      for (const m of value.matchAll(FIGMA_LINK)) if (m[1] !== fileKey || /\/branch\//i.test(m[2])) return "an argument links to another Figma file";
       return null;
     }
     if (!value || typeof value !== "object") return null;
@@ -178,6 +179,17 @@ async function pipeEvents(body, res, policy) {
   if (buf.trim()) flush(buf);
 }
 
+// Reads a web stream as text, up to a limit.
+async function readText(body, limit) {
+  const decoder = new TextDecoder();
+  let text = "";
+  for await (const chunk of body) {
+    text += decoder.decode(chunk, { stream: true });
+    if (text.length > limit) throw new Error("response too large");
+  }
+  return text + decoder.decode();
+}
+
 async function readBody(req, limit) {
   const chunks = [];
   let size = 0;
@@ -252,37 +264,39 @@ export function createGateway({ token, policy, hostnames, upstream = UPSTREAM, f
         log({ t: new Date().toISOString(), ...entry, decision: "block", reason: "busy" });
         return send(res, 429, "Too many requests");
       }
+      // The slot is held until the response has been relayed in full, so open streams count too.
       state.inflight += 1;
       let up;
       try {
         up = await fetchImpl(upstream, { method: req.method, headers, body, redirect: "error", signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
+        log({ t: new Date().toISOString(), ...entry, status: up.status, ms: Date.now() - started });
+        // An expired or revoked token must not look like an auth challenge: the client would try OAuth against the gateway.
+        if (up.status === 401 || up.status === 403) return send(res, 502, "Figma refused the gateway's token");
+        const out = { "cache-control": "no-store" };
+        for (const h of ["mcp-session-id", "mcp-protocol-version"]) {
+          const v = up.headers.get(h);
+          if (v !== null && HEADER_RULES[h].test(v)) out[h] = v;
+        }
+        const type = up.headers.get("content-type") ?? "";
+        if (!up.body || up.status === 202 || up.status === 204) { res.writeHead(up.status, out); return res.end(); }
+        if (/^text\/event-stream\b/i.test(type)) {
+          res.writeHead(up.status, { ...out, "content-type": "text/event-stream" });
+          await pipeEvents(up.body, res, policy);
+          return res.end();
+        }
+        if (/^application\/json\b/i.test(type)) {
+          const filtered = filterJsonText(await readText(up.body, MAX_RESPONSE), policy);
+          if (filtered === null) { res.writeHead(202, out); return res.end(); }
+          res.writeHead(up.status, { ...out, "content-type": "application/json" });
+          return res.end(filtered);
+        }
+        return send(res, 502, "Unexpected response from Figma");
       } finally {
         state.inflight -= 1;
+        // A body that was not read to the end is cancelled, so no upstream stream outlives its slot.
+        if (up?.body && !up.body.locked) await up.body.cancel().catch(() => {});
+        else if (up?.body?.locked && !res.writableEnded) res.destroy();
       }
-      log({ t: new Date().toISOString(), ...entry, status: up.status, ms: Date.now() - started });
-      // An expired or revoked token must not look like an auth challenge: the client would try OAuth against the gateway.
-      if (up.status === 401 || up.status === 403) return send(res, 502, "Figma refused the gateway's token");
-      const out = { "cache-control": "no-store" };
-      for (const h of ["mcp-session-id", "mcp-protocol-version"]) {
-        const v = up.headers.get(h);
-        if (v !== null && HEADER_RULES[h].test(v)) out[h] = v;
-      }
-      const type = up.headers.get("content-type") ?? "";
-      if (!up.body || up.status === 202 || up.status === 204) { res.writeHead(up.status, out); return res.end(); }
-      if (/^text\/event-stream\b/i.test(type)) {
-        res.writeHead(up.status, { ...out, "content-type": "text/event-stream" });
-        await pipeEvents(up.body, res, policy);
-        return res.end();
-      }
-      if (/^application\/json\b/i.test(type)) {
-        const text = await up.text();
-        if (text.length > MAX_RESPONSE) return send(res, 502, "Response too large");
-        const filtered = filterJsonText(text, policy);
-        if (filtered === null) { res.writeHead(202, out); return res.end(); }
-        res.writeHead(up.status, { ...out, "content-type": "application/json" });
-        return res.end(filtered);
-      }
-      return send(res, 502, "Unexpected response from Figma");
     } catch (e) {
       log({ t: new Date().toISOString(), method: "error", decision: "error", reason: e?.name === "TimeoutError" ? "timeout" : "gateway" });
       if (!res.headersSent) send(res, 502, "Gateway error");

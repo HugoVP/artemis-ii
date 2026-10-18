@@ -5,10 +5,10 @@ import { extname, join, normalize } from 'node:path';
 
 const root = new URL('../dist/', import.meta.url).pathname;
 const port = Number(process.env.PORT ?? 4321);
-const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2', '.xml': 'application/xml', '.svg': 'image/svg+xml' };
+const types: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2', '.xml': 'application/xml', '.svg': 'image/svg+xml' };
 
 createServer(async (req, res) => {
-  const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '');
+  const path = normalize(decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '');
   let file = join(root, path);
   try {
     if ((await stat(file)).isDirectory()) file = join(file, 'index.html');

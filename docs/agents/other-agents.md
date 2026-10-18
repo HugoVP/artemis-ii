@@ -51,7 +51,7 @@ Nothing here has been run on this project yet. "Confirmed" means found in OpenAI
 3. Run a small documentation-only task with the kickoff prompt (`Read AGENTS.md and follow docs/agents/next-stage.md.`) and check: which account opens the PR, which permissions it has, and that it follows `AGENTS.md`.
 4. Record the results in the "Known agents" table in `README.md`, with the date.
 
-Its branches usually start with `codex/`. Nothing depends on that.
+Its branches usually start with `codex/`; `AGENTS.md` rule 2 asks for an `agent/…` branch instead (`agent/stage-NN-short-name` for a stage), so name the branch that way when you start the task.
 
 ## Open-source agents and open-weight models
 

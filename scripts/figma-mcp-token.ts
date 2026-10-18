@@ -11,24 +11,46 @@ import { fileURLToPath } from "node:url";
 export const DISCOVERY_URL = "https://api.figma.com/.well-known/oauth-authorization-server";
 
 // The token endpoint must be Figma's own, over HTTPS, so a changed discovery document cannot send the secrets elsewhere.
-export function checkTokenEndpoint(url, allowedOrigin = "https://api.figma.com") {
+export function checkTokenEndpoint(url: string, allowedOrigin = "https://api.figma.com"): string {
   const u = new URL(url);
   if (u.origin !== allowedOrigin) throw new Error(`Unexpected token endpoint origin ${u.origin}.`);
   return u.toString();
 }
 
-export async function refresh({ clientId, clientSecret, refreshToken, discoveryUrl = DISCOVERY_URL, allowedOrigin, fetchImpl = fetch }) {
+export interface RefreshOptions {
+  clientId: string | undefined;
+  clientSecret?: string | undefined;
+  refreshToken: string | undefined;
+  discoveryUrl?: string;
+  allowedOrigin?: string;
+  fetchImpl?: typeof fetch;
+}
+
+export interface RefreshResult {
+  accessToken: string;
+  expiresIn: number | null;
+  rotated: boolean;
+}
+
+interface TokenResponse {
+  access_token?: string;
+  expires_in?: number | string;
+  refresh_token?: string;
+  error?: string;
+}
+
+export async function refresh({ clientId, clientSecret, refreshToken, discoveryUrl = DISCOVERY_URL, allowedOrigin, fetchImpl = fetch }: RefreshOptions): Promise<RefreshResult> {
   if (!clientId || !refreshToken) throw new Error("FIGMA_MCP_CLIENT_ID and FIGMA_MCP_REFRESH_TOKEN must be set.");
   // No redirects: a redirect could take the request, and the secrets of the POST below, to another origin.
   const meta = await fetchImpl(discoveryUrl, { redirect: "error" });
   if (!meta.ok) throw new Error(`Figma OAuth discovery failed with ${meta.status}.`);
-  const tokenEndpoint = checkTokenEndpoint((await meta.json()).token_endpoint, allowedOrigin);
+  const tokenEndpoint = checkTokenEndpoint(((await meta.json()) as { token_endpoint: string }).token_endpoint, allowedOrigin);
 
   const body = new URLSearchParams({ grant_type: "refresh_token", client_id: clientId, refresh_token: refreshToken });
   if (clientSecret) body.set("client_secret", clientSecret);
   const res = await fetchImpl(tokenEndpoint, { method: "POST", redirect: "error", headers: { "content-type": "application/x-www-form-urlencoded" }, body });
-  let json = {};
-  try { json = await res.json(); } catch { /* no body */ }
+  let json: TokenResponse = {};
+  try { json = (await res.json()) as TokenResponse; } catch { /* no body */ }
   // Status and the OAuth error code only: never the request body.
   if (!res.ok || !json.access_token) throw new Error(`Figma token refresh failed with ${res.status}${json.error ? ` (${json.error})` : ""}.`);
   return {
@@ -39,7 +61,7 @@ export async function refresh({ clientId, clientSecret, refreshToken, discoveryU
   };
 }
 
-function fromEnv() {
+function fromEnv(): RefreshOptions {
   return {
     clientId: process.env.FIGMA_MCP_CLIENT_ID,
     clientSecret: process.env.FIGMA_MCP_CLIENT_SECRET || undefined,
@@ -48,11 +70,11 @@ function fromEnv() {
 }
 
 // CLI used by agent-run.yml.
-//   figma-mcp-token.mjs issue <out-file>   writes a fresh access token to <out-file> (mode 0600) and masks it in the log
-//   figma-mcp-token.mjs revoke             refreshes once more and drops the result, so the agent's token stops working
-async function main([cmd, outFile]) {
+//   figma-mcp-token.ts issue <out-file>   writes a fresh access token to <out-file> (mode 0600) and masks it in the log
+//   figma-mcp-token.ts revoke             refreshes once more and drops the result, so the agent's token stops working
+async function main([cmd, outFile]: string[]): Promise<number> {
   if (cmd === "issue") {
-    if (!outFile) throw new Error("Usage: figma-mcp-token.mjs issue <out-file>");
+    if (!outFile) throw new Error("Usage: figma-mcp-token.ts issue <out-file>");
     const r = await refresh(fromEnv());
     console.log(`::add-mask::${r.accessToken}`);
     await writeFile(outFile, r.accessToken, { mode: 0o600 });
@@ -66,7 +88,7 @@ async function main([cmd, outFile]) {
     console.log("Figma MCP token replaced; the token used in this run no longer works.");
     return 0;
   }
-  console.error("Usage: figma-mcp-token.mjs issue <out-file> | revoke");
+  console.error("Usage: figma-mcp-token.ts issue <out-file> | revoke");
   return 2;
 }
 
@@ -74,7 +96,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     process.exit(await main(process.argv.slice(2)));
   } catch (e) {
-    console.error(e.message);
+    console.error((e as Error).message);
     process.exit(1);
   }
 }

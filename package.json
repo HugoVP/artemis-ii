@@ -10,8 +10,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check",
-    "test": "npm run build && playwright test"
+    "check": "astro check && npm run typecheck",
+    "typecheck": "node node_modules/typescript7/bin/tsc --noEmit -p tsconfig.json",
+    "test:scripts": "node --test scripts/*.test.ts",
+    "test": "npm run test:scripts && npm run build && playwright test"
   },
   "dependencies": {
     "@astrojs/react": "^7.1.0",
@@ -30,6 +32,7 @@
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "typescript": "^6.0.3"
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript7": "npm:typescript@^7.0.2"
   }
 }

@@ -1,7 +1,7 @@
-// Run with: node --test scripts/*.test.mjs
+// Run with: node --test scripts/*.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
-import { findGrants, figmaGrant } from "./figma-mcp-credentials.mjs";
+import { findGrants, figmaGrant } from "./figma-mcp-credentials.ts";
 
 test("figmaGrant finds the client id and refresh token whatever the nesting", () => {
   const flat = { "figma|abc": { server_url: "https://mcp.figma.com/mcp", client_id: "cid", token_response: { access_token: "a", refresh_token: "rt" } } };

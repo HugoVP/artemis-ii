@@ -24,7 +24,7 @@ Created at claude.ai/code/routines:
   - **GitHub event:** Pull request → `closed`, with the filters:
      - Is merged = `true`
      - Base branch = `main`
-     - Head branch starts with `claude/` (so the routine chains stages built by Claude Code; stages built by other agents are started by hand, see `other-agents.md`)
+     - Head branch starts with `agent/stage-` (every agent names its stage branches this way, `AGENTS.md` rule 2, so the routine chains the next stage whichever agent built the last one)
 
   The work-order issue that `next-stage.yml` opens after each stage merge does not stop this routine: both start the next stage, and the PR the agent opens says `Closes #<issue>`. If you prefer another agent for a stage, turn the routine off (**Active** switch) before merging.
 
@@ -41,6 +41,6 @@ Claude Code acts on GitHub as the account connected to claude.ai. From Stage 03 
 
 ## Notes
 
-- Claude Code branches start with `claude/`. Nothing in the project depends on that.
+- Claude Code starts cloud sessions on a `claude/…` branch. `AGENTS.md` rule 2 asks every agent to work on an `agent/…` branch instead (`agent/stage-NN-short-name` for a stage), so Claude Code creates that branch before its first commit. The routine trigger above depends on it.
 - Verified on 2026-10-12: the Figma connector can read and write the file in `FIGMA_FILE_URL` with `use_figma`.
 - Routines are in preview and use Hugo's usage limit, like any session.

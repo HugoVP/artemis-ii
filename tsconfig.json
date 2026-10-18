@@ -4,6 +4,10 @@
   "exclude": ["dist", "node_modules", "playwright-report", "test-results"],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "react"
+    "jsxImportSource": "react",
+    // TypeScript only (AGENTS.md, "Technical rules"): no JavaScript files in the project.
+    "allowJs": false,
+    // Scripts run with Node's type stripping, which only removes types: no enums, namespaces or parameter properties.
+    "erasableSyntaxOnly": true
   }
 }

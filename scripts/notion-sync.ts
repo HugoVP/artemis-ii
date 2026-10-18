@@ -13,22 +13,22 @@ const MAX_BATCH = 100; // Notion limit of blocks per append call
 const MARKER = /\s*<!--\s*notion\s*-->\s*$/;
 
 // Content that must never be published to a page that may be public.
-const FORBIDDEN = [
+const FORBIDDEN: [RegExp, string][] = [
   [/claude\.ai\/code\/session_/i, "session link"],
   [/\b(?:secret_|ntn_)[A-Za-z0-9]{20,}/, "Notion token"],
   [/\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}/, "GitHub token"],
   [/[\w.+-]+@[\w-]+\.[\w.-]+/, "email address"],
 ];
 
-export function pageIdFrom(value) {
+export function pageIdFrom(value: string | undefined): string {
   const m = String(value ?? "").replace(/-/g, "").match(/[0-9a-f]{32}(?![0-9a-f])/i);
   if (!m) throw new Error("NOTION_PAGE_ID must be a Notion page ID or URL (32 hex characters).");
   return m[0].toLowerCase();
 }
 
-export function sections(markdown) {
-  const out = {};
-  let name = null;
+export function sections(markdown: string): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  let name: string | null = null;
   for (const line of markdown.split("\n")) {
     const h = line.match(/^## (.+)$/);
     if (h) { name = h[1].trim(); out[name] = []; continue; }
@@ -38,11 +38,25 @@ export function sections(markdown) {
 }
 
 // `[text](https://…)` keeps absolute links; relative repo links become plain text.
-export function richText(text) {
-  const items = [];
+export interface RichText {
+  type: "text";
+  text: { content: string; link?: { url: string } };
+  annotations?: { code?: boolean; bold?: boolean };
+}
+
+export interface Block {
+  object: "block";
+  type: "heading_2" | "bulleted_list_item" | "paragraph";
+  heading_2?: { rich_text: RichText[] };
+  bulleted_list_item?: { rich_text: RichText[] };
+  paragraph?: { rich_text: RichText[] };
+}
+
+export function richText(text: string): RichText[] {
+  const items: RichText[] = [];
   const re = /\[([^\]]+)\]\(([^)]+)\)|`([^`]+)`|\*\*([^*]+)\*\*/g;
-  let last = 0, m;
-  const push = (content, extra = {}) => {
+  let last = 0, m: RegExpExecArray | null;
+  const push = (content: string, extra: { link?: string; annotations?: RichText["annotations"] } = {}) => {
     for (let i = 0; i < content.length; i += MAX_TEXT) {
       items.push({ type: "text", text: { content: content.slice(i, i + MAX_TEXT), ...(extra.link ? { link: { url: extra.link } } : {}) }, ...(extra.annotations ? { annotations: extra.annotations } : {}) });
     }
@@ -58,12 +72,12 @@ export function richText(text) {
   return items.length ? items : [{ type: "text", text: { content: " " } }];
 }
 
-const heading = (t) => ({ object: "block", type: "heading_2", heading_2: { rich_text: richText(t) } });
-const bullet = (t) => ({ object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: richText(t) } });
-const paragraph = (t) => ({ object: "block", type: "paragraph", paragraph: { rich_text: richText(t) } });
+const heading = (t: string): Block => ({ object: "block", type: "heading_2", heading_2: { rich_text: richText(t) } });
+const bullet = (t: string): Block => ({ object: "block", type: "bulleted_list_item", bulleted_list_item: { rich_text: richText(t) } });
+const paragraph = (t: string): Block => ({ object: "block", type: "paragraph", paragraph: { rich_text: richText(t) } });
 
-function stageLines(lines) {
-  const out = [];
+function stageLines(lines: string[]): string[] {
+  const out: string[] = [];
   for (const line of lines) {
     if (!line.startsWith("|")) continue;
     const c = line.split("|").slice(1, -1).map((s) => s.trim());
@@ -74,10 +88,10 @@ function stageLines(lines) {
   return out;
 }
 
-export function buildBlocks(markdown, sha = "") {
+export function buildBlocks(markdown: string, sha = ""): Block[] {
   const s = sections(markdown);
   // Allowlist: only entries that end with the marker are published. Everything else stays in the repository.
-  const bullets = (lines) => lines.filter((l) => l.startsWith("- ") && MARKER.test(l)).map((l) => bullet(l.slice(2).replace(MARKER, "")));
+  const bullets = (lines: string[]) => lines.filter((l) => l.startsWith("- ") && MARKER.test(l)).map((l) => bullet(l.slice(2).replace(MARKER, "")));
   const blocks = [
     paragraph(`Synced from \`docs/PLAN.md\` in the repository${sha ? ` (commit ${sha.slice(0, 7)})` : ""}. Do not edit this page: it is overwritten on every sync.`),
     heading("Stages"), ...stageLines(markdown.split(/^## /m)[0].split("\n")).map(bullet),
@@ -85,14 +99,14 @@ export function buildBlocks(markdown, sha = "") {
     heading("Log"), ...bullets(s["Log"] ?? []),
   ];
   // Check the serialized blocks (link URLs included) and each block's text joined, because a value can be split across rich-text items.
-  const texts = blocks.map((b) => b[b.type].rich_text.map((r) => r.text.content).join(""));
+  const texts = blocks.map((b) => b[b.type]!.rich_text.map((r) => r.text.content).join(""));
   for (const text of [JSON.stringify(blocks), ...texts]) {
     for (const [re, what] of FORBIDDEN) if (re.test(text)) throw new Error(`Refusing to publish: content looks like it contains a ${what}.`);
   }
   return blocks;
 }
 
-async function api(base, token, method, path, body) {
+async function api(base: string, token: string, method: string, path: string, body?: unknown): Promise<unknown> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const res = await fetch(`${base}${path}`, {
       method,
@@ -106,11 +120,17 @@ async function api(base, token, method, path, body) {
   throw new Error(`Notion ${method} ${path} kept returning 429.`);
 }
 
-export async function sync({ token, pageId, blocks, base = "https://api.notion.com" }) {
-  const old = [];
-  let cursor;
+interface BlockList {
+  results: { id: string }[];
+  has_more: boolean;
+  next_cursor: string | null;
+}
+
+export async function sync({ token, pageId, blocks, base = "https://api.notion.com" }: { token: string; pageId: string; blocks: Block[]; base?: string }): Promise<{ added: number; removed: number }> {
+  const old: string[] = [];
+  let cursor: string | null | undefined;
   do {
-    const r = await api(base, token, "GET", `/v1/blocks/${pageId}/children?page_size=100${cursor ? `&start_cursor=${cursor}` : ""}`);
+    const r = (await api(base, token, "GET", `/v1/blocks/${pageId}/children?page_size=100${cursor ? `&start_cursor=${cursor}` : ""}`)) as BlockList;
     old.push(...r.results.map((b) => b.id));
     cursor = r.has_more ? r.next_cursor : undefined;
   } while (cursor);

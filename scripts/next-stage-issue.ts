@@ -8,8 +8,25 @@ import { fileURLToPath } from "node:url";
 
 const LABEL = { name: "agent-task", color: "1d76db", description: "Work order for an AI agent: run the stage named in the title" };
 
-export function parseStages(markdown) {
-  const rows = [];
+// One row of the stage table of docs/PLAN.md.
+export interface Stage {
+  number: string;
+  name: string;
+  needs: string[];
+  specPath: string | null;
+  status: string;
+  pr: string;
+  linear: string | null;
+}
+
+export interface Issue {
+  title: string;
+  body: string;
+  labels: string[];
+}
+
+export function parseStages(markdown: string): Stage[] {
+  const rows: Stage[] = [];
   for (const line of markdown.split(/^## /m)[0].split("\n")) {
     if (!line.startsWith("|")) continue;
     const c = line.split("|").slice(1, -1).map((s) => s.trim());
@@ -22,20 +39,20 @@ export function parseStages(markdown) {
       specPath: link ? link[1].replace(/^\.?\/?/, "") : null,
       status: c[4],
       pr: c[5],
-      linear: (c[6].match(/HUG-\d+/) ?? [null])[0],
+      linear: c[6].match(/HUG-\d+/)?.[0] ?? null,
     });
   }
   return rows;
 }
 
 // The stage after the one whose PR was merged; otherwise the first pending stage. null when nothing is left.
-export function pickNext(stages, prNumber) {
+export function pickNext(stages: Stage[], prNumber: string | number): Stage | null {
   const i = stages.findIndex((s) => s.pr === `#${prNumber}`);
   if (i >= 0) return stages.slice(i + 1).find((s) => s.status === "pending") ?? null;
   return stages.find((s) => s.status === "pending") ?? null;
 }
 
-export function buildIssue(stage, { repo, prNumber, branch = "main" }) {
+export function buildIssue(stage: Stage, { repo, prNumber, branch = "main" }: { repo: string; prNumber: string | number; branch?: string }): Issue {
   const specUrl = stage.specPath ? `https://github.com/${repo}/blob/${branch}/docs/${stage.specPath}` : null;
   const needs = ["git", ...stage.needs.filter((n) => n !== "git")].map((n) => `\`${n}\``).join(", ");
   const body = [
@@ -61,7 +78,13 @@ export function buildIssue(stage, { repo, prNumber, branch = "main" }) {
   return { title: `Run Stage ${stage.number}: ${stage.name}`, body, labels: [LABEL.name] };
 }
 
-async function api(base, token, method, path, body) {
+interface ApiResult {
+  status: number;
+  ok: boolean;
+  json: unknown;
+}
+
+async function api(base: string, token: string | undefined, method: string, path: string, body?: unknown): Promise<ApiResult> {
   const res = await fetch(`${base}${path}`, {
     method,
     headers: {
@@ -77,7 +100,19 @@ async function api(base, token, method, path, body) {
   return { status: res.status, ok: res.ok, json: text ? JSON.parse(text) : null };
 }
 
-export async function run({ token, repo, prNumber, markdown, base = "https://api.github.com", dryRun = false }) {
+export type RunResult =
+  | { action: "none"; reason: string }
+  | { action: "dry-run"; issue: Issue }
+  | { action: "exists" | "created"; number: number };
+
+export async function run({ token, repo, prNumber, markdown, base = "https://api.github.com", dryRun = false }: {
+  token?: string | undefined;
+  repo: string;
+  prNumber: string | number;
+  markdown: string;
+  base?: string;
+  dryRun?: boolean;
+}): Promise<RunResult> {
   const stage = pickNext(parseStages(markdown), prNumber);
   if (!stage) return { action: "none", reason: "no pending stage left" };
   const issue = buildIssue(stage, { repo, prNumber });
@@ -85,14 +120,14 @@ export async function run({ token, repo, prNumber, markdown, base = "https://api
 
   const open = await api(base, token, "GET", `/repos/${repo}/issues?state=open&labels=${LABEL.name}&per_page=100`);
   if (!open.ok) throw new Error(`Listing issues failed: ${open.status}`);
-  const same = open.json.find((i) => !i.pull_request && i.title === issue.title);
+  const same = (open.json as { number: number; title: string; pull_request?: unknown }[]).find((i) => !i.pull_request && i.title === issue.title);
   if (same) return { action: "exists", number: same.number };
 
   const label = await api(base, token, "POST", `/repos/${repo}/labels`, LABEL);
   if (!label.ok && label.status !== 422) throw new Error(`Creating the label failed: ${label.status}`);
   const created = await api(base, token, "POST", `/repos/${repo}/issues`, issue);
   if (!created.ok) throw new Error(`Creating the issue failed: ${created.status}`);
-  return { action: "created", number: created.json.number };
+  return { action: "created", number: (created.json as { number: number }).number };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -101,6 +136,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(GITHUB_REPOSITORY ?? "")) throw new Error("GITHUB_REPOSITORY must be owner/name.");
   if (!DRY_RUN && !GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not set.");
   const markdown = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
-  const result = await run({ token: GITHUB_TOKEN, repo: GITHUB_REPOSITORY, prNumber: PR_NUMBER, markdown, base: GITHUB_API_URL || "https://api.github.com", dryRun: Boolean(DRY_RUN) });
+  const result = await run({ token: GITHUB_TOKEN, repo: GITHUB_REPOSITORY!, prNumber: PR_NUMBER!, markdown, base: GITHUB_API_URL || "https://api.github.com", dryRun: Boolean(DRY_RUN) });
   console.log(result.action === "dry-run" ? JSON.stringify(result.issue, null, 2) : JSON.stringify(result));
 }

@@ -13,7 +13,7 @@ Each phase has the same sections: what it delivers, how it works, security, what
 
 ## Phase 2: one agent, run by the pipeline
 
-> **Status:** built in its own PR. The files are `agents/registry.yaml`, the `agent-runner` target of the `Dockerfile`, the proposed workflows in `docs/agents/workflows/`, `scripts/agent-checks.mjs` and the guide `docs/agents/adding-an-agent.md`. The guide records what was verified for Codex and what is still **to verify** on the first real run. Continuation mode (follow-up runs on an existing PR) is left for a separate change; criteria P2-1 to P2-7 below cover new runs.
+> **Status:** built in its own PR. The files are `agents/registry.yaml`, the `agent-runner` target of the `Dockerfile`, the proposed workflows in `docs/agents/workflows/`, `scripts/agent-checks.ts` and the guide `docs/agents/adding-an-agent.md`. The guide records what was verified for Codex and what is still **to verify** on the first real run. Continuation mode (follow-up runs on an existing PR) is left for a separate change; criteria P2-1 to P2-7 below cover new runs.
 
 ### What it delivers
 
@@ -69,7 +69,7 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 - Has no project code: it does not run npm or any repository script.
 - Downloads the bundle and checks it:
   - The diff does not touch protected paths, as `AGENTS.md` defines them (`.github/**`, `AGENTS.md`, `CLAUDE.md`, `REVIEW.md`, `docs/DELIVERY.md`, `docs/agents/**` and security configuration, which is `public/_headers` and the configuration files of the scanners), unless the stage spec lists them. The check reads that definition from the `AGENTS.md` on `main`, so a change to the list there changes the check. When it does, the PR still opens, but as a draft with a warning.
-  - No commit message, file or PR text contains secret-like strings or session links. A secret scanner runs over every commit in the bundle and over the PR text before anything is pushed, with patterns for the model keys of the registered providers and for private keys. The privacy filter of `notion-sync.mjs` (GitHub and Notion tokens, emails, session links) is a second check, not the main one, because it does not know model keys. If the scanner is a third-party tool, adding it is justified in the phase 2 PR.
+  - No commit message, file or PR text contains secret-like strings or session links. A secret scanner runs over every commit in the bundle and over the PR text before anything is pushed, with patterns for the model keys of the registered providers and for private keys. The privacy filter of `notion-sync.ts` (GitHub and Notion tokens, emails, session links) is a second check, not the main one, because it does not know model keys. If the scanner is a third-party tool, adding it is justified in the phase 2 PR.
   - The PR title starts with `Stage NN:` and the body follows the template.
 - Creates a token for the GitHub App with `actions/create-github-app-token`, scoped to this repository, valid for one hour.
 - Pushes only to a ref that matches `agent/stage-NN-*` for the validated stage number, opens the PR with the label `agent-authored`, and comments on the issue with the PR link. The App token is repository-wide, so this destination check is what keeps one run from touching another stage's branch. Once the PR exists, `publish` makes the follow-up commit that `AGENTS.md` rule 4 asks for: it adds the PR link to the stage's row and to its log line in `docs/PLAN.md`, and checks that this commit changes only those two lines. The worker cannot do it because the PR number does not exist yet, and an issue comment does not replace it.
@@ -133,7 +133,7 @@ Phase 2 needs one amendment before it is built, not after:
 - **P2-4:** the PR opened by the App starts CI and the preview.
 - **P2-5:** a merge attempt by the App on a test PR into `main` is refused because `approval` is missing (the App's merge permission is not what stops it), the App cannot push to `.github/workflows/`, and `publish` refuses a destination ref outside `agent/stage-NN-*` and another stage's branch (test with a sandbox branch).
 - **P2-6:** two runs never overlap, for the same stage or for different stages, including the `publish` job: a second request waits until the first run has fully finished, and its open-stage-PR guard sees the PR the first run opened.
-- **P2-7:** the checks of `publish` have unit tests in `scripts/*.test.mjs`, like the Notion and Linear scripts.
+- **P2-7:** the checks of `publish` have unit tests in `scripts/*.test.ts`, like the Notion and Linear scripts.
 
 ### Rollback
 
@@ -176,7 +176,7 @@ Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR tha
 
 ### Orchestrator
 
-`scripts/orchestrate.mjs`, with tests, runs in a workflow on `main` with read-only permissions and writes its decision as a file artifact. A second job, with `issues: write` and no project code, posts that decision as a comment on the iteration issue, so every choice can be audited.
+`scripts/orchestrate.ts`, with tests, runs in a workflow on `main` with read-only permissions and writes its decision as a file artifact. A second job, with `issues: write` and no project code, posts that decision as a comment on the iteration issue, so every choice can be audited.
 
 **Choosing the leader of a stage:**
 

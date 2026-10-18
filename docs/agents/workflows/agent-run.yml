@@ -71,8 +71,8 @@ jobs:
           TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           TRUSTED: ${{ vars.AGENT_TRUSTED_LOGIN }}
         run: |
-          node scripts/agent-checks.mjs trusted "$ACTOR" "$TRUSTED"
-          node scripts/agent-checks.mjs trusted "$TRIGGERING_ACTOR" "$TRUSTED"
+          node scripts/agent-checks.ts trusted "$ACTOR" "$TRUSTED"
+          node scripts/agent-checks.ts trusted "$TRIGGERING_ACTOR" "$TRUSTED"
 
       - name: Resolve the work order, the stage and the agent
         id: order
@@ -95,7 +95,7 @@ jobs:
               --jq "[.[] | select(.title | startswith(\"Run Stage ${STAGE}:\"))][0].number // empty")
             [ -n "$ISSUE" ] || { echo "No open 'Run Stage ${STAGE}' issue with the agent-task label."; exit 1; }
           else
-            STAGE=$(node scripts/agent-checks.mjs stage "$ISSUE_TITLE")
+            STAGE=$(node scripts/agent-checks.ts stage "$ISSUE_TITLE")
             AGENT="${LABEL#agent:}"
             ISSUE="$ISSUE_NUMBER"
           fi
@@ -104,12 +104,12 @@ jobs:
 
           # Rule 3 of AGENTS.md: no new stage while a stage PR is open.
           gh pr list --repo "$REPO" --state open --limit 100 --json title,isCrossRepository > "$RUNNER_TEMP/prs.json"
-          node scripts/agent-checks.mjs open-stage-pr "$RUNNER_TEMP/prs.json"
+          node scripts/agent-checks.ts open-stage-pr "$RUNNER_TEMP/prs.json"
 
           # Rule 1 of AGENTS.md: only the next stage to run, with an agent that has the capabilities it needs.
           # Steps 4 and 5 of next-stage.md: an earlier stage that is in review and not merged stops the run.
           gh pr list --repo "$REPO" --state merged --limit 200 --json number --jq '[.[].number]' > "$RUNNER_TEMP/merged.json"
-          node scripts/agent-checks.mjs plan docs/PLAN.md agents/registry.yaml "$STAGE" "$AGENT" "$RUNNER_TEMP/merged.json" > "$RUNNER_TEMP/plan.json"
+          node scripts/agent-checks.ts plan docs/PLAN.md agents/registry.yaml "$STAGE" "$AGENT" "$RUNNER_TEMP/merged.json" > "$RUNNER_TEMP/plan.json"
           KEY_SECRET=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).keySecret" "$RUNNER_TEMP/plan.json")
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
           echo "agent=$AGENT" >> "$GITHUB_OUTPUT"
@@ -226,7 +226,7 @@ jobs:
           # It answers only requests addressed to the name figma-gateway, which the agent's container resolves to it.
           BIND=$(docker network inspect bridge --format '{{ (index .IPAM.Config 0).Gateway }}')
           [[ "$BIND" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "No address for Docker's bridge."; exit 1; }
-          nohup node "$RUNNER_TEMP/trusted/scripts/figma-mcp-gateway.mjs" "$BIND" > "$RUNNER_TEMP/figma-gateway.log" 2>&1 &
+          nohup node "$RUNNER_TEMP/trusted/scripts/figma-mcp-gateway.ts" "$BIND" > "$RUNNER_TEMP/figma-gateway.log" 2>&1 &
           echo "FIGMA_GATEWAY_PID=$!" >> "$GITHUB_ENV"
           for _ in $(seq 1 30); do
             if curl -fsS --resolve "figma-gateway:8787:$BIND" "http://figma-gateway:8787/healthz" >/dev/null 2>&1; then echo "Figma MCP gateway ready."; exit 0; fi
@@ -392,7 +392,7 @@ jobs:
           git diff --no-renames --name-only -z "origin/main...$BRANCH" > "$OUT/files.txt"
           # Scan from the trusted copy. Every new commit and blob is scanned, binary ones and merge resolutions included.
           # Log transcripts are never uploaded. publish scans again.
-          TRUSTED="$RUNNER_TEMP/trusted/scripts/agent-checks.mjs"
+          TRUSTED="$RUNNER_TEMP/trusted/scripts/agent-checks.ts"
           node "$TRUSTED" scan-range origin/main "$BRANCH"
           node "$TRUSTED" decide "$RUNNER_TEMP/trusted/AGENTS.md" "$OUT/files.txt" \
             "$OUT/pr-title.txt" "$OUT/pr-body.md" "$OUT/draft-reason.txt" > "$OUT/decision.json"
@@ -446,8 +446,8 @@ jobs:
         run: |
           set -euo pipefail
           B="$RUNNER_TEMP/bundle"
-          node scripts/agent-checks.mjs ref "$BRANCH" "$STAGE"
-          node scripts/agent-checks.mjs pr-text "$B/.agent/pr-title.txt" "$B/.agent/pr-body.md" "$STAGE"
+          node scripts/agent-checks.ts ref "$BRANCH" "$STAGE"
+          node scripts/agent-checks.ts pr-text "$B/.agent/pr-title.txt" "$B/.agent/pr-body.md" "$STAGE"
           git config user.name "artemis-ii-agent"
           git config user.email "artemis-ii-agent@users.noreply.github.com"
           # Trusted copy of the scripts, from main: later steps check out the agent's branch.
@@ -456,16 +456,16 @@ jobs:
           # Three dots: main may have moved during the run, and its own changes are not the agent's.
           git diff --no-renames --name-only -z "origin/main...$BRANCH" > "$RUNNER_TEMP/files.txt"
           # Scan every new commit and blob here too, before any token exists.
-          node scripts/agent-checks.mjs scan-range origin/main "$BRANCH"
+          node scripts/agent-checks.ts scan-range origin/main "$BRANCH"
           # AGENTS.md comes from main, so a change to the protected list in the bundle does not apply to itself.
           touch "$B/.agent/draft-reason.txt"
-          node scripts/agent-checks.mjs decide AGENTS.md "$RUNNER_TEMP/files.txt" \
+          node scripts/agent-checks.ts decide AGENTS.md "$RUNNER_TEMP/files.txt" \
             "$B/.agent/pr-title.txt" "$B/.agent/pr-body.md" "$B/.agent/draft-reason.txt" > "$RUNNER_TEMP/decision.json" || {
             cat "$RUNNER_TEMP/decision.json"; exit 1; }
           cat "$RUNNER_TEMP/decision.json"
           # Draft when a protected path changed or the agent asked for one (a blocked run, AGENTS.md rule 8).
           # The warning goes to a file, never to a step output: it can contain agent-chosen text.
-          MODE=$(node scripts/agent-checks.mjs publish-plan "$RUNNER_TEMP/decision.json" "$B/.agent/draft-reason.txt" "$RUNNER_TEMP/warning.txt")
+          MODE=$(node scripts/agent-checks.ts publish-plan "$RUNNER_TEMP/decision.json" "$B/.agent/draft-reason.txt" "$RUNNER_TEMP/warning.txt")
           echo "draft=$([ "$MODE" = draft ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       # Short-lived token of the GitHub App, for this repository only.
@@ -510,12 +510,12 @@ jobs:
           set -euo pipefail
           git checkout "$BRANCH"
           BEFORE=$(git rev-parse HEAD)
-          node "$RUNNER_TEMP/trusted/scripts/agent-checks.mjs" link-plan docs/PLAN.md "$STAGE" "$PR_NUMBER"
+          node "$RUNNER_TEMP/trusted/scripts/agent-checks.ts" link-plan docs/PLAN.md "$STAGE" "$PR_NUMBER"
           git add docs/PLAN.md
           if git diff --cached --quiet; then echo "Nothing to link."; exit 0; fi
           git commit -m "Add the PR link to docs/PLAN.md" >/dev/null
           git diff -U0 "$BEFORE" HEAD > "$RUNNER_TEMP/followup.diff"
-          node "$RUNNER_TEMP/trusted/scripts/agent-checks.mjs" check-follow-up "$RUNNER_TEMP/followup.diff" "$PR_NUMBER"
+          node "$RUNNER_TEMP/trusted/scripts/agent-checks.ts" check-follow-up "$RUNNER_TEMP/followup.diff" "$PR_NUMBER"
           AUTH=$(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)
           echo "::add-mask::$AUTH"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin "refs/heads/$BRANCH:refs/heads/$BRANCH"
@@ -551,7 +551,7 @@ jobs:
           FIGMA_MCP_CLIENT_ID: ${{ secrets.FIGMA_MCP_CLIENT_ID }}
           FIGMA_MCP_CLIENT_SECRET: ${{ secrets.FIGMA_MCP_CLIENT_SECRET }}
           FIGMA_MCP_REFRESH_TOKEN: ${{ secrets.FIGMA_MCP_REFRESH_TOKEN }}
-        run: node scripts/figma-mcp-token.mjs revoke
+        run: node scripts/figma-mcp-token.ts revoke
 
   # Any failure after a successful prepare is reported on the work order and handed to Hugo.
   escalate:

@@ -1,19 +1,19 @@
-// Run with: node --test scripts/*.test.mjs
+// Run with: node --test scripts/*.test.ts
 // Reads the proposed workflows in docs/agents/workflows/ and checks the security properties of the design
 // (docs/MULTI-AGENT-PHASES.md, Phase 2). These are text checks: they catch regressions in the YAML, they do not run it.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const read = (n) => readFile(new URL(`../docs/agents/workflows/${n}`, import.meta.url), "utf8");
+const read = (n: string) => readFile(new URL(`../docs/agents/workflows/${n}`, import.meta.url), "utf8");
 const run = await read("agent-run.yml");
 const image = await read("agent-runner-image.yml");
 
 // The text of one job, from its key to the next top-level job.
-function job(text, name) {
+function job(text: string, name: string): string {
   const m = new RegExp(`^  ${name}:\\n([\\s\\S]*?)(?=^  [a-z-]+:\\n|(?![\\s\\S]))`, "m").exec(text);
   assert.ok(m, `job ${name} not found`);
-  return m[1];
+  return m[1]!;
 }
 
 test("every action is pinned to a full commit SHA, and is a GitHub-created action", () => {
@@ -26,7 +26,7 @@ test("every action is pinned to a full commit SHA, and is a GitHub-created actio
 
 test("P2-2: the work job has read-only permissions and no App credential", () => {
   const work = job(run, "work");
-  const perms = /permissions:\n((?:      .+\n)+)/.exec(work)[1];
+  const perms = /permissions:\n((?:      .+\n)+)/.exec(work)![1];
   assert.doesNotMatch(perms, /write/);
   assert.doesNotMatch(work, /AGENT_APP_/);
   assert.match(work, /git [^\n]*push --dry-run/);
@@ -34,7 +34,7 @@ test("P2-2: the work job has read-only permissions and no App credential", () =>
 
 test("the model key is read in exactly one step of one job, and the App key only in publish", () => {
   assert.equal([...run.matchAll(/secrets\[needs\.prepare\.outputs\.key_secret\]/g)].length, 1);
-  const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(run)[1];
+  const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(run)![1]!;
   assert.match(agentStep, /AGENT_MODEL_KEY: \$\{\{ secrets\[needs\.prepare\.outputs\.key_secret\] \}\}/);
   // Handed to the CLI under its own name, and removed from the environment that the CLI inherits.
   assert.match(agentStep, /unset AGENT_MODEL_KEY/);
@@ -48,7 +48,7 @@ test("the model key is read in exactly one step of one job, and the App key only
 test("P2-1: prepare compares the actor with the AGENT_TRUSTED_LOGIN variable, never with the repository owner", () => {
   const prepare = job(run, "prepare");
   assert.match(prepare, /TRUSTED: \$\{\{ vars\.AGENT_TRUSTED_LOGIN \}\}/);
-  assert.match(prepare, /agent-checks\.mjs trusted/);
+  assert.match(prepare, /agent-checks\.ts trusted/);
   assert.doesNotMatch(run, /repository_owner\s*==|owner\.login/);
 });
 
@@ -61,7 +61,7 @@ test("publish runs no project code and no npm, and takes its scripts from main",
   const publish = job(run, "publish");
   assert.doesNotMatch(publish.replace(/^\s*#.*$/gm, ""), /\bnpm\b|\bnpx\b|\bpnpm\b|\byarn\b/);
   assert.match(publish, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
-  assert.match(publish, /RUNNER_TEMP\/trusted\/scripts\/agent-checks\.mjs/);
+  assert.match(publish, /RUNNER_TEMP\/trusted\/scripts\/agent-checks\.ts/);
   // After the agent's branch is checked out, only the trusted copy of the scripts may run.
   const afterCheckout = publish.split('git checkout "$BRANCH"')[1];
   assert.ok(afterCheckout, "publish checks out the branch to add the PLAN.md link");
@@ -70,7 +70,7 @@ test("publish runs no project code and no npm, and takes its scripts from main",
 
 test("publish pushes only after the destination ref check, and never merges", () => {
   const publish = job(run, "publish");
-  assert.ok(publish.indexOf("agent-checks.mjs ref") < publish.indexOf("git -c"), "the ref check comes before the first push");
+  assert.ok(publish.indexOf("agent-checks.ts ref") < publish.indexOf("git -c"), "the ref check comes before the first push");
   assert.doesNotMatch(run, /gh pr merge|gh api[^\n]*merge|--auto|enable_pr_auto_merge/);
   assert.doesNotMatch(run, /workflows:\s*write|administration|environments:\s*write/);
 });
@@ -123,7 +123,7 @@ test("the draft warning never goes through a step output", () => {
 test("a trusted step makes the commit, with hooks off and without the scratch folder, after the agent ran", () => {
   const work = job(run, "work");
   assert.ok(work.indexOf("- name: Run the agent") < work.indexOf("- name: Commit the agent's changes"));
-  const step = /- name: Commit the agent's changes\n([\s\S]*?)(?=\n      - name:)/.exec(work)[1];
+  const step = /- name: Commit the agent's changes\n([\s\S]*?)(?=\n      - name:)/.exec(work)![1]!;
   assert.match(step, /core\.hooksPath=\/dev\/null/);
   assert.match(step, /':!\.agent'/);
   assert.doesNotMatch(step, /CODEX_API_KEY|secrets\./);
@@ -137,7 +137,7 @@ test("the work order line is matched on a numeric boundary, and prepare checks m
 
 test("path diffs use three dots, and the concurrency group mirrors the eligibility of prepare", () => {
   for (const m of run.matchAll(/git diff [^\n]*--name-only[^\n]*/g)) assert.match(m[0], /origin\/main\.\.\.\$/);
-  const group = /^  group: (.*)$/m.exec(run)[1];
+  const group = /^  group: (.*)$/m.exec(run)![1]!;
   for (const part of ["agent-task", "issue.pull_request == null", "startsWith(github.event.label.name, 'agent:')", "github.actor == vars.AGENT_TRUSTED_LOGIN", "github.triggering_actor == vars.AGENT_TRUSTED_LOGIN"]) assert.ok(group.includes(part), part);
 });
 
@@ -148,7 +148,7 @@ test("a re-run by anyone but the trusted login is refused, in prepare and again 
 });
 
 test("the agent step never asks the CLI to write to a path of the agent's choosing, and never bypasses the sandbox", () => {
-  const step = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(run)[1];
+  const step = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(run)![1]!;
   assert.doesNotMatch(step, /--output-last-message|-o \./);
   assert.doesNotMatch(run, /dangerously-bypass/);
   assert.match(step, /--sandbox workspace-write/);
@@ -167,10 +167,10 @@ test("single-line run: values contain no colon followed by a space, which is inv
 });
 
 // The text of one step of a job, up to the next step or comment.
-function step(text, name) {
+function step(text: string, name: string): string {
   const m = new RegExp(`- name: ${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n([\\s\\S]*?)(?=\\n      #|\\n      - )`).exec(text);
   assert.ok(m, `step ${name} not found`);
-  return m[1];
+  return m[1]!;
 }
 
 test("the agent runs in a docker run container without the Docker socket, as the runner's user, with .git read-only", () => {
@@ -195,16 +195,16 @@ test("the Figma refresh token is read only by the gateway and the replacement jo
   const work = job(run, "work");
   const gateway = step(work, "Start the Figma MCP gateway");
   assert.match(gateway, /if: needs\.prepare\.outputs\.figma != 'none'/);
-  assert.match(gateway, /node "\$RUNNER_TEMP\/trusted\/scripts\/figma-mcp-gateway\.mjs" "\$BIND"/);
+  assert.match(gateway, /node "\$RUNNER_TEMP\/trusted\/scripts\/figma-mcp-gateway\.ts" "\$BIND"/);
   assert.match(gateway, /FIGMA_ACCESS: \$\{\{ needs\.prepare\.outputs\.figma \}\}/);
   const revoke = job(run, "figma-revoke");
   assert.match(revoke, /^    if: always\(\) && github\.triggering_actor == vars\.AGENT_TRUSTED_LOGIN && needs\.prepare\.result == 'success' && needs\.prepare\.outputs\.figma != 'none'/m);
   assert.match(revoke, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
-  assert.match(revoke, /run: node scripts\/figma-mcp-token\.mjs revoke/);
+  assert.match(revoke, /run: node scripts\/figma-mcp-token\.ts revoke/);
   assert.doesNotMatch(revoke.replace(/^\s*#.*$/gm, ""), /\bnpm\b/);
   assert.equal([...run.matchAll(/secrets\.FIGMA_MCP_REFRESH_TOKEN/g)].length, 2);
   for (const name of ["Install the project dependencies", "Run the agent"]) assert.doesNotMatch(step(work, name), /FIGMA_MCP_|FIGMA_TOKEN|headers:|Bearer |bearer_token/, name);
-  assert.doesNotMatch(run, /figma-mcp-token\.mjs" issue|bearer_token_env_var/);
+  assert.doesNotMatch(run, /figma-mcp-token\.ts" issue|bearer_token_env_var/);
   for (const name of ["prepare", "publish", "escalate"]) assert.doesNotMatch(job(run, name), /FIGMA_MCP_/);
   assert.match(job(run, "prepare"), /figma=\$FIGMA/);
   // The gateway is stopped right after the agent, whatever happened, and its log is shown.
@@ -232,7 +232,7 @@ test("Figma write tools are offered only to stages that need figma-write, for bo
 
 test("Claude Code may edit and write only inside the workspace, never in .git", () => {
   const agentStep = step(job(run, "work"), "Run the agent");
-  const allowed = /ALLOWED=\(([^)]*\))*[^)]*\)/.exec(agentStep)[0];
+  const allowed = /ALLOWED=\(([^)]*\))*[^)]*\)/.exec(agentStep)![0];
   assert.match(allowed, /"Edit\(\/\/work\/\*\*\)" "Write\(\/\/work\/\*\*\)"/);
   assert.doesNotMatch(allowed, /(?:^|[ (])(?:Edit|Write)(?:[ )]|$)/);
   assert.match(agentStep, /deny: \["Edit\(\/\/work\/\.git\/\*\*\)", "Write\(\/\/work\/\.git\/\*\*\)"\]/);
@@ -242,7 +242,7 @@ test("the trusted git steps after the agent read no global or system configurati
   const work = job(run, "work");
   for (const name of ["Commit the agent's changes", "Check that no write token reached the workspace", "Bundle and scan the result"]) {
     const s = /- name: ([^\n]+)\n([\s\S]*?)(?=\n      - |(?![\s\S]))/g;
-    const text = [...work.matchAll(s)].find((m) => m[1] === name)[2];
+    const text = [...work.matchAll(s)].find((m) => m[1] === name)![2]!;
     assert.match(text, /GIT_CONFIG_GLOBAL: \/dev\/null/, name);
     assert.match(text, /GIT_CONFIG_NOSYSTEM: "1"/, name);
     assert.match(text, /core\.hooksPath[\s\S]*\/dev\/null/, name);
@@ -253,7 +253,7 @@ test("the trusted git steps after the agent read no global or system configurati
 test("project dependencies are installed before the gateway starts and before the agent, never in the preparation step", () => {
   const work = job(run, "work");
   assert.doesNotMatch(step(work, "Prepare the workspace"), /npm ci/);
-  const at = (s) => work.indexOf(`- name: ${s}`);
+  const at = (s: string) => work.indexOf(`- name: ${s}`);
   assert.ok(at("Prepare the workspace") < at("Install the project dependencies"));
   // The gateway starts after the install, so install scripts never find it running, and stops right after the agent.
   assert.ok(at("Install the project dependencies") < at("Start the Figma MCP gateway"));

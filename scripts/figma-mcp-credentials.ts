@@ -7,14 +7,26 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-const FIELDS = {
+type Field = "client_id" | "client_secret" | "refresh_token";
+type Node = Record<string, unknown>;
+
+export interface Grant {
+  client_id: string | undefined;
+  client_secret: string | undefined;
+  refresh_token: string;
+}
+
+const FIELDS: Record<Field, string[]> = {
   client_id: ["client_id", "clientId"],
   client_secret: ["client_secret", "clientSecret"],
   refresh_token: ["refresh_token", "refreshToken"],
 };
 
-function pick(obj, names) {
-  for (const n of names) if (typeof obj?.[n] === "string" && obj[n] !== "") return obj[n];
+function pick(obj: Node | undefined, names: string[]): string | undefined {
+  for (const n of names) {
+    const v = obj?.[n];
+    if (typeof v === "string" && v !== "") return v;
+  }
   return undefined;
 }
 
@@ -22,29 +34,33 @@ function pick(obj, names) {
 // with the client id found on the object itself or on one of its parents.
 // The server URL of a grant may sit on the grant's object or on an enclosing one (for example a `token_response`
 // inside an entry that holds `server_url`), so the nearest URL in the chain decides which server the grant is for.
-function nearestUrl(chain) {
-  for (const o of chain) for (const k of ["server_url", "serverUrl", "url", "resource"]) if (typeof o?.[k] === "string") return o[k];
+function nearestUrl(chain: Node[]): string {
+  for (const o of chain) for (const k of ["server_url", "serverUrl", "url", "resource"]) {
+    const v = o?.[k];
+    if (typeof v === "string") return v;
+  }
   return "";
 }
 
-export function findGrants(value, parents = []) {
-  let node = value;
+export function findGrants(value: unknown, parents: Node[] = []): (Grant & { text: string })[] {
+  let node: unknown = value;
   if (typeof node === "string") {
     try { node = JSON.parse(node); } catch { return []; }
   }
   if (!node || typeof node !== "object") return [];
-  const found = [];
-  const refresh = pick(node, FIELDS.refresh_token);
+  const obj = node as Node;
+  const found: (Grant & { text: string })[] = [];
+  const refresh = pick(obj, FIELDS.refresh_token);
   if (refresh) {
-    const chain = [node, ...parents];
-    const first = (names) => chain.map((o) => pick(o, names)).find(Boolean);
-    found.push({ client_id: first(FIELDS.client_id), client_secret: first(FIELDS.client_secret), refresh_token: refresh, text: nearestUrl(chain) || JSON.stringify(node) });
+    const chain = [obj, ...parents];
+    const first = (names: string[]) => chain.map((o) => pick(o, names)).find(Boolean);
+    found.push({ client_id: first(FIELDS.client_id), client_secret: first(FIELDS.client_secret), refresh_token: refresh, text: nearestUrl(chain) || JSON.stringify(obj) });
   }
-  for (const child of Object.values(node)) found.push(...findGrants(child, [node, ...parents]));
+  for (const child of Object.values(obj)) found.push(...findGrants(child, [obj, ...parents]));
   return found;
 }
 
-export function figmaGrant(json) {
+export function figmaGrant(json: unknown): Grant {
   const grants = findGrants(json);
   // Only a grant for Figma's server counts: a grant of another server must never be printed as if it were Figma's.
   const list = grants.filter((g) => /^https:\/\/mcp\.figma\.com(?:\/|$)/.test(g.text));
@@ -57,13 +73,13 @@ export function figmaGrant(json) {
   return grant;
 }
 
-async function main([file, field]) {
+async function main([file, field]: string[]): Promise<number> {
   if (!file || !(field in FIELDS)) {
-    console.error("Usage: figma-mcp-credentials.mjs <credentials file> client_id|client_secret|refresh_token");
+    console.error("Usage: figma-mcp-credentials.ts <credentials file> client_id|client_secret|refresh_token");
     return 2;
   }
   const grant = figmaGrant(JSON.parse(await readFile(file, "utf8")));
-  const value = grant[field];
+  const value = grant[field as Field];
   if (!value) {
     console.error(`No ${field} in this grant.${field === "client_secret" ? " That is normal for a public client: skip FIGMA_MCP_CLIENT_SECRET." : ""}`);
     return 1;
@@ -76,7 +92,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     process.exit(await main(process.argv.slice(2)));
   } catch (e) {
-    console.error(e.message);
+    console.error((e as Error).message);
     process.exit(1);
   }
 }

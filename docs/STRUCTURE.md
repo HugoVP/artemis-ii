@@ -7,7 +7,7 @@ artemis-ii/
 ├── REVIEW.md                  short copy of the code review rules (read by Copilot code review)
 ├── PROMPT.md                  Hugo's original brief
 ├── CURATION.md                photo selection (Stage 05)
-├── astro.config.mjs  tailwind.config.*  tsconfig.json
+├── astro.config.ts  tailwind.config.*  tsconfig.json
 ├── package.json  package-lock.json
 ├── Dockerfile  compose.yaml  .dockerignore   development and test images (docs/DOCKER.md)
 ├── .devcontainer/             dev container for VS Code and Codespaces
@@ -24,7 +24,7 @@ artemis-ii/
 │   └── content-review/        text drafts (Stage 08)
 ├── tests/                     Playwright acceptance and smoke tests, named after spec criteria (Stage 02)
 ├── scripts/
-│   ├── agent-checks.mjs       checks of the agent-run workflow, with tests
+│   ├── agent-checks.ts        checks of the agent-run workflow, with tests
 │   └── ingest.ts              local mode for agents, credential-free build mode for the pipeline; uploads are done by `media.yml` (Stage 06)
 ├── public/
 │   └── _headers               security headers (Stage 03); plus favicon and very light thumbnails

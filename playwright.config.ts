@@ -7,7 +7,7 @@ export default defineConfig({
   reporter: [['list']],
   use: { baseURL: 'http://localhost:4321' },
   webServer: {
-    command: 'node scripts/serve-dist.mjs',
+    command: 'node scripts/serve-dist.ts',
     url: 'http://127.0.0.1:4321/es/',
     reuseExistingServer: !process.env.CI,
   },

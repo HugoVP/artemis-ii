@@ -1,13 +1,15 @@
-// Run with: node --test scripts/*.test.mjs
+// Run with: node --test scripts/*.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { readFile } from "node:fs/promises";
-import { parseStages } from "./next-stage-issue.mjs";
-import { planActions, rank, run, wantedRows } from "./linear-sync.mjs";
+import { parseStages } from "./next-stage-issue.ts";
+import { planActions, rank, run, wantedRows } from "./linear-sync.ts";
+import type { LinearIssue, LinearState } from "./linear-sync.ts";
+import type { AddressInfo } from "node:net";
 
 const plan = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
-const table = (rows) => `# Plan\n\n| # | Stage | Needs | Spec | Status | PR | Issue |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join("\n")}\n`;
+const table = (rows: string[]) => `# Plan\n\n| # | Stage | Needs | Spec | Status | PR | Issue |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join("\n")}\n`;
 const md = table([
   "| 01 | Design | `figma-write` | [s](specs/s.md) | in review | #4 | `HUG-5` |",
   "| 02 | Base | `node` | [s](specs/s.md) | pending | | `HUG-6` |",
@@ -15,9 +17,9 @@ const md = table([
   "| 04 | Prefs | `node` | — | pending | | |",
 ]);
 
-const S = { backlog: { id: "s1", name: "Backlog", type: "backlog" }, todo: { id: "s2", name: "Todo", type: "unstarted" }, progress: { id: "s3", name: "In Progress", type: "started" }, review: { id: "s4", name: "In Review", type: "started" }, done: { id: "s5", name: "Done", type: "completed" }, canceled: { id: "s6", name: "Canceled", type: "canceled" } };
+const S: Record<"backlog" | "todo" | "progress" | "review" | "done" | "canceled", LinearState> = { backlog: { id: "s1", name: "Backlog", type: "backlog" }, todo: { id: "s2", name: "Todo", type: "unstarted" }, progress: { id: "s3", name: "In Progress", type: "started" }, review: { id: "s4", name: "In Review", type: "started" }, done: { id: "s5", name: "Done", type: "completed" }, canceled: { id: "s6", name: "Canceled", type: "canceled" } };
 const team = { id: "t1", key: "HUG" };
-const issue = (n, state) => ({ id: `uuid-${n}`, identifier: `HUG-${n}`, state, team });
+const issue = (n: number, state: LinearState): LinearIssue => ({ id: `uuid-${n}`, identifier: `HUG-${n}`, state, team });
 const states = { t1: Object.values(S) };
 
 test("the real PLAN.md only uses known statuses", () => {
@@ -57,23 +59,31 @@ test("an issue missing in Linear and an unknown plan status both fail clearly", 
   assert.throws(() => wantedRows(parseStages(table(["| 01 | Design | `x` | — | in progress | | `HUG-5` |"]))), /Unknown status "in progress"/);
 });
 
-function mockLinear(issues) {
-  const calls = [];
+interface GqlCall {
+  auth: string | undefined;
+  query: string;
+  variables: Record<string, string>;
+}
+
+const portOf = (server: http.Server) => (server.address() as AddressInfo).port;
+
+function mockLinear(issues: Record<string, LinearIssue>) {
+  const calls: GqlCall[] = [];
   const server = http.createServer((req, res) => {
     let data = "";
     req.on("data", (c) => (data += c));
     req.on("end", () => {
-      const { query, variables } = JSON.parse(data);
+      const { query, variables } = JSON.parse(data) as { query: string; variables: Record<string, string> };
       calls.push({ auth: req.headers.authorization, query, variables });
       res.setHeader("content-type", "application/json");
       if (query.includes("issueUpdate")) return res.end(JSON.stringify({ data: { issueUpdate: { success: true } } }));
       if (query.includes("states")) return res.end(JSON.stringify({ data: { team: { states: { nodes: Object.values(S) } } } }));
-      const out = {};
+      const out: Record<string, LinearIssue | null> = {};
       Object.entries(variables).forEach(([k, id], i) => { out[`i${i}`] = issues[id] ?? null; });
       res.end(JSON.stringify({ data: out }));
     });
   }).listen(0);
-  return { server, calls, url: `http://127.0.0.1:${server.address().port}/graphql` };
+  return { server, calls, url: `http://127.0.0.1:${portOf(server)}/graphql` };
 }
 
 test("run applies the moves, sends the key without Bearer and leaves the rest alone", async () => {
@@ -97,17 +107,17 @@ test("a dry run reads but does not write", async () => {
 
 test("GraphQL errors are reported", async () => {
   const server = http.createServer((req, res) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ errors: [{ message: "Authentication required" }] })); }).listen(0);
-  await assert.rejects(run({ key: "bad", markdown: md, url: `http://127.0.0.1:${server.address().port}/graphql` }), /Authentication required/);
+  await assert.rejects(run({ key: "bad", markdown: md, url: `http://127.0.0.1:${portOf(server)}/graphql` }), /Authentication required/);
   server.close();
 });
 
 // An issue whose status changes after the first read, as Linear's GitHub integration can do mid-run.
-function changesAfterFirstRead(first, later) {
+function changesAfterFirstRead(first: LinearState, later: LinearState) {
   let reads = 0;
   return { get value() { return issue(5, reads++ === 0 ? first : later); } };
 }
 
-for (const [label, later] of [["completed", S.done], ["canceled", S.canceled]]) {
+for (const [label, later] of [["completed", S.done], ["canceled", S.canceled]] as const) {
   test(`an issue ${label} while the sync runs is not moved back`, async () => {
     const racing = changesAfterFirstRead(S.progress, later);
     const m = mockLinear({ get "HUG-5"() { return racing.value; }, "HUG-6": issue(6, S.todo), "HUG-7": issue(7, S.done) });
@@ -121,6 +131,6 @@ for (const [label, later] of [["completed", S.done], ["canceled", S.canceled]]) 
 
 test("a missing-scope error says which permissions the key needs", async () => {
   const server = http.createServer((req, res) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ errors: [{ message: "Invalid scope: `read` required" }] })); }).listen(0);
-  await assert.rejects(run({ key: "k", markdown: md, url: `http://127.0.0.1:${server.address().port}/graphql` }), /Read and Write permissions/);
+  await assert.rejects(run({ key: "k", markdown: md, url: `http://127.0.0.1:${portOf(server)}/graphql` }), /Read and Write permissions/);
   server.close();
 });

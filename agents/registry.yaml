@@ -1,0 +1,15 @@
+# Agents that the pipeline can run (docs/MULTI-AGENT-PHASES.md, Phase 2). Flat list: scalars and inline lists only.
+# Adding an agent: docs/agents/adding-an-agent.md. Capability ids: docs/agents/README.md.
+- id: codex
+  name: OpenAI Codex
+  provider: openai
+  key_secret: AGENT_KEY_CODEX      # secret of the GitHub environment "agents"; never written anywhere else
+  runner: codex-exec               # how agent-run.yml starts it
+  capabilities: [git, node, browser, web, figma-read, figma-write]   # Figma through its MCP server, see docs/agents/adding-an-agent.md
+
+- id: claude
+  name: Claude Code
+  provider: anthropic
+  key_secret: AGENT_KEY_CLAUDE     # secret of the GitHub environment "agents"; never written anywhere else
+  runner: claude-print             # claude -p, see agent-run.yml
+  capabilities: [git, node, browser, web, figma-read, figma-write]

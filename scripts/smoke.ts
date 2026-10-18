@@ -1,11 +1,15 @@
-// Post-deploy smoke test (OPS-07): `node scripts/smoke.mjs <base-url>`. No dependencies.
+// Post-deploy smoke test (OPS-07): `node scripts/smoke.ts <base-url>`. No dependencies.
+export {};
+
 const base = process.argv[2]?.replace(/\/+$/, '');
 if (!base) {
-  console.error('usage: node scripts/smoke.mjs <base-url>');
+  console.error('usage: node scripts/smoke.ts <base-url>');
   process.exit(2);
 }
 
-const checks = [
+type SmokeCheck = readonly [path: string, test: (response: Response, body: string) => boolean];
+
+const checks: readonly SmokeCheck[] = [
   ['/es/', (r, body) => r.ok && body.includes('<html lang="es"')],
   ['/en/', (r, body) => r.ok && body.includes('<html lang="en"')],
   ['/sitemap-index.xml', (r) => r.ok],
@@ -20,7 +24,8 @@ for (const [path, test] of checks) {
     console.log(`${ok ? 'ok  ' : 'FAIL'} ${path}`);
     if (!ok) failed++;
   } catch (error) {
-    console.log(`FAIL ${path} (${error.message})`);
+    const message = error instanceof Error ? error.message : String(error);
+    console.log(`FAIL ${path} (${message})`);
     failed++;
   }
 }

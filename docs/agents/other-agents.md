@@ -31,6 +31,8 @@ Nothing here has been run on this project yet. "Confirmed" means found in OpenAI
 - Cloud environments run a setup script with internet access; afterwards the agent has no internet unless a domain allowlist is configured. Environment variables are visible to the agent; secrets only to the setup script ([environments](https://developers.openai.com/codex/cloud/environments), [internet access](https://developers.openai.com/codex/cloud/agent-internet)).
 - The Codex CLI and IDE extension support MCP servers (stdio and Streamable HTTP, with OAuth through `codex mcp login`) ([MCP](https://developers.openai.com/codex/mcp)). Figma's remote MCP server only accepts approved clients, and a user report lists Codex among them.
 - The CLI has a `/review` command that reviews the changes against a base branch.
+- Figma lists Codex among the clients of its MCP server, which signs in with OAuth in a browser and does not accept personal access tokens. The pipeline reuses one such sign-in through a gateway that holds the token and limits the agent to the design file and the stage's tools (see "Figma in the pipeline" in `docs/agents/adding-an-agent.md`).
+- Headless use in the pipeline (`codex exec`, authentication with `CODEX_API_KEY`) was checked against the CLI's own help on 2026-10-17; the details and what is still to verify are in `docs/agents/adding-an-agent.md`.
 
 **To verify**
 
@@ -49,7 +51,7 @@ Nothing here has been run on this project yet. "Confirmed" means found in OpenAI
 3. Run a small documentation-only task with the kickoff prompt (`Read AGENTS.md and follow docs/agents/next-stage.md.`) and check: which account opens the PR, which permissions it has, and that it follows `AGENTS.md`.
 4. Record the results in the "Known agents" table in `README.md`, with the date.
 
-Its branches usually start with `codex/`. Nothing depends on that.
+Its branches usually start with `codex/`; `AGENTS.md` rule 2 asks for an `agent/…` branch instead (`agent/stage-NN-short-name` for a stage), so name the branch that way when you start the task.
 
 ## Open-source agents and open-weight models
 

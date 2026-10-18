@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - docs/PLAN.md
-      - scripts/notion-sync.mjs
+      - scripts/notion-sync.ts
   workflow_dispatch:
 
 permissions:
@@ -30,10 +30,10 @@ jobs:
           node-version: 22
 
       - name: Unit tests (no network, no credentials)
-        run: node --test scripts/*.test.mjs
+        run: node --test scripts/*.test.ts
 
       - name: Publish docs/PLAN.md to Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_PAGE_ID: ${{ vars.NOTION_PAGE_ID }}
-        run: node scripts/notion-sync.mjs
+        run: node scripts/notion-sync.ts

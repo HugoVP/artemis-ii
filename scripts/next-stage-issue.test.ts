@@ -1,9 +1,10 @@
-// Run with: node --test scripts/*.test.mjs
+// Run with: node --test scripts/*.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { readFile } from "node:fs/promises";
-import { buildIssue, parseStages, pickNext, run } from "./next-stage-issue.mjs";
+import { buildIssue, parseStages, pickNext, run } from "./next-stage-issue.ts";
+import type { AddressInfo } from "node:net";
 
 const plan = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
 const sample = `# Stage plan
@@ -36,8 +37,8 @@ test("parseStages reads name, needs, spec, status, PR and Linear issue, and igno
 
 test("pickNext takes the pending stage after the merged PR, or the first pending one", () => {
   const s = parseStages(sample);
-  assert.equal(pickNext(s, 4).number, "02");
-  assert.equal(pickNext(s, 999).number, "02");
+  assert.equal(pickNext(s, 4)?.number, "02");
+  assert.equal(pickNext(s, 999)?.number, "02");
   assert.equal(pickNext(s.map((x) => ({ ...x, status: "approved" })), 4), null);
 });
 
@@ -54,21 +55,21 @@ test("buildIssue has the prompt, an absolute spec link and no PR title", () => {
   assert.ok(noSpec.body.includes("not written yet"));
 });
 
-function mockGitHub(existing = []) {
-  const calls = [];
+function mockGitHub(existing: { number: number; title: string; pull_request?: object }[] = []) {
+  const calls: string[] = [];
   const server = http.createServer((req, res) => {
     let data = "";
     req.on("data", (c) => (data += c));
     req.on("end", () => {
-      calls.push(`${req.method} ${req.url.split("?")[0]}`);
+      calls.push(`${req.method} ${req.url!.split("?")[0]}`);
       res.setHeader("content-type", "application/json");
       if (req.method === "GET") return res.end(JSON.stringify(existing));
-      if (req.url.endsWith("/labels")) { res.statusCode = 422; return res.end("{}"); }
+      if (req.url!.endsWith("/labels")) { res.statusCode = 422; return res.end("{}"); }
       res.statusCode = 201;
       res.end(JSON.stringify({ number: 7 }));
     });
   }).listen(0);
-  return { server, calls, base: `http://127.0.0.1:${server.address().port}` };
+  return { server, calls, base: `http://127.0.0.1:${(server.address() as AddressInfo).port}` };
 }
 
 test("run creates the issue and tolerates an existing label", async () => {

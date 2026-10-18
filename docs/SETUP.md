@@ -32,7 +32,7 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
 5. **Cloudflare:** create the Direct Upload Pages projects `artemis-ii-staging` and (or convert) `artemis-ii`, then turn off automatic Git deployments so only the workflows deploy.
 6. **Ruleset** on `main`: require the checks `build` (CI), the Security jobs, `approval` and `preview`, no bypass.
 7. **Agent token and verification:** do the "Verified in Stage 03" tests of `docs/DELIVERY.md` ("Agent identity") once the above is done and record the results in the PR.
-8. Check `SITE_URL_STAGING` points at the staging Pages URL, so `scripts/smoke.mjs` and the DAST scan have a target.
+8. Check `SITE_URL_STAGING` points at the staging Pages URL, so `scripts/smoke.ts` and the DAST scan have a target.
 
 ## 2. Cloudflare
 
@@ -85,7 +85,7 @@ Every agent environment gets:
   3. The workflow is `.github/workflows/linear-sync.yml`. Agent tokens cannot push workflow files, so Hugo adds or edits it.
   4. Until you switch writes on, every run is a dry run: after merging, the runs triggered by pushes and by hand only print what they would change. Run it by hand (Actions, Linear sync, Run workflow, leave the dry-run box ticked) and check the output against Linear.
   5. When the output is what you expect, create the variable `LINEAR_SYNC_APPLY` with the value `true` in the `linear` environment. From then on, pushes that change `docs/PLAN.md` apply the changes. To go back to dry runs, delete the variable or set it to anything else.
-  6. To see what the plan asks for without any key, run `DRY_RUN=1 node scripts/linear-sync.mjs` on your machine.
+  6. To see what the plan asks for without any key, run `DRY_RUN=1 node scripts/linear-sync.ts` on your machine.
 - **Notion:** a page "Artemis II" with a sub-page "Decision log (synced from repo)", filled automatically from `docs/PLAN.md` by the `notion-sync.yml` workflow. Only entries that end with `<!-- notion -->` are published, so nothing reaches Notion unless someone marks it as safe. The page may be public (see `AGENTS.md`). One-time setup:
   1. In Notion, create an internal connection (API token) at notion.so/profile/integrations, with the three content capabilities (read, update and insert content) and no user information.
   2. On the sub-page, open the `...` menu, then Connections, and add the connection. Share only that sub-page with it.
@@ -102,7 +102,7 @@ After each stage merge, `next-stage.yml` opens an issue `Run Stage NN: <name>` (
 
 1. The workflow is `.github/workflows/next-stage.yml`. It runs when a stage PR is merged. Agent tokens cannot push workflow files, so Hugo adds or edits it.
 2. No secret or variable is needed: the job uses the automatic token with `contents: read` and `issues: write`. The `agent-task` label is created on the first run.
-3. After the next stage PR is merged, check that the issue exists. To test earlier, run `PR_NUMBER=<n> GITHUB_REPOSITORY=<owner>/<repo> DRY_RUN=1 node scripts/next-stage-issue.mjs` on your machine: it prints the issue without creating it.
+3. After the next stage PR is merged, check that the issue exists. To test earlier, run `PR_NUMBER=<n> GITHUB_REPOSITORY=<owner>/<repo> DRY_RUN=1 node scripts/next-stage-issue.ts` on your machine: it prints the issue without creating it.
 
 ## Keep in mind
 

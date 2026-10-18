@@ -23,7 +23,7 @@ Each stage lists the capabilities it needs in the "Needs" column of `docs/PLAN.m
 | `node` | Node.js 22 and npm, able to run project scripts | Stage 02 on |
 | `browser` | Headless Chromium for Playwright tests | Stage 02 on |
 | `web` | HTTP access to NASA and news domains | Curation, ingestion, texts |
-| `figma-read` | Figma MCP server, read tools (`get_metadata`, `get_screenshot`, `get_variable_defs`) | Stages with visible changes |
+| `figma-read` | Figma MCP server, read tools (`get_metadata`, `get_screenshot`, `get_variable_defs`); in the agent pipeline, through the pipeline's Figma gateway, limited to the design file | Stages with visible changes |
 | `figma-write` | Figma MCP server, `use_figma` | Design stage and design changes |
 
 ## Known agents
@@ -31,7 +31,7 @@ Each stage lists the capabilities it needs in the "Needs" column of `docs/PLAN.m
 | Agent | Instructions | Capabilities | Status in this project | Setup |
 | --- | --- | --- | --- | --- |
 | Claude Code (cloud, routine) | `CLAUDE.md` → `AGENTS.md` | All, Figma through the claude.ai Figma connector | Verified 2026-10-12 (Stage 00, Figma write access) | [`claude-code.md`](claude-code.md) |
-| OpenAI Codex (cloud, CLI) | `AGENTS.md` (including `## Code Review Rules`) | `git`, `node`, `browser`, `web` depending on its environment settings; Figma works through MCP in the CLI, cloud support to verify | Not yet tried; first use planned as PR reviewer (`/review`) | [`other-agents.md`](other-agents.md) |
+| OpenAI Codex (cloud, CLI) | `AGENTS.md` (including `## Code Review Rules`) | `git`, `node`, `browser`, `web` depending on its environment settings; Figma works through MCP in the CLI, cloud support to verify | Not yet tried; first use planned as PR reviewer (`/review`) | [`other-agents.md`](other-agents.md); in the pipeline: [`adding-an-agent.md`](adding-an-agent.md) |
 | GitHub Copilot coding agent | `AGENTS.md` | `git`, `node`, `browser`; no Figma (Figma's remote MCP only accepts approved OAuth clients) | Evaluated 2026-10-12, not used (see "Agent identity" in `docs/DELIVERY.md`) | — |
 | Open-source agents (for example OpenHands, Aider, Goose, Cline) with any model, including open-weight models | `AGENTS.md` (configure if not automatic) | Depends on the runner; Figma only if it is an MCP client | Not yet tried | [`other-agents.md`](other-agents.md) |
 
@@ -52,7 +52,7 @@ Every layer below is plain files, GitHub or a pipeline workflow, so any agent an
 
 **Starting a stage with an agent.** Open the work-order issue, copy its prompt and give it to the agent you choose. The stage's "Needs" column says which capabilities it requires; pick an agent that has them.
 
-**Use what each agent does well.** Every stage needs `git`, and from Stage 02 on also `node` and `browser`, plus whatever its "Needs" column adds (for example `web` for curation and text stages, `figma-read` or `figma-write` for design). An agent that has all of them can take the stage, including free or open-weight ones; small models may struggle with long specs, so start them on reviews and small stages. Stages that need Figma go to a client Figma accepts. The routine in `claude-code.md` keeps chaining stages built by Claude Code; for any other agent, the work-order issue is the trigger.
+**Use what each agent does well.** Every stage needs `git`, and from Stage 02 on also `node` and `browser`, plus whatever its "Needs" column adds (for example `web` for curation and text stages, `figma-read` or `figma-write` for design). An agent that has all of them can take the stage, including free or open-weight ones; small models may struggle with long specs, so start them on reviews and small stages. Stages that need Figma go to a client Figma accepts. The routine in `claude-code.md` chains the next stage with Claude Code after any stage merge (its trigger is the `agent/stage-` branch prefix that every agent uses); to give a stage to another agent, turn the routine off and use the work-order issue.
 
 **Figma clients.** [Figma's guide to its MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) (checked 2026-10-16) lists among its supported clients Claude Code, Codex, Gemini CLI, OpenCode, OpenHands, Copilot CLI, Cursor and VS Code, and compares each client's remote-server and write-to-canvas support in a table. Check that table before assigning a design stage (`figma-write`) to an agent other than Claude Code.
 

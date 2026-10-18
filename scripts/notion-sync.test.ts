@@ -1,9 +1,10 @@
-// Run with: node --test scripts/*.test.mjs
+// Run with: node --test scripts/*.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { readFile } from "node:fs/promises";
-import { buildBlocks, pageIdFrom, richText, sync } from "./notion-sync.mjs";
+import { buildBlocks, pageIdFrom, richText, sync } from "./notion-sync.ts";
+import type { AddressInfo } from "node:net";
 
 const plan = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
 
@@ -17,9 +18,9 @@ test("pageIdFrom accepts a bare ID and a Notion URL", () => {
 
 test("richText keeps absolute links, drops relative ones, chunks long text", () => {
   const t = richText("[a](https://example.com) and [b](docs/x.md) and `c`");
-  assert.equal(t[0].text.link.url, "https://example.com");
+  assert.equal(t[0].text.link?.url, "https://example.com");
   assert.equal(t[2].text.link, undefined);
-  assert.equal(t[4].annotations.code, true);
+  assert.equal(t[4].annotations?.code, true);
   assert.ok(richText("x".repeat(4500)).every((i) => i.text.content.length <= 2000));
 });
 
@@ -53,14 +54,14 @@ test("only entries with the notion marker are published", () => {
 });
 
 test("sync appends the new blocks, then deletes the old ones", async () => {
-  const calls = [];
+  const calls: string[] = [];
   const server = http.createServer((req, res) => {
-    calls.push(`${req.method} ${req.url.split("?")[0]}`);
+    calls.push(`${req.method} ${req.url!.split("?")[0]}`);
     res.setHeader("content-type", "application/json");
     if (req.method === "GET") res.end(JSON.stringify({ results: [{ id: "old1" }, { id: "old2" }], has_more: false }));
     else res.end("{}");
   }).listen(0);
-  const { port } = server.address();
+  const { port } = server.address() as AddressInfo;
   const result = await sync({ token: "t", pageId: "p".repeat(32), blocks: buildBlocks(plan), base: `http://127.0.0.1:${port}` });
   server.close();
   assert.equal(result.removed, 2);

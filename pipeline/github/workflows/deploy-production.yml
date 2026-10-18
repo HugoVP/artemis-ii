@@ -105,6 +105,6 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-      - run: node scripts/smoke.mjs "${SITE_URL}"
+      - run: node scripts/smoke.ts "${SITE_URL}"
         env:
           SITE_URL: ${{ vars.SITE_URL_PRODUCTION }}

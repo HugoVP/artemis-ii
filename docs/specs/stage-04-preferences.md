@@ -10,8 +10,9 @@ A visitor can choose theme, language and density, and the choices are remembered
 
 ## Scope
 
+- TypeScript only, checked with TypeScript 7: `.ts`, `.tsx` and TypeScript in `.astro` files; no JavaScript files. Work on `agent/stage-04-preferences`, following `AGENTS.md`.
 - React island in the top bar Settings panel: theme (light / dark / system, dark default), language, density (Compact / Comfortable / Spacious) and, only on gallery pages, gallery view (Mosaic / Gallery / Immersive), as designed in Figma.
-- Inline script in `<head>` that applies theme and density before first paint (`PREF-02`). Allowed by the CSP through a hash or a bundled external script; no `'unsafe-inline'` for scripts.
+- A TypeScript source compiled to a bundled external script in `<head>` applies theme and density before first paint (`PREF-02`). If an inline script is unavoidable, keep it minimal, state the reason in a comment and allow it through a CSP hash; no `'unsafe-inline'` for scripts.
 - `localStorage` always inside try/catch; the site works with storage blocked (`PREF-05`).
 - Browser language detection only on the first visit (`I18N-02`); the language selector keeps the equivalent page (`I18N-03`).
 - Controls reachable by keyboard and labelled for screen readers (`PREF-06`); the Stage 02 panel placeholders ("not yet available") are replaced.

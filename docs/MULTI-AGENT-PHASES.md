@@ -8,7 +8,7 @@ Each phase has the same sections: what it delivers, how it works, security, what
 
 - Docker images for development, tests and preview (`Dockerfile`, `compose.yaml`, `docs/DOCKER.md`).
 - Work orders: when a stage PR merges, `next-stage.yml` opens a `Run Stage NN: <name>` issue with the kickoff prompt.
-- Agents run in their own vendor's environment (a Claude Code routine, a Codex cloud task) and act on GitHub as Hugo through a limited token (`docs/DELIVERY.md`, "Agent identity").
+- Vendor sessions use their configured GitHub connection. Prefer limited tokens where supported and verify each connection's effective access; the dedicated approval App replaces the assumption that every connector denies workflow writes (`docs/DELIVERY.md`, "Agent identity").
 - Hugo starts each stage and approves each stage PR by merging it into `main`.
 
 ## Phase 2: one agent, run by the pipeline

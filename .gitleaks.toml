@@ -1,0 +1,15 @@
+[extend]
+useDefault = true
+
+# This is the design file's public identifier, also present in design.md's URL, not an OAuth token.
+# Historical and current mock-server tests use it to verify the gateway's file restriction.
+# All three conditions must match; other values, files and detection rules remain checked.
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Public Figma design file ID used by mock-server tests"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^scripts/figma-(mcp-gateway|snapshot)\.test\.(mjs|ts)$''']
+regexes = ['''^7b6W4tsb9Ia0J0KhyvBWCX$''']

@@ -1,6 +1,6 @@
 name: Agent run
 
-# Proposed workflow: Hugo copies it to .github/workflows/agent-run.yml (agents cannot push there).
+# Proposed copy for connections without workflow-write access; Hugo installs it when needed.
 # Design and threat model: docs/MULTI-AGENT-PHASES.md, "Phase 2". Setup: docs/agents/adding-an-agent.md.
 #
 # Hugo adds the label `agent:<id>` to a "Run Stage NN" issue (or starts it by hand). Three jobs:
@@ -111,15 +111,17 @@ jobs:
           gh pr list --repo "$REPO" --state merged --limit 200 --json number --jq '[.[].number]' > "$RUNNER_TEMP/merged.json"
           node scripts/agent-checks.ts plan docs/PLAN.md agents/registry.yaml "$STAGE" "$AGENT" "$RUNNER_TEMP/merged.json" > "$RUNNER_TEMP/plan.json"
           KEY_SECRET=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).keySecret" "$RUNNER_TEMP/plan.json")
-          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
-          echo "agent=$AGENT" >> "$GITHUB_OUTPUT"
-          echo "key_secret=$KEY_SECRET" >> "$GITHUB_OUTPUT"
           # none, read or write: only stages that need Figma get a Figma MCP token, and only write stages get write tools.
           FIGMA=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).figma" "$RUNNER_TEMP/plan.json")
           RUNNER=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).runner" "$RUNNER_TEMP/plan.json")
-          echo "figma=$FIGMA" >> "$GITHUB_OUTPUT"
-          echo "runner=$RUNNER" >> "$GITHUB_OUTPUT"
-          echo "branch=agent/stage-${STAGE}-${AGENT}" >> "$GITHUB_OUTPUT"
+          {
+            echo "stage=$STAGE"
+            echo "agent=$AGENT"
+            echo "key_secret=$KEY_SECRET"
+            echo "figma=$FIGMA"
+            echo "runner=$RUNNER"
+            echo "branch=agent/stage-${STAGE}-${AGENT}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Tell the work order that the run did not start
         if: failure() && steps.order.outputs.issue != ''
@@ -343,7 +345,10 @@ jobs:
           GIT_CONFIG_NOSYSTEM: "1"
         run: |
           set -euo pipefail
-          [ -f .agent/pr-title.txt ] && [ ! -L .agent/pr-title.txt ] && [ -s .agent/pr-title.txt ] || { echo "The agent did not write a regular file .agent/pr-title.txt."; exit 1; }
+          if [ ! -f .agent/pr-title.txt ] || [ -L .agent/pr-title.txt ] || [ ! -s .agent/pr-title.txt ]; then
+            echo "The agent did not write a regular file .agent/pr-title.txt."
+            exit 1
+          fi
           G=(git -c core.hooksPath=/dev/null -c core.fsmonitor=false)
           "${G[@]}" add -A -- . ':!.agent' ':!node_modules'
           if "${G[@]}" diff --cached --quiet; then echo "The agent changed nothing."; exit 1; fi
@@ -385,7 +390,10 @@ jobs:
             [ ! -L ".agent/$f" ] || { echo ".agent/$f is a symlink."; exit 1; }
             if [ -f ".agent/$f" ]; then cp -P ".agent/$f" "$OUT/$f"; else : > "$OUT/$f"; fi
           done
-          [ -s "$OUT/pr-title.txt" ] && [ -s "$OUT/pr-body.md" ] || { echo "The agent did not write .agent/pr-title.txt and .agent/pr-body.md."; exit 1; }
+          if [ ! -s "$OUT/pr-title.txt" ] || [ ! -s "$OUT/pr-body.md" ]; then
+            echo "The agent did not write .agent/pr-title.txt and .agent/pr-body.md."
+            exit 1
+          fi
           git bundle create "$OUT/work.bundle" "$BRANCH" --not origin/main
           # NUL-separated, no rename detection: both sides of a rename are listed and names are never quoted.
           # Three dots: the changes of the branch since it left main.

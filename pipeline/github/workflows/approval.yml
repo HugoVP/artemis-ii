@@ -1,0 +1,30 @@
+name: Approval
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    environment: approval
+    steps:
+      # Only the protected environment holds this App's key, after Hugo's approval.
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: approval-app
+        with:
+          app-id: ${{ vars.APPROVAL_APP_ID }}
+          private-key: ${{ secrets.APPROVAL_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-statuses: write
+      # Checks out nothing and runs no PR code. The ruleset must accept only this App's approval.
+      - name: Report the approval status
+        env:
+          GH_TOKEN: ${{ steps.approval-app.outputs.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" -f state=success -f context=approval -f description="Approved by Hugo"

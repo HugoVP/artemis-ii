@@ -1,6 +1,6 @@
 # Stage 03: Delivery pipeline and security baseline
 
-- **Status:** draft (approved when Stage 02 is merged)
+- **Status:** approved (Stage 02 merged)
 - **Requirements covered:** `OPS-01` to `OPS-07`, `SEC-01` to `SEC-05` and `SEC-07`, `TECH-04`
 - **Depends on:** Stage 02 (buildable project with `check`, `build` and `test`); an agent with `node`; Hugo for Cloudflare, GitHub settings and secrets
 
@@ -14,11 +14,14 @@ Every PR gets a preview, every merge to `main` deploys to staging, and productio
 - `.github/dependabot.yml` (npm and GitHub Actions), `public/_headers` (security headers, CSP decided with the font choice: self-hosted Fraunces and Inter, already bundled in Stage 02).
 - CI: install the Playwright browser before `npm run test` (the pinned `@playwright/test` needs its matching Chromium) and pass `MEDIA_BASE_URL` and `SITE_URL` from repository variables.
 - Agent identity verification tests and exact setup steps in `docs/SETUP.md`.
-- Workflow files are protected paths and the agent token cannot push them: the PR explains which files Hugo applies by hand, as in Stage 02.
+- Workflow files are protected paths. Keep proposed copies for connections that cannot push them; capable connections can submit authorized changes for Hugo's review.
+- **Scope amendment (2026-10-18, Hugo):** retain the ChatGPT Codex Connector and replace the workflow-write-denial assumption with a dedicated status-only approval App. Its key lives only in the protected `approval` environment; the ruleset accepts the custom `approval` context only from that App. Account-side setup and verification remain Hugo's responsibility.
+
+- **Media scope amendment (2026-10-18, Hugo):** replace R2 with HTML/media bundled under `/media` on Pages; unchanged originals at most 25 MiB are local, larger ones are explicit verified NASA links with measured byte sizes. No paid media serving services. Stage 03 adds packaging/manifest/limit contracts, not the Stage 06 ingestion implementation. Requirements GAL-05, MEDIA-01–05, TECH-04, QA-06 and OPS-04/06 are amended together.
 
 ## Out of scope
 
-- Real media upload and promotion logic beyond the workflow shell (Stage 06).
+- Real NASA ingestion and image compression beyond the manifest/packaging contract (Stage 06).
 - Lighthouse and link checks as blocking gates (Stage 11).
 - Preference logic (Stage 04).
 
@@ -36,14 +39,16 @@ None (no visible change).
 | AC-4 | `public/_headers` sets the security headers and the build passes with them. | `SEC-05` | automated: `tests/headers.spec.ts` |
 | AC-5 | No agent-reachable credentials; secrets only in the GitHub environments of `DELIVERY.md`. | `OPS-06` | manual: `SETUP.md` checklist |
 | AC-6 | `docs/specs/stage-04-preferences.md` exists and follows the template. | — | manual: PR diff |
+| AC-7 | Approval is reported only after the protected environment is approved, on the current PR head, using a dedicated status-only App; the active ruleset requires that App as the expected source. | `OPS-06`, `SEC-04` | automated: approval workflow and ruleset fixture tests; manual: protected test PR and read-only ruleset inspection |
+| AC-8 | Every complete Pages artifact obeys 26,214,400 bytes per file and 20,000 files; generation is secret-free, media paths are hashed, and no R2 operations remain. Local/external original selection preserves URL and size. | `MEDIA-03` to `MEDIA-05`, `TECH-04`, `QA-06` | automated: pages-media and workflow tests; manual: deployed media and Pages rollback after ingestion |
 
 ## Tasks
 
 1. Write the workflows and Dependabot configuration; keep them in a branch folder Hugo can copy into `.github/` if the token cannot push.
 2. Add `public/_headers` and its test.
-3. Write `docs/SETUP.md` steps for Cloudflare Pages projects, R2 buckets, environments and secrets.
+3. Write `docs/SETUP.md` steps for Cloudflare Pages projects, bundled media, environments and secrets.
 4. Run the local checks and write the Stage 04 spec.
 
 ## Risks and open questions
 
-- Cloudflare API token, buckets or GitHub settings may not be ready: the stage then opens as a draft with the steps Hugo must take (AGENTS.md, rule 8).
+- Cloudflare API token, Pages projects or GitHub settings may not be ready: the stage then opens as a draft with the steps Hugo must take (AGENTS.md, rule 8).

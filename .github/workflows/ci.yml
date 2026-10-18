@@ -34,3 +34,6 @@ jobs:
 
       - name: Acceptance tests
         run: npm run test
+        env:
+          MEDIA_BASE_URL: /media
+          SITE_URL: ${{ vars.SITE_URL_STAGING }}

@@ -261,6 +261,8 @@ export function createGateway({ token, policy, hostnames, upstream = UPSTREAM, f
       }
 
       if (state.inflight >= MAX_INFLIGHT) {
+        // A call refused here never reached Figma, so it gives back the quota that decide() charged.
+        if (entry.call !== undefined) state.calls -= 1;
         log({ t: new Date().toISOString(), ...entry, decision: "block", reason: "busy" });
         return send(res, 429, "Too many requests");
       }

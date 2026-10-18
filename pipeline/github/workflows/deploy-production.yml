@@ -29,7 +29,16 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+      EVENT_NAME: ${{ github.event_name }}
+      REF_TYPE: ${{ github.ref_type }}
+      REF_NAME: ${{ github.ref_name }}
     steps:
+      - name: Validate dispatch ref
+        run: |
+          if [ "${EVENT_NAME}" = workflow_dispatch ] && { [ "${REF_TYPE}" != tag ] || [ "${REF_NAME}" != "${TAG}" ]; }; then
+            echo "Run rollback from the same release tag as the tag input."
+            exit 1
+          fi
       - name: Verify release, commit on main and green staging run
         id: verify
         run: |
@@ -95,7 +104,7 @@ jobs:
         run: npx --yes wrangler@4.151.1 pages deploy site --project-name=artemis-ii --branch=main --commit-hash="${SHA}" --commit-dirty=true
 
   smoke:
-    needs: deploy
+    needs: [gate, deploy]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

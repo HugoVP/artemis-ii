@@ -33,3 +33,28 @@ jobs:
           name: preview-dist
           path: dist
           retention-days: 7
+      # QA-03: mobile reports for representative built routes; score thresholds start in Stage 11.
+      - name: Lighthouse mobile reports
+        continue-on-error: true
+        run: |
+          mkdir -p reports/lighthouse
+          node scripts/lighthouse-pages.ts > reports/lighthouse/pages.tsv
+          node scripts/serve-dist.ts > reports/lighthouse/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:4321/es/ > /dev/null; then break; fi
+            sleep 1
+          done
+          failed=0
+          while IFS=$'\t' read -r name path; do
+            npx --yes lighthouse@13.5.0 "http://127.0.0.1:4321${path}" --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path="reports/lighthouse/${name}" > "reports/lighthouse/${name}.log" 2>&1 || failed=1
+          done < reports/lighthouse/pages.tsv
+          exit "$failed"
+      - name: Retain Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: preview-lighthouse-reports
+          path: reports/lighthouse
+          retention-days: 7

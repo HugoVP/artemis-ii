@@ -70,3 +70,27 @@ jobs:
       - run: node scripts/smoke.ts "${SITE_URL}"
         env:
           SITE_URL: ${{ vars.SITE_URL_STAGING }}
+
+  links:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      # QA-04: report-only until Stage 11; a broken external link does not fail staging.
+      - name: Link report
+        continue-on-error: true
+        env:
+          SITE_URL: ${{ vars.SITE_URL_STAGING }}
+        run: |
+          mkdir -p reports/links
+          npx --yes linkinator@8.1.0 "${SITE_URL%/}/es/" "${SITE_URL%/}/en/" --recurse --sitemap-url="${SITE_URL%/}/sitemap-index.xml" --check-fragments --format=json --concurrency=5 --timeout=10000 > reports/links/staging.json 2> reports/links/staging.log
+      - name: Retain link report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: staging-link-report
+          path: reports/links
+          retention-days: 7

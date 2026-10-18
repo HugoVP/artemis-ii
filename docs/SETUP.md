@@ -31,8 +31,18 @@ agent runs a stage ─► PR with preview ─► Hugo reviews ─► merge ─�
 4. **Secrets and variables** as listed in "Secrets and configuration" of `docs/DELIVERY.md`: `CLOUDFLARE_API_TOKEN` in `preview`, `staging` and `production`; R2 keys in `staging` and `production`; the `*_STAGING` / `*_PRODUCTION` variables and `CLOUDFLARE_ACCOUNT_ID` at repository level.
 5. **Cloudflare:** create the Direct Upload Pages projects `artemis-ii-staging` and (or convert) `artemis-ii`, then turn off automatic Git deployments so only the workflows deploy.
 6. **Ruleset** on `main`: require the checks `build` (CI), the Security jobs, `approval` and `preview`, no bypass.
+   Enable **Require code scanning results**, select **CodeQL**, and block **High or higher** security alerts (SEC-03). Successful CodeQL jobs only prove that analysis was uploaded; they do not prove that no high-severity alerts were found. Hugo configures this rule in GitHub and verifies it with the Stage 03 manual checks.
 7. **Agent token and verification:** do the "Verified in Stage 03" tests of `docs/DELIVERY.md` ("Agent identity") once the above is done and record the results in the PR.
 8. Check `SITE_URL_STAGING` points at the staging Pages URL, so `scripts/smoke.ts` and the DAST scan have a target.
+9. **Rollback:** from a clone of the repository, run `gh workflow run deploy-production.yml --ref vX.Y.Z -f tag=vX.Y.Z`, replacing both occurrences with the same published release tag. In the Actions UI, select that tag in **Use workflow from** and enter the same tag in the input. The workflow rejects branch refs or mismatched tags before deployment; keep the `production` environment restricted to tags `v*`.
+
+### Stage 03 quality reports
+
+- `preview-build.yml` runs Lighthouse 13.5.0 with its default mobile settings against the built Home page, an existing chapter and an existing photo. `scripts/lighthouse-pages.ts` selects the chapter and photo from the current build, so replacing sample content does not leave stale URLs. Download `preview-lighthouse-reports` for the HTML, JSON and execution logs.
+- `deploy-staging.yml` runs Linkinator 8.1.0 after deployment, starting from the deployed `sitemap-index.xml` and following same-site pages. It checks internal and external links and fragment targets; download `staging-link-report` for its JSON and execution log.
+- These two reporting steps use `continue-on-error` and upload their reports even when a scan fails. Review failures in the artifacts; score and link enforcement becomes blocking in Stage 11 (`QA-03`, `QA-04`). Neither report job has deployment or storage credentials.
+
+The secret scan keeps the complete Git history and all default gitleaks rules. `.gitleaks.toml` adds one narrowly scoped false-positive exception: the public design file ID already linked in `docs/specs/design.md`, used as `fileKey` in historical and current Figma mock-server tests. The exception applies only to `generic-api-key`, the two exact test-file paths and that exact identifier together. It never exempts OAuth tokens, other values, other files or whole commits. Its scope is covered by `scripts/pipeline-review.test.ts` and was verified with synthetic credentials through gitleaks itself.
 
 ## 2. Cloudflare
 

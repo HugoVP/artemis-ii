@@ -37,10 +37,10 @@ jobs:
         env:
           GITLEAKS_VERSION: '8.28.0'
         run: |
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tgz
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt" -o checksums.txt
           grep "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" checksums.txt | sha256sum -c -
-          tar -xzf gitleaks.tgz gitleaks
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
           ./gitleaks detect --source . --redact --no-banner
 
   dependency-review:
@@ -81,8 +81,8 @@ jobs:
         env:
           ACTIONLINT_VERSION: '1.7.7'
         run: |
-          curl -sSfL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" -o actionlint.tgz
+          curl -sSfL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" -o "actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
           curl -sSfL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_checksums.txt" -o checksums.txt
           grep "actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" checksums.txt | sha256sum -c -
-          tar -xzf actionlint.tgz actionlint
+          tar -xzf "actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" actionlint
           ./actionlint

@@ -1,0 +1,23 @@
+name: Approval
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    environment: approval
+    permissions:
+      statuses: write
+    steps:
+      # Checks out nothing and runs no PR code. The SHA comes from the event payload.
+      - name: Report the approval status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" -f state=success -f context=approval -f description="Approved by Hugo"

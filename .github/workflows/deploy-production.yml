@@ -1,0 +1,119 @@
+name: Deploy production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy (rollback)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      sha: ${{ steps.verify.outputs.sha }}
+      tag: ${{ steps.verify.outputs.tag }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+      EVENT_NAME: ${{ github.event_name }}
+      REF_TYPE: ${{ github.ref_type }}
+      REF_NAME: ${{ github.ref_name }}
+    steps:
+      - name: Validate dispatch ref
+        run: |
+          if [ "${EVENT_NAME}" = workflow_dispatch ] && { [ "${REF_TYPE}" != tag ] || [ "${REF_NAME}" != "${TAG}" ]; }; then
+            echo "Run rollback from the same release tag as the tag input."
+            exit 1
+          fi
+      - name: Verify release, commit on main and green staging run
+        id: verify
+        run: |
+          set -euo pipefail
+          case "${TAG}" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "Not a release tag: ${TAG}"; exit 1;; esac
+          release=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}")
+          [ "$(echo "${release}" | jq -r '.draft')" = "false" ] || { echo "Release is a draft"; exit 1; }
+          sha=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha)
+          status=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${sha}...main" --jq .status)
+          case "${status}" in identical|ahead) ;; *) echo "Commit ${sha} is not on main"; exit 1;; esac
+          ok=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-staging.yml/runs?head_sha=${sha}&status=success" --jq '.total_count')
+          [ "${ok}" -ge 1 ] || { echo "No successful staging run for ${sha}"; exit 1; }
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ needs.gate.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          MEDIA_BASE_URL: ${{ vars.MEDIA_BASE_URL_PRODUCTION }}
+          SITE_URL: ${{ vars.SITE_URL_PRODUCTION }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: production-dist
+          path: dist
+
+  media:
+    needs: [gate, build]
+    uses: ./.github/workflows/media.yml
+    with:
+      target: production
+    secrets: inherit
+
+  deploy:
+    needs: [gate, build, media]
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      SHA: ${{ needs.gate.outputs.sha }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: production-dist
+          path: site
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - run: rm -f site/wrangler.toml site/wrangler.json site/wrangler.jsonc
+      - name: Upload to the production Pages project
+        run: npx --yes wrangler@4.151.1 pages deploy site --project-name=artemis-ii --branch=main --commit-hash="${SHA}" --commit-dirty=true
+
+  smoke:
+    needs: [gate, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ needs.gate.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - run: node scripts/smoke.ts "${SITE_URL}"
+        env:
+          SITE_URL: ${{ vars.SITE_URL_PRODUCTION }}

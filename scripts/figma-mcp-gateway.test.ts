@@ -218,6 +218,54 @@ test("notifications are forwarded and answered with 202", async () => {
   });
 });
 
+test("a slow reader slows the upstream down instead of filling the gateway's memory, and a disconnect cancels the upstream stream", async () => {
+  const event = `data: ${JSON.stringify({ jsonrpc: "2.0", id: 1, result: { pad: "x".repeat(64 * 1024) } })}\n\n`;
+  const attempted = 4096; // 256 MB in all
+  let written = 0;
+  let upstreamClosed: () => void = () => {};
+  const closed = new Promise<void>((r) => { upstreamClosed = r; });
+  const up = http.createServer((req, res) => {
+    req.resume();
+    req.on("end", async () => {
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      res.on("close", upstreamClosed);
+      for (let i = 0; i < attempted && !res.destroyed; i++) {
+        written += event.length;
+        if (!res.write(event)) await new Promise((r) => { res.once("drain", r); res.once("close", r); });
+      }
+      res.end();
+    });
+  }).listen(0, "127.0.0.1");
+  await new Promise((r) => up.once("listening", r));
+  const gw = createGateway({ token: "t", policy: readPolicy(), hostnames: ["127.0.0.1"], upstream: `http://127.0.0.1:${(up.address() as AddressInfo).port}/mcp`, log: () => {} });
+  await new Promise<void>((r) => gw.listen(0, "127.0.0.1", r));
+  try {
+    // A client that connects and never reads.
+    const req = http.request({ host: "127.0.0.1", port: (gw.address() as AddressInfo).port, path: "/mcp", method: "POST", headers: { "content-type": "application/json" } }, (res) => res.pause());
+    req.on("error", () => {});
+    req.end(JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }));
+    // With backpressure the upstream stalls once the buffers between it and the client are full; without it, the
+    // gateway keeps reading and the upstream keeps writing until the whole stream is through.
+    await new Promise((r) => setTimeout(r, 600));
+    const first = written;
+    await new Promise((r) => setTimeout(r, 600));
+    assert.equal(written, first, "the upstream is still being read although the client reads nothing");
+    assert.ok(written < attempted * event.length, "the whole stream went through to a client that reads nothing");
+    assert.equal(gw.state.inflight, 1);
+    // The client goes away: the upstream stream is cancelled and the slot is free again.
+    req.destroy();
+    await Promise.race([closed, new Promise((_, rej) => setTimeout(() => rej(new Error("the upstream stream was not cancelled")), 3000))]);
+    for (let i = 0; i < 100 && gw.state.inflight > 0; i++) await new Promise((r) => setTimeout(r, 20));
+    assert.equal(gw.state.inflight, 0);
+  } finally {
+    // Open streams would keep close() waiting if the test failed halfway.
+    gw.closeAllConnections();
+    up.closeAllConnections();
+    gw.close();
+    up.close();
+  }
+});
+
 test("a response holds its concurrency slot until its body is relayed, so a ninth open stream is refused", async () => {
   const open: ServerResponse[] = [];
   const up = http.createServer((req, res) => {

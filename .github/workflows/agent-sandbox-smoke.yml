@@ -1,0 +1,40 @@
+name: Agent sandbox smoke
+
+# A PR can exercise the nested sandbox without a model key or Figma grant.
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - agents/agent-seccomp.json
+      - .github/workflows/agent-run.yml
+      - docs/agents/workflows/agent-run.yml
+      - .github/workflows/agent-sandbox-smoke.yml
+      - docs/agents/workflows/agent-sandbox-smoke.yml
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the agent image
+        run: docker build --target agent-runner -t artemis-ii-sandbox-smoke .
+
+      - name: Check the nested Codex sandbox
+        run: |
+          set -euo pipefail
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
+            --security-opt "seccomp=$GITHUB_WORKSPACE/agents/agent-seccomp.json" --pids-limit 4096 \
+            -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
+            artemis-ii-sandbox-smoke bwrap --unshare-user --unshare-pid --ro-bind / / -- true
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
+            --security-opt "seccomp=$GITHUB_WORKSPACE/agents/agent-seccomp.json" --pids-limit 4096 \
+            -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
+            -e HOME=/tmp artemis-ii-sandbox-smoke codex sandbox -- /bin/true

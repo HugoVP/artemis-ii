@@ -180,6 +180,7 @@ jobs:
           # container never sees this folder.
           mkdir -p "$RUNNER_TEMP/trusted"
           cp -r scripts AGENTS.md "$RUNNER_TEMP/trusted/"
+          cp agents/agent-seccomp.json "$RUNNER_TEMP/trusted/agent-seccomp.json"
 
       # The image is pinned by digest. The registry login lives in a throwaway Docker config and is removed after the pull.
       - name: Pull the runner image
@@ -323,7 +324,8 @@ jobs:
           # (-e NAME), so their values are not on the command line. No stdin: the CLIs must not wait for input.
           HOSTS=()
           if [ "$FIGMA" != none ]; then HOSTS=(--add-host figma-gateway:host-gateway); fi
-          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
+            --security-opt "seccomp=$RUNNER_TEMP/trusted/agent-seccomp.json" --pids-limit 4096 \
             -v "$RUNNER_TEMP/agent-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
             -e GIT_OPTIONAL_LOCKS=0 -e CI=true -e STAGE -e RUNNER -e FIGMA -e FIGMA_FILE_URL -e AGENT_MODEL_KEY \

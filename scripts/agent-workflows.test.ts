@@ -8,6 +8,7 @@ import { readFile } from "node:fs/promises";
 const read = (n: string) => readFile(new URL(`../docs/agents/workflows/${n}`, import.meta.url), "utf8");
 const run = await read("agent-run.yml");
 const image = await read("agent-runner-image.yml");
+const smoke = await read("agent-sandbox-smoke.yml");
 
 // The text of one job, from its key to the next top-level job.
 function job(text: string, name: string): string {
@@ -17,7 +18,7 @@ function job(text: string, name: string): string {
 }
 
 test("every action is pinned to a full commit SHA, and is a GitHub-created action", () => {
-  for (const text of [run, image]) {
+  for (const text of [run, image, smoke]) {
     for (const m of text.matchAll(/^\s*- uses: (\S+)/gm)) {
       assert.match(m[1], /^actions\/[a-z-]+@[0-9a-f]{40}$/, m[1]);
     }
@@ -189,6 +190,40 @@ test("the agent runs in a docker run container without the Docker socket, as the
   assert.match(step(work, "Install the project dependencies"), /"\$IMAGE" npm ci/);
   assert.match(step(work, "Pull the runner image"), /@sha256:\[0-9a-f\]\{64\}\$/);
   assert.match(step(work, "Pull the runner image"), /docker logout ghcr\.io/);
+});
+
+test("the sandbox smoke workflow has no secrets and tests bwrap and Codex on the PR image", () => {
+  assert.match(smoke, /pull_request:/);
+  assert.match(smoke, /permissions:\n  contents: read/);
+  assert.match(smoke, /head\.repo\.full_name == github\.repository/);
+  assert.doesNotMatch(smoke, /secrets\.|packages: write|--privileged|seccomp=unconfined/);
+  assert.match(smoke, /bwrap --unshare-user --unshare-pid/);
+  assert.match(smoke, /codex sandbox -- \/bin\/true/);
+});
+
+test("the nested sandbox uses a trusted, bounded seccomp profile", async () => {
+  const installed = await readFile(new URL("../.github/workflows/agent-run.yml", import.meta.url), "utf8");
+  const profile = JSON.parse(await readFile(new URL("../agents/agent-seccomp.json", import.meta.url), "utf8")) as {
+    defaultAction: string;
+    syscalls: Array<{ names: string[]; action: string; args?: Array<{ index: number; value: number; valueTwo?: number; op: string }> }>;
+  };
+  assert.equal(profile.defaultAction, "SCMP_ACT_ERRNO");
+  assert.ok(profile.syscalls.some((rule) => rule.names.includes("clone") && rule.action === "SCMP_ACT_ALLOW" &&
+    rule.args?.some((arg) => arg.value === 0x10000000 && arg.valueTwo === 0x10000000 && arg.op === "SCMP_CMP_MASKED_EQ")));
+  for (const name of ["mount", "umount2", "pivot_root", "unshare"]) {
+    assert.ok(profile.syscalls.some((rule) => rule.names.includes(name) && rule.action === "SCMP_ACT_ALLOW"), name);
+  }
+  for (const workflow of [run, installed]) {
+    const work = job(workflow, "work");
+    const prepare = step(work, "Prepare the workspace");
+    const install = step(work, "Install the project dependencies");
+    const agent = step(work, "Run the agent");
+    assert.match(prepare, /cp agents\/agent-seccomp\.json "\$RUNNER_TEMP\/trusted\/agent-seccomp\.json"/);
+    assert.match(agent, /--security-opt "seccomp=\$RUNNER_TEMP\/trusted\/agent-seccomp\.json"/);
+    assert.doesNotMatch(install, /agent-seccomp\.json/);
+    assert.doesNotMatch(agent, /-v "\$RUNNER_TEMP\/trusted/);
+    assert.ok(work.indexOf("cp agents/agent-seccomp.json") < work.indexOf("npm ci"));
+  }
 });
 
 test("the Figma refresh token is read only by the gateway and the replacement job, from trusted scripts, and the agent gets no Figma credential", () => {

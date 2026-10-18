@@ -1,6 +1,6 @@
 name: Agent run
 
-# Proposed workflow: Hugo copies it to .github/workflows/agent-run.yml (agents cannot push there).
+# Proposed copy for connections without workflow-write access; Hugo installs it when needed.
 # Design and threat model: docs/MULTI-AGENT-PHASES.md, "Phase 2". Setup: docs/agents/adding-an-agent.md.
 #
 # Hugo adds the label `agent:<id>` to a "Run Stage NN" issue (or starts it by hand). Three jobs:

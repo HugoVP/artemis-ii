@@ -14,7 +14,7 @@ How the `agent-run` workflow runs an agent on a stage, how Hugo sets it up, and 
 | `scripts/figma-mcp-token.ts`, `scripts/figma-mcp-credentials.ts` | Exchange the refresh token for an access token and replace the run's token at the end; extract the one-time grant on Hugo's machine |
 | `scripts/agent-checks.ts` | The checks of `prepare`, `work` and `publish`, with unit tests in `scripts/agent-checks.test.ts` and `scripts/agent-workflows.test.ts` |
 
-Agents cannot push to `.github/workflows/`, so the workflows live in `docs/agents/workflows/` and Hugo copies them. Copy them again whenever they change.
+For agent connections without workflow-write access, the proposed workflows live in `docs/agents/workflows/` and Hugo copies them. Copy them again whenever they change. The ChatGPT Codex Connector has accepted workflow writes; `docs/DELIVERY.md` records that capability and uses a separate approval App with a source-bound required status. The publisher App below is distinct from that status-only approval App and never receives its key.
 
 ## Setup (Hugo)
 

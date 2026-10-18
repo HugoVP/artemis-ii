@@ -49,7 +49,7 @@ Entries that end with `<!-- notion -->` are published to the Notion page by `not
 - Production keeps two credential-only jobs in the `production` environment, media promotion and then the Pages deploy (Hugo's decision, 2026-10-15); Stage 03 confirms how many approvals GitHub asks for.
 - Until Stage 03 is merged, Cloudflare Pages' Git integration keeps deploying every merge to `main` straight to production (Hugo's decision, 2026-10-15); the production URL is not announced.
 - Cloudflare: one account, two Pages projects (`artemis-ii` for production, `artemis-ii-staging` for staging and previews) and two R2 buckets (Hugo's decision, 2026-10-14); a separate account for production is a possible later change, described in `DELIVERY.md`.
-- The `approval` status is reported by a GitHub Actions workflow defined on `main` (Hugo's decision, 2026-10-14); moving it to a dedicated GitHub App is a planned future change, described under "Trust assumption for the `approval` status" in `DELIVERY.md`.
+- The default-branch approval workflow reports `approval` through a dedicated status-only GitHub App; the ruleset must require that App as the expected source (Hugo's decision, 2026-10-18). This replaces the earlier workflow-write-denial assumption; setup and verification are in `DELIVERY.md` and `SETUP.md`.
 
 ## Detail by stage
 
@@ -129,3 +129,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-16 — Stage 01 approved (PR #4 merged); Stage 02 — PR #8 — Astro + Tailwind base with design tokens, es/en routes, layout, content collections and Playwright tests; Stage 03 spec written.
 - 2026-10-17 — Stage 02 approved (PR #8 merged); Stage 03 — PR #14 — Delivery pipeline: workflows ready in `pipeline/github/` for Hugo to copy into `.github/`, security headers, smoke test script and setup steps; Stage 04 spec written.
 - 2026-10-18 — Process (requested by Hugo) — TypeScript only, on TypeScript 7: scripts and configuration converted from JavaScript, with a test that refuses JavaScript files; one branch prefix, `agent/`, for every agent. <!-- notion -->
+- 2026-10-18 — Stage 03 — PR #14 — Hugo authorized retaining the Codex Connector and replacing the workflow-write-denial assumption with a dedicated approval App, protected environment and source-bound ruleset. Account-side setup and live verification remain pending.

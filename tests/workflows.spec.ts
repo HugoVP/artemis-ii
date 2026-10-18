@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { extractRunScripts, unsafePrInterpolation } from '../scripts/workflow-security.ts';
 
 // SEC-04 AC-1: every workflow, in .github/workflows and in the pipeline/ folder Hugo copies from,
 // pins actions by commit SHA and declares least-privilege permissions.
@@ -24,7 +25,6 @@ for (const file of files) {
     expect(text).not.toMatch(/^\s*pull_request_target:[\s\S]*?actions\/checkout[^\n]*\n\s+with:\s*\n\s+ref:\s*\$\{\{\s*github\.event\.pull_request\.head/m);
   });
   test(`SEC-04 AC-1: ${file} never interpolates PR-controlled text into shell`, () => {
-    const runs = [...text.matchAll(/^\s*run:\s*[|>]?-?\s*\n?((?:\s+.*\n?)*)/gm)].map((m) => m[0]).join('\n');
-    expect(runs).not.toMatch(/\$\{\{\s*github\.event\.(pull_request\.(title|body|head\.ref)|head_commit\.message|workflow_run\.(head_branch|display_title))/);
+    for (const script of extractRunScripts(text)) expect(script).not.toMatch(unsafePrInterpolation);
   });
 }

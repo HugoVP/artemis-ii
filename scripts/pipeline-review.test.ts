@@ -197,13 +197,40 @@ test('OPS-04/06: setup protects v* tags and enables new checks only after bootst
   assert.match(setup, /After the workflows are on `main`[\s\S]*?test PR[\s\S]*?required checks/);
 });
 
-test('OPS-06: agent workflow-write denial is a mandatory prerequisite to bootstrap and the approval gate', () => {
-  const permissionCheck = setup.indexOf('Verify agent workflow-write restrictions before bootstrap');
+test('OPS-06 AC-7: the dedicated approval App is prepared before bootstrap and required by source', () => {
+  const appSetup = setup.indexOf('Prepare the dedicated approval App before bootstrap');
   const bootstrap = setup.indexOf('Bootstrap on main');
   const requiredChecks = setup.indexOf('Verify and enable the new rules');
-  assert.ok(permissionCheck >= 0 && permissionCheck < bootstrap && permissionCheck < requiredChecks);
-  assert.match(setup, /590305e/);
-  assert.match(setup, /rejected workflow push/);
-  assert.match(setup, /Do not proceed to steps 6–7 until this verification passes/);
-  assert.doesNotMatch(setup, /Agents cannot push workflow files/);
+  assert.ok(appSetup >= 0 && appSetup < bootstrap && appSetup < requiredChecks);
+  assert.match(setup, /expected source[\s\S]*?any source[\s\S]*?GitHub Actions/);
+  assert.match(setup, /APPROVAL_APP_PRIVATE_KEY/);
+  assert.match(setup, /scripts\/approval-ruleset.ts/);
 });
+
+test('OPS-03/04: Pages preparation and disabling automatic deploys precede bootstrap merge', () => {
+  const preparation = setup.indexOf('Prepare Cloudflare before the bootstrap merge');
+  assert.ok(preparation >= 0 && preparation < setup.indexOf('Bootstrap on main'));
+  assert.match(setup, /Disable automatic Git deployments[\s\S]*?before any merge of the installation PR/);
+});
+
+for (const folder of ['pipeline/github/workflows', '.github/workflows']) {
+  test(`OPS-06 AC-7: ${folder}/approval uses a status-only App after environment approval and no project code`, async () => {
+    const text = await readFile(new URL(`../${folder}/approval.yml`, import.meta.url), 'utf8');
+    assert.match(text, /pull_request_target:/);
+    assert.match(text, /^permissions: \{\}/m);
+    assert.match(text, /environment: approval/);
+    assert.match(text, /actions\/create-github-app-token@[0-9a-f]{40}/);
+    assert.match(text, /app-id: \$\{\{ vars.APPROVAL_APP_ID \}\}/);
+    assert.match(text, /private-key: \$\{\{ secrets.APPROVAL_APP_PRIVATE_KEY \}\}/);
+    assert.match(text, /repositories: \$\{\{ github.event.repository.name \}\}/);
+    assert.match(text, /permission-statuses: write/);
+    assert.match(text, /GH_TOKEN: \$\{\{ steps.approval-app.outputs.token \}\}/);
+    assert.match(text, /HEAD_SHA: \$\{\{ github.event.pull_request.head.sha \}\}/);
+    assert.doesNotMatch(text, /github.token|statuses: write\n    steps|actions\/checkout|\b(?:npm|npx|node)\b/);
+    assert.doesNotMatch(text, /continue-on-error|always\(\)/);
+  });
+  test(`OPS-02: ${folder}/preview-build checks out the PR head that deployment reports`, async () => {
+    const text = await readFile(new URL(`../${folder}/preview-build.yml`, import.meta.url), 'utf8');
+    assert.match(text, /ref: \$\{\{ github.event.pull_request.head.sha \}\}/);
+  });
+}

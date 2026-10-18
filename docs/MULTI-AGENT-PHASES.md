@@ -56,7 +56,7 @@ Stage PR → CI, security checks, preview, Copilot review → Hugo merges into m
 
 **Job `work`:**
 
-- Runs in `ghcr.io/<owner>/artemis-ii-agent-runner@sha256:…`, pinned by digest.
+- Runs the agent in `ghcr.io/<owner>/artemis-ii-agent-runner@sha256:…`, pinned by digest, as a container the job starts with `docker run`: the runner's user, no added privileges, no Docker socket, only the workspace mounted, with `.git` read-only. Not as a container job, because the runner mounts the Docker socket into job containers. The job's own steps (commit, scan, upload) run on the runner and never run project code.
 - Checks out `main` with `persist-credentials: false`, so no token stays in the git configuration.
 - Creates the branch `agent/stage-NN-<agent>` locally.
 - Starts the agent headless with the kickoff prompt from the issue: "Read AGENTS.md and follow docs/agents/next-stage.md". The agent must write its PR title and body to `.agent/pr-title.txt` and `.agent/pr-body.md`. `.agent/` is git-ignored.
@@ -142,7 +142,7 @@ Remove the label `agent:<id>`, or disable `agent-run.yml` in the Actions tab. Ve
 ### Open points
 
 - Each agent's headless mode and how it authenticates with a key (**to verify** in each vendor's documentation before it is added). Codex is checked in `docs/agents/adding-an-agent.md`. Still to check: Claude Code's print mode, Gemini CLI's prompt flag, `opencode run`.
-- The Figma MCP server needs an OAuth login in an approved client, which is unlikely to work in CI (**to verify**). Until it does, stages that need `figma-read` or `figma-write` stay in vendor environments.
+- The Figma MCP server only accepts OAuth access tokens issued to approved clients, not personal access tokens. The pipeline keeps one grant made by Hugo with Codex. For each run that needs Figma, a gateway on the runner issues the access token, keeps it out of the agent's container and forwards only the stage's tools on the design file (`docs/agents/adding-an-agent.md`, "Figma in the pipeline"), so pipeline agents can take `figma-read` and `figma-write` stages.
 - Free Actions minutes for this repository and the maximum time per job (**to verify** on GitHub's live pages).
 - The runner image is built by a separate workflow on `main` and published to GitHub Container Registry, which needs `packages: write` in that workflow only.
 

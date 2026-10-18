@@ -21,7 +21,7 @@ The files need the project from Stage 02 on (`package.json` and `package-lock.js
 | `dev` | `deps` and the Astro dev server on port 4321 | Working on the site with hot reload |
 | `tools` | `deps` and Playwright's Chromium with its system libraries | Dev container; base of `test` |
 | `test` | `tools` and a copy of the source | `npm run check` and `npm run test`, as CI runs them |
-| `agent-runner` | `tools` and the pinned Codex CLI | The `agent-run` workflow (`docs/agents/adding-an-agent.md`); built and published by its own workflow |
+| `agent-runner` | `tools`, the pinned Codex and Claude Code CLIs, and bubblewrap and socat for Claude Code's sandbox | The `agent-run` workflow (`docs/agents/adding-an-agent.md`); built and published by its own workflow |
 | `build` | `deps`, the source and `npm run build` | The static build in `/app/dist` |
 | `preview` | nginx serving the build on port 80 | Looking at the build as a static host serves it |
 
@@ -50,4 +50,4 @@ Open the repository in VS Code with the Dev Containers extension, or create a Gi
 
 ## The agent runner
 
-The `agent-runner` target is the image in which the pipeline runs an agent: the CI toolchain plus a pinned agent CLI. It is not meant to be run by hand, because it needs a model key and a workspace prepared by `agent-run.yml`. The `agent-runner-image` workflow builds it on `main` and publishes it to GitHub Container Registry; the run pins it by digest. Details: `docs/agents/adding-an-agent.md`.
+The `agent-runner` target is the image in which the pipeline runs an agent: the CI toolchain plus the pinned agent CLIs. It is not meant to be run by hand, because it needs a model key and a workspace prepared by `agent-run.yml`, which starts it with `docker run` as the runner's user, without the Docker socket and with `.git` read-only. The `agent-runner-image` workflow builds it on `main` and publishes it to GitHub Container Registry; the run pins it by digest. Details: `docs/agents/adding-an-agent.md`.

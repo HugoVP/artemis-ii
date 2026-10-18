@@ -35,12 +35,16 @@ FROM tools AS test
 COPY . .
 CMD ["sh", "-c", "npm run check && npm run test"]
 
-# Runner of the agent-run workflow (docs/MULTI-AGENT-PHASES.md, Phase 2): the CI toolchain plus the pinned agent CLI.
+# Runner of the agent-run workflow (docs/MULTI-AGENT-PHASES.md, Phase 2): the CI toolchain plus the pinned agent CLIs.
 # Built and published by the agent-runner-image workflow; the agent job pins the image by digest.
-# It runs as root inside a throwaway container: the container, not a user account, is the isolation.
+# agent-run.yml starts it with `docker run` as the runner's user (not root), with no added privileges and no Docker socket.
 FROM tools AS agent-runner
 ARG CODEX_VERSION=0.163.0
-RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION}
+ARG CLAUDE_CODE_VERSION=2.1.302
+# bubblewrap and socat: the sandbox that Claude Code uses for shell commands on Linux.
+RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap socat \
+ && rm -rf /var/lib/apt/lists/*
+RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION} @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
 # Static build. MEDIA_BASE_URL defaults to the preview layout (media served from /media).
 FROM deps AS build

@@ -112,7 +112,9 @@ test("the registry parser reads scalars and inline lists, and rejects incomplete
   const real = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
   assert.equal(real[0].id, "codex");
   assert.equal(real[0].key_secret, "AGENT_KEY_CODEX");
-  assert.deepEqual(real[0].capabilities, ["git", "node", "browser"]);
+  assert.deepEqual(real[0].capabilities, ["git", "node", "browser", "web", "figma-read", "figma-write"]);
+  assert.deepEqual(real.map((a) => a.id), ["codex", "claude"]);
+  assert.throws(() => parseRegistry("- id: x\n  key_secret: AGENT_KEY_X\n  runner: shell-anything\n  capabilities: [git]\n"), /unknown runner/);
   assert.throws(() => parseRegistry("- id: x\n  runner: y\n"), /key_secret/);
   assert.throws(() => parseRegistry("  id: x\n"), /Unreadable|start with/);
 });
@@ -149,7 +151,7 @@ test("the real PLAN.md parses into stages that selectStage can walk", async () =
 import { linkPlan } from "./agent-checks.mjs";
 
 test("a registry entry cannot point the work job at a secret that is not a model key", () => {
-  const bad = (k) => `- id: x\n  key_secret: ${k}\n  runner: r\n  capabilities: [git]\n`;
+  const bad = (k) => `- id: x\n  key_secret: ${k}\n  runner: codex-exec\n  capabilities: [git]\n`;
   assert.throws(() => parseRegistry(bad("AGENT_APP_PRIVATE_KEY")), /AGENT_KEY_/);
   assert.throws(() => parseRegistry(bad("GITHUB_TOKEN")), /AGENT_KEY_/);
   assert.equal(parseRegistry(bad("AGENT_KEY_OTHER"))[0].key_secret, "AGENT_KEY_OTHER");
@@ -254,13 +256,14 @@ test("keys glued to other bytes are still found, and ordinary words with sk- are
     "GitHub token": ["ghp_" + "d".repeat(36), "github_pat_" + "e".repeat(60)],
     "Google API key": ["AIza" + "f".repeat(35)],
     "Notion token": ["ntn_" + "g".repeat(40), "secret_" + "h".repeat(43)],
+    "Figma token": ["figd_" + "i".repeat(40), "figu_" + "j".repeat(40), "figur_" + "k".repeat(40)],
   };
   for (const [kind, list] of Object.entries(keys)) {
     for (const key of list) {
       for (const text of [key, `x${key}`, `text${key}more`, `\u0000\u0001${key}\u0002`]) assert.ok(findSecrets(text).includes(kind), `${kind}: ${text.slice(0, 20)}`);
     }
   }
-  for (const ok of ["risk-management-framework-for-the-agents", "task-description-with-many-words-in-it", "ask-me-anything-about-the-pipeline-please", "secret_sync_workflow_and_settings", "ntn_short"]) {
+  for (const ok of ["risk-management-framework-for-the-agents", "task-description-with-many-words-in-it", "ask-me-anything-about-the-pipeline-please", "secret_sync_workflow_and_settings", "ntn_short", "figure_caption_for_the_launch_photo_one", "configure_figma_tokens"]) {
     assert.deepEqual(findSecrets(ok), [], ok);
   }
 });
@@ -281,4 +284,13 @@ test("the work and publish diffs use the merge base, so a main that moved is not
   const three = parsePathList(git("diff", "--no-renames", "--name-only", "-z", "main...agent/x"));
   assert.deepEqual(two.sort(), ["AGENTS.md", "mine.txt"], "two endpoints blame the agent for main's change");
   assert.deepEqual(three, ["mine.txt"]);
+});
+
+test("Codex and Claude Code can take every stage of the plan, Figma ones included", async () => {
+  const registry = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
+  const plan = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
+  for (const id of ["codex", "claude"]) {
+    const agent = registry.find((a) => a.id === id);
+    for (const s of parseStages(plan)) assert.deepEqual(missingCapabilities(s.needs, agent.capabilities), [], `${id}, Stage ${s.number}`);
+  }
 });

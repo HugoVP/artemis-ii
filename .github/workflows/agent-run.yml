@@ -50,6 +50,8 @@ jobs:
       issue: ${{ steps.order.outputs.issue }}
       key_secret: ${{ steps.order.outputs.key_secret }}
       branch: ${{ steps.order.outputs.branch }}
+      figma: ${{ steps.order.outputs.figma }}
+      runner: ${{ steps.order.outputs.runner }}
     steps:
       # Always main: the checks come from main and an issue or PR cannot change them.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -69,8 +71,8 @@ jobs:
           TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           TRUSTED: ${{ vars.AGENT_TRUSTED_LOGIN }}
         run: |
-          node scripts/agent-checks.mjs trusted "$ACTOR" "$TRUSTED"
-          node scripts/agent-checks.mjs trusted "$TRIGGERING_ACTOR" "$TRUSTED"
+          node scripts/agent-checks.ts trusted "$ACTOR" "$TRUSTED"
+          node scripts/agent-checks.ts trusted "$TRIGGERING_ACTOR" "$TRUSTED"
 
       - name: Resolve the work order, the stage and the agent
         id: order
@@ -93,7 +95,7 @@ jobs:
               --jq "[.[] | select(.title | startswith(\"Run Stage ${STAGE}:\"))][0].number // empty")
             [ -n "$ISSUE" ] || { echo "No open 'Run Stage ${STAGE}' issue with the agent-task label."; exit 1; }
           else
-            STAGE=$(node scripts/agent-checks.mjs stage "$ISSUE_TITLE")
+            STAGE=$(node scripts/agent-checks.ts stage "$ISSUE_TITLE")
             AGENT="${LABEL#agent:}"
             ISSUE="$ISSUE_NUMBER"
           fi
@@ -102,16 +104,21 @@ jobs:
 
           # Rule 3 of AGENTS.md: no new stage while a stage PR is open.
           gh pr list --repo "$REPO" --state open --limit 100 --json title,isCrossRepository > "$RUNNER_TEMP/prs.json"
-          node scripts/agent-checks.mjs open-stage-pr "$RUNNER_TEMP/prs.json"
+          node scripts/agent-checks.ts open-stage-pr "$RUNNER_TEMP/prs.json"
 
           # Rule 1 of AGENTS.md: only the next stage to run, with an agent that has the capabilities it needs.
           # Steps 4 and 5 of next-stage.md: an earlier stage that is in review and not merged stops the run.
           gh pr list --repo "$REPO" --state merged --limit 200 --json number --jq '[.[].number]' > "$RUNNER_TEMP/merged.json"
-          node scripts/agent-checks.mjs plan docs/PLAN.md agents/registry.yaml "$STAGE" "$AGENT" "$RUNNER_TEMP/merged.json" > "$RUNNER_TEMP/plan.json"
+          node scripts/agent-checks.ts plan docs/PLAN.md agents/registry.yaml "$STAGE" "$AGENT" "$RUNNER_TEMP/merged.json" > "$RUNNER_TEMP/plan.json"
           KEY_SECRET=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).keySecret" "$RUNNER_TEMP/plan.json")
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
           echo "agent=$AGENT" >> "$GITHUB_OUTPUT"
           echo "key_secret=$KEY_SECRET" >> "$GITHUB_OUTPUT"
+          # none, read or write: only stages that need Figma get a Figma MCP token, and only write stages get write tools.
+          FIGMA=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).figma" "$RUNNER_TEMP/plan.json")
+          RUNNER=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).runner" "$RUNNER_TEMP/plan.json")
+          echo "figma=$FIGMA" >> "$GITHUB_OUTPUT"
+          echo "runner=$RUNNER" >> "$GITHUB_OUTPUT"
           echo "branch=agent/stage-${STAGE}-${AGENT}" >> "$GITHUB_OUTPUT"
 
       - name: Tell the work order that the run did not start
@@ -136,20 +143,18 @@ jobs:
     permissions:
       contents: read
       packages: read
-    # Container job steps default to sh (Dash in this image), which rejects `set -o pipefail`.
     defaults:
       run:
         shell: bash
-    container:
-      # Full reference with digest, from the repository variable set after the image workflow ran.
-      image: ${{ vars.AGENT_RUNNER_IMAGE }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+    # The steps run on the runner, which stays trusted: no project code runs there. The agent and every project command
+    # (npm included) run in the runner image, started with `docker run` and given only the workspace, with .git read-only.
+    # Not a container job: the runner mounts the Docker socket into a job container, and with it the agent could control
+    # Docker, read other containers and the runner's own folders, and so reach the trusted steps and the Figma gateway.
     env:
       STAGE: ${{ needs.prepare.outputs.stage }}
       AGENT: ${{ needs.prepare.outputs.agent }}
       BRANCH: ${{ needs.prepare.outputs.branch }}
+      IMAGE: ${{ vars.AGENT_RUNNER_IMAGE }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -157,55 +162,215 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Node on the runner, for the trusted scripts only (checks and Figma gateway). Project code never runs here.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
       - name: Prepare the workspace
         run: |
           set -euo pipefail
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "artemis-ii-agent"
           git config user.email "artemis-ii-agent@users.noreply.github.com"
           git checkout -b "$BRANCH"
           mkdir -p .agent
-          # Trusted copies, taken before the agent runs, for the scan below.
+          # Trusted copies, taken before the agent runs, for the scan below. They stay on the runner: the agent's
+          # container never sees this folder.
           mkdir -p "$RUNNER_TEMP/trusted"
           cp -r scripts AGENTS.md "$RUNNER_TEMP/trusted/"
-          # The key is not in the environment yet, so install scripts cannot read it.
-          npm ci --no-audit --no-fund
+
+      # The image is pinned by digest. The registry login lives in a throwaway Docker config and is removed after the pull.
+      - name: Pull the runner image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]] || { echo "AGENT_RUNNER_IMAGE must be a ghcr.io reference pinned by digest."; exit 1; }
+          export DOCKER_CONFIG="$RUNNER_TEMP/docker-login"
+          mkdir -p "$DOCKER_CONFIG"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
+          docker pull -q "$IMAGE"
+          docker logout ghcr.io >/dev/null
+          rm -r -- "$DOCKER_CONFIG"
+          # The agent runs as the runner's user, not root, so the files it writes stay the runner's. The image has no
+          # account for that user id, so one is added to a copy of its passwd file.
+          docker run --rm --network none --entrypoint cat "$IMAGE" /etc/passwd > "$RUNNER_TEMP/agent-passwd"
+          printf 'agent:x:%s:%s::/home/agent:/bin/bash\n' "$(id -u)" "$(id -g)" >> "$RUNNER_TEMP/agent-passwd"
+
+      # Project dependencies are installed in the agent's container, without any credential in it and before the Figma
+      # gateway starts: their install scripts are project code.
+      - name: Install the project dependencies
+        run: |
+          set -euo pipefail
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            -v "$RUNNER_TEMP/agent-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
+            -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
+            "$IMAGE" npm ci --no-audit --no-fund
+
+      # Figma's MCP server accepts OAuth access tokens issued to approved clients (Codex, Claude Code, …), not personal
+      # access tokens. Hugo signed in once with such a client. The gateway, a trusted script from main running on the
+      # runner, exchanges the stored refresh token for the run's access token and keeps it: the agent never gets a Figma
+      # credential. It forwards only the stage's tools, only on the design file of FIGMA_FILE_URL, up to a call limit.
+      # See docs/agents/adding-an-agent.md, "Figma in the pipeline".
+      - name: Start the Figma MCP gateway
+        if: needs.prepare.outputs.figma != 'none'
+        env:
+          FIGMA_MCP_CLIENT_ID: ${{ secrets.FIGMA_MCP_CLIENT_ID }}
+          FIGMA_MCP_CLIENT_SECRET: ${{ secrets.FIGMA_MCP_CLIENT_SECRET }}
+          FIGMA_MCP_REFRESH_TOKEN: ${{ secrets.FIGMA_MCP_REFRESH_TOKEN }}
+          FIGMA_FILE_URL: ${{ vars.FIGMA_FILE_URL }}
+          FIGMA_ACCESS: ${{ needs.prepare.outputs.figma }}
+        run: |
+          set -euo pipefail
+          # Listens on the address of Docker's bridge on the runner: reachable from the agent's container, not from outside.
+          # It answers only requests addressed to the name figma-gateway, which the agent's container resolves to it.
+          BIND=$(docker network inspect bridge --format '{{ (index .IPAM.Config 0).Gateway }}')
+          [[ "$BIND" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "No address for Docker's bridge."; exit 1; }
+          nohup node "$RUNNER_TEMP/trusted/scripts/figma-mcp-gateway.ts" "$BIND" > "$RUNNER_TEMP/figma-gateway.log" 2>&1 &
+          echo "FIGMA_GATEWAY_PID=$!" >> "$GITHUB_ENV"
+          for _ in $(seq 1 30); do
+            if curl -fsS --resolve "figma-gateway:8787:$BIND" "http://figma-gateway:8787/healthz" >/dev/null 2>&1; then echo "Figma MCP gateway ready."; exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/figma-gateway.log"
+          echo "The Figma MCP gateway did not start."
+          exit 1
 
       - name: Run the agent
         env:
-          # The only step that sees the model key. For Codex, `codex exec` reads CODEX_API_KEY.
-          CODEX_API_KEY: ${{ secrets[needs.prepare.outputs.key_secret] }}
+          # The only step that sees the model key. It is handed to the agent's CLI under the name that CLI reads.
+          AGENT_MODEL_KEY: ${{ secrets[needs.prepare.outputs.key_secret] }}
+          RUNNER: ${{ needs.prepare.outputs.runner }}
+          FIGMA: ${{ needs.prepare.outputs.figma }}
+          FIGMA_FILE_URL: ${{ vars.FIGMA_FILE_URL }}
         run: |
           set -euo pipefail
+          # The script that runs inside the agent's container, from this trusted file.
+          IFS= read -r -d '' IN_CONTAINER <<'IN_CONTAINER' || true
+          set -euo pipefail
+          KEY="$AGENT_MODEL_KEY"; unset AGENT_MODEL_KEY
           KICKOFF="Read AGENTS.md and follow docs/agents/next-stage.md. Run Stage ${STAGE} only. You run inside the agent pipeline (see 'When the pipeline runs you' in docs/agents/next-stage.md): leave your changes in the working tree (the pipeline commits them), do not push, and write the PR title to .agent/pr-title.txt and the PR body to .agent/pr-body.md."
-          codex exec \
-            --sandbox workspace-write \
-            -c sandbox_workspace_write.network_access=true \
-            --ephemeral \
-            --color never \
-            "$KICKOFF"
 
-      # Codex's workspace-write sandbox keeps .git read-only, so the agent cannot commit. This trusted step does it,
-      # with hooks disabled, without the model key in its environment, and without the agent's scratch folder.
+          # Figma MCP, through the pipeline's gateway, which holds the token and enforces the same lists: read tools for
+          # figma-read stages, plus use_figma for figma-write stages. Nothing for other stages.
+          GATEWAY="http://figma-gateway:8787/mcp"
+          TOOLS=()
+          if [ "$FIGMA" != none ]; then
+            node -e 'fetch(process.argv[1]).then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))' "http://figma-gateway:8787/healthz" \
+              || { echo "The agent's container cannot reach the Figma MCP gateway."; exit 1; }
+            TOOLS=(get_metadata get_screenshot get_variable_defs get_design_context)
+            if [ "$FIGMA" = write ]; then TOOLS+=(use_figma); fi
+          fi
+
+          case "$RUNNER" in
+            codex-exec)
+              FIGMA_ARGS=()
+              if [ "${#TOOLS[@]}" -gt 0 ]; then
+                LIST=$(printf '"%s",' "${TOOLS[@]}")
+                FIGMA_ARGS=(-c "mcp_servers.figma.url=\"$GATEWAY\""
+                            -c "mcp_servers.figma.enabled_tools=[${LIST%,}]")
+              fi
+              CODEX_API_KEY="$KEY" codex exec \
+                --sandbox workspace-write \
+                -c sandbox_workspace_write.network_access=true \
+                "${FIGMA_ARGS[@]}" \
+                --ephemeral \
+                --color never \
+                "$KICKOFF"
+              ;;
+            claude-print)
+              CFG=$(mktemp -d)
+              # Bash runs in Claude Code's sandbox (bubblewrap); the container is the outer boundary, so the nested
+              # sandbox runs in its weaker mode. Commands may not ask to leave the sandbox, and their network is limited
+              # to the npm registry and NASA's domains (docs/SETUP.md); web pages go through the WebFetch tool. The file
+              # tools may write only in the workspace, and never in .git (also mounted read-only).
+              node -e '
+                require("fs").writeFileSync(process.argv[1], JSON.stringify({
+                  sandbox: {
+                    enabled: true, failIfUnavailable: true, enableWeakerNestedSandbox: true, allowUnsandboxedCommands: false,
+                    network: { allowedDomains: ["registry.npmjs.org", "eol.jsc.nasa.gov", "pds-imaging.jpl.nasa.gov", "www.nasa.gov",
+                      "images.nasa.gov", "images-api.nasa.gov", "images-assets.nasa.gov"] },
+                  },
+                  permissions: { deny: ["Edit(//work/.git/**)", "Write(//work/.git/**)"] },
+                }), { mode: 0o600 });' "$CFG/settings.json"
+              ALLOWED=(Read "Edit(//work/**)" "Write(//work/**)" Glob Grep WebSearch WebFetch "Bash(npm *)" "Bash(npx *)" "Bash(node *)" "Bash(git status*)" "Bash(git diff*)" "Bash(git log*)" "Bash(ls *)" "Bash(mkdir *)")
+              MCP_ARGS=()
+              if [ "${#TOOLS[@]}" -gt 0 ]; then
+                # No Authorization header: the gateway adds Figma's token on its side.
+                node -e '
+                  require("fs").writeFileSync(process.argv[1], JSON.stringify({ mcpServers: { figma: {
+                    type: "http", url: process.argv[2] } } }), { mode: 0o600 });' "$CFG/mcp.json" "$GATEWAY"
+                MCP_ARGS=(--mcp-config "$CFG/mcp.json")
+                for t in "${TOOLS[@]}"; do ALLOWED+=("mcp__figma__$t"); done
+              fi
+              # dontAsk: anything not in the allow list is denied, edits outside the workspace and Figma write tools
+              # (unless this is a write stage) included.
+              ANTHROPIC_API_KEY="$KEY" claude -p "$KICKOFF" \
+                --strict-mcp-config "${MCP_ARGS[@]}" \
+                --settings "$CFG/settings.json" \
+                --permission-mode dontAsk \
+                --no-session-persistence \
+                --allowedTools "${ALLOWED[@]}"
+              ;;
+            *)
+              echo "Unknown runner '$RUNNER'."; exit 1 ;;
+          esac
+          IN_CONTAINER
+
+          # Same container as the install step, plus the gateway's name for Figma stages. Variables are passed by name
+          # (-e NAME), so their values are not on the command line. No stdin: the CLIs must not wait for input.
+          HOSTS=()
+          if [ "$FIGMA" != none ]; then HOSTS=(--add-host figma-gateway:host-gateway); fi
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            -v "$RUNNER_TEMP/agent-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
+            -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
+            -e GIT_OPTIONAL_LOCKS=0 -e CI=true -e STAGE -e RUNNER -e FIGMA -e FIGMA_FILE_URL -e AGENT_MODEL_KEY \
+            "${HOSTS[@]}" "$IMAGE" bash -c "$IN_CONTAINER" < /dev/null
+
+      # The gateway stops as soon as the agent is done, and its log (decisions only: method, tool, node id, never the
+      # arguments or the token) goes into the job log.
+      - name: Stop the Figma MCP gateway
+        if: always() && needs.prepare.outputs.figma != 'none'
+        run: |
+          if [ -n "${FIGMA_GATEWAY_PID:-}" ]; then kill "$FIGMA_GATEWAY_PID" 2>/dev/null || true; fi
+          cat "$RUNNER_TEMP/figma-gateway.log" 2>/dev/null || true
+
+      # The trusted steps below run git in the workspace the agent wrote to. Its .git was read-only to the agent; git
+      # still reads no global or system configuration, and runs no hooks or fsmonitor.
       - name: Commit the agent's changes
+        env:
+          GIT_CONFIG_GLOBAL: /dev/null
+          GIT_CONFIG_NOSYSTEM: "1"
         run: |
           set -euo pipefail
           [ -f .agent/pr-title.txt ] && [ ! -L .agent/pr-title.txt ] && [ -s .agent/pr-title.txt ] || { echo "The agent did not write a regular file .agent/pr-title.txt."; exit 1; }
-          git add -A -- . ':!.agent' ':!node_modules'
-          if git diff --cached --quiet; then echo "The agent changed nothing."; exit 1; fi
-          git -c core.hooksPath=/dev/null commit -q -F .agent/pr-title.txt
+          G=(git -c core.hooksPath=/dev/null -c core.fsmonitor=false)
+          "${G[@]}" add -A -- . ':!.agent' ':!node_modules'
+          if "${G[@]}" diff --cached --quiet; then echo "The agent changed nothing."; exit 1; fi
+          "${G[@]}" commit -q -F .agent/pr-title.txt
 
       - name: Check that no write token reached the workspace
+        env:
+          GIT_CONFIG_GLOBAL: /dev/null
+          GIT_CONFIG_NOSYSTEM: "1"
         run: |
           set -u
           export GIT_TERMINAL_PROMPT=0
-          if git push --dry-run "https://github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/agent-push-probe" >/dev/null 2>&1; then
+          if git -c core.hooksPath=/dev/null -c core.fsmonitor=false push --dry-run "https://github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/agent-push-probe" >/dev/null 2>&1; then
             echo "A push from the work job succeeded. It must not."
             exit 1
           fi
           echo "A push from the work job is refused, as expected."
 
       - name: Bundle and scan the result
+        env:
+          GIT_CONFIG_GLOBAL: /dev/null
+          GIT_CONFIG_NOSYSTEM: "1"
+          GIT_CONFIG_COUNT: "2"
+          GIT_CONFIG_KEY_0: core.hooksPath
+          GIT_CONFIG_VALUE_0: /dev/null
+          GIT_CONFIG_KEY_1: core.fsmonitor
+          GIT_CONFIG_VALUE_1: "false"
         run: |
           set -euo pipefail
           git rev-parse --verify "$BRANCH" >/dev/null
@@ -227,7 +392,7 @@ jobs:
           git diff --no-renames --name-only -z "origin/main...$BRANCH" > "$OUT/files.txt"
           # Scan from the trusted copy. Every new commit and blob is scanned, binary ones and merge resolutions included.
           # Log transcripts are never uploaded. publish scans again.
-          TRUSTED="$RUNNER_TEMP/trusted/scripts/agent-checks.mjs"
+          TRUSTED="$RUNNER_TEMP/trusted/scripts/agent-checks.ts"
           node "$TRUSTED" scan-range origin/main "$BRANCH"
           node "$TRUSTED" decide "$RUNNER_TEMP/trusted/AGENTS.md" "$OUT/files.txt" \
             "$OUT/pr-title.txt" "$OUT/pr-body.md" "$OUT/draft-reason.txt" > "$OUT/decision.json"
@@ -281,8 +446,8 @@ jobs:
         run: |
           set -euo pipefail
           B="$RUNNER_TEMP/bundle"
-          node scripts/agent-checks.mjs ref "$BRANCH" "$STAGE"
-          node scripts/agent-checks.mjs pr-text "$B/.agent/pr-title.txt" "$B/.agent/pr-body.md" "$STAGE"
+          node scripts/agent-checks.ts ref "$BRANCH" "$STAGE"
+          node scripts/agent-checks.ts pr-text "$B/.agent/pr-title.txt" "$B/.agent/pr-body.md" "$STAGE"
           git config user.name "artemis-ii-agent"
           git config user.email "artemis-ii-agent@users.noreply.github.com"
           # Trusted copy of the scripts, from main: later steps check out the agent's branch.
@@ -291,16 +456,16 @@ jobs:
           # Three dots: main may have moved during the run, and its own changes are not the agent's.
           git diff --no-renames --name-only -z "origin/main...$BRANCH" > "$RUNNER_TEMP/files.txt"
           # Scan every new commit and blob here too, before any token exists.
-          node scripts/agent-checks.mjs scan-range origin/main "$BRANCH"
+          node scripts/agent-checks.ts scan-range origin/main "$BRANCH"
           # AGENTS.md comes from main, so a change to the protected list in the bundle does not apply to itself.
           touch "$B/.agent/draft-reason.txt"
-          node scripts/agent-checks.mjs decide AGENTS.md "$RUNNER_TEMP/files.txt" \
+          node scripts/agent-checks.ts decide AGENTS.md "$RUNNER_TEMP/files.txt" \
             "$B/.agent/pr-title.txt" "$B/.agent/pr-body.md" "$B/.agent/draft-reason.txt" > "$RUNNER_TEMP/decision.json" || {
             cat "$RUNNER_TEMP/decision.json"; exit 1; }
           cat "$RUNNER_TEMP/decision.json"
           # Draft when a protected path changed or the agent asked for one (a blocked run, AGENTS.md rule 8).
           # The warning goes to a file, never to a step output: it can contain agent-chosen text.
-          MODE=$(node scripts/agent-checks.mjs publish-plan "$RUNNER_TEMP/decision.json" "$B/.agent/draft-reason.txt" "$RUNNER_TEMP/warning.txt")
+          MODE=$(node scripts/agent-checks.ts publish-plan "$RUNNER_TEMP/decision.json" "$B/.agent/draft-reason.txt" "$RUNNER_TEMP/warning.txt")
           echo "draft=$([ "$MODE" = draft ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       # Short-lived token of the GitHub App, for this repository only.
@@ -345,12 +510,12 @@ jobs:
           set -euo pipefail
           git checkout "$BRANCH"
           BEFORE=$(git rev-parse HEAD)
-          node "$RUNNER_TEMP/trusted/scripts/agent-checks.mjs" link-plan docs/PLAN.md "$STAGE" "$PR_NUMBER"
+          node "$RUNNER_TEMP/trusted/scripts/agent-checks.ts" link-plan docs/PLAN.md "$STAGE" "$PR_NUMBER"
           git add docs/PLAN.md
           if git diff --cached --quiet; then echo "Nothing to link."; exit 0; fi
           git commit -m "Add the PR link to docs/PLAN.md" >/dev/null
           git diff -U0 "$BEFORE" HEAD > "$RUNNER_TEMP/followup.diff"
-          node "$RUNNER_TEMP/trusted/scripts/agent-checks.mjs" check-follow-up "$RUNNER_TEMP/followup.diff" "$PR_NUMBER"
+          node "$RUNNER_TEMP/trusted/scripts/agent-checks.ts" check-follow-up "$RUNNER_TEMP/followup.diff" "$PR_NUMBER"
           AUTH=$(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)
           echo "::add-mask::$AUTH"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin "refs/heads/$BRANCH:refs/heads/$BRANCH"
@@ -361,10 +526,41 @@ jobs:
           PR_URL: ${{ steps.pr.outputs.url }}
         run: gh issue comment "$ISSUE" --repo "$REPO" --body "The agent opened $PR_URL"
 
+  # Replaces the run's Figma MCP access token, so the token the gateway held stops working. It runs in its own job, on a
+  # fresh runner from a clean checkout of main, so it also runs when the work job failed, was cancelled or lost its runner.
+  figma-revoke:
+    needs: [prepare, work]
+    if: always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' && needs.prepare.outputs.figma != 'none'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: agents
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Replace the Figma MCP access token
+        env:
+          FIGMA_MCP_CLIENT_ID: ${{ secrets.FIGMA_MCP_CLIENT_ID }}
+          FIGMA_MCP_CLIENT_SECRET: ${{ secrets.FIGMA_MCP_CLIENT_SECRET }}
+          FIGMA_MCP_REFRESH_TOKEN: ${{ secrets.FIGMA_MCP_REFRESH_TOKEN }}
+        run: node scripts/figma-mcp-token.ts revoke
+
   # Any failure after a successful prepare is reported on the work order and handed to Hugo.
   escalate:
-    needs: [prepare, work, publish]
-    if: always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' && (needs.work.result != 'success' || needs.publish.result != 'success')
+    needs: [prepare, work, publish, figma-revoke]
+    # figma-revoke is skipped on purpose for stages without Figma; only a failure or cancellation of it counts.
+    if: >-
+      always() && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && needs.prepare.result == 'success' &&
+      (needs.work.result != 'success' || needs.publish.result != 'success' ||
+       needs.figma-revoke.result == 'failure' || needs.figma-revoke.result == 'cancelled')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -376,6 +572,15 @@ jobs:
           REPO: ${{ github.repository }}
           ISSUE: ${{ needs.prepare.outputs.issue }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PUBLISHED: ${{ needs.work.result == 'success' && needs.publish.result == 'success' }}
+          REVOKE: ${{ needs.figma-revoke.result }}
         run: |
-          gh issue comment "$ISSUE" --repo "$REPO" --body "The agent result was not published. The reason is in the log: $RUN_URL"
+          set -euo pipefail
+          if [ "$PUBLISHED" = true ]; then
+            MSG="The agent result was published, but the Figma MCP access token of this run was not replaced ($REVOKE). Check the log, and revoke the grant in Figma if in doubt: $RUN_URL"
+          else
+            MSG="The agent result was not published. The reason is in the log: $RUN_URL"
+            if [ "$REVOKE" = failure ] || [ "$REVOKE" = cancelled ]; then MSG="$MSG (The Figma MCP access token was not replaced either.)"; fi
+          fi
+          gh issue comment "$ISSUE" --repo "$REPO" --body "$MSG"
           gh issue edit "$ISSUE" --repo "$REPO" --add-label needs-hugo || true

@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const workflow = (name: string) => readFile(new URL(`../pipeline/github/workflows/${name}.yml`, import.meta.url), 'utf8');
 const production = await workflow('deploy-production');
@@ -78,7 +80,7 @@ test('OPS-04/05: rollback validation rejects main or a different tag before rele
 test('OPS-07: production smoke directly depends on the gate whose verified SHA it checks out', () => {
   const smoke = job(production, 'smoke');
   assert.match(smoke, /needs: \[gate, deploy\]/);
-  assert.match(smoke, /ref: \$\{\{ needs.gate.outputs.sha \}\}/);
+  assert.match(smoke, /ref: \$\{\{ github.sha \}\}/);
 });
 
 test('QA-04: staging scans links after deploy and retains a report even when checks fail', () => {
@@ -127,4 +129,70 @@ test('OPS-02: CI build is the only PR job named build', () => {
   assert.match(ci, /jobs:\n  build:/);
   assert.match(preview, /jobs:\n  preview-build:/);
   assert.doesNotMatch(preview, /jobs:\n  build:/);
+});
+
+function runBlock(text: string, name: string): string {
+  const match = new RegExp(`- name: ${name}\\n(?:        [^\\n]+\\n)*?        run: \\|\\n((?:          .*\\n?)+)`).exec(text);
+  assert.ok(match, `Missing run block: ${name}`);
+  return match[1]!.replace(/^          /gm, '');
+}
+
+for (const folder of ['pipeline/github/workflows', '.github/workflows']) {
+for (const name of ['preview', 'staging', 'production']) {
+  test(`SEC-04: ${folder}/deploy-${name} refuses Worker files, directories and symlinks before credentialed upload`, async () => {
+    const text = await readFile(new URL(`../${folder}/deploy-${name}.yml`, import.meta.url), 'utf8');
+    const guard = runBlock(text, 'Reject Pages Worker entrypoints');
+    assert.ok(text.indexOf('Reject Pages Worker entrypoints') < text.indexOf('wrangler@'));
+    const dir = await mkdtemp(join(tmpdir(), 'static-artifact-'));
+    try {
+      await mkdir(join(dir, 'site'));
+      const run = () => execFileSync('bash', ['-eu', '-c', guard], { cwd: dir, stdio: 'pipe' });
+      assert.doesNotThrow(run, 'plain static assets are accepted');
+      const worker = join(dir, 'site/_worker.js');
+      await writeFile(worker, 'export default {};');
+      assert.throws(run, 'Worker file is rejected');
+      await rm(worker);
+      await mkdir(worker);
+      assert.throws(run, 'Worker directory is rejected');
+      await rm(worker, { recursive: true });
+      await symlink('missing-worker', worker);
+      assert.throws(run, 'dangling Worker symlink is rejected');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+test(`SEC-04: ${folder}/deploy-production uses the triggering commit only after the gate verifies its identity`, async () => {
+  const text = await readFile(new URL(`../${folder}/deploy-production.yml`, import.meta.url), 'utf8');
+  assert.match(text, /RUN_SHA: \$\{\{ github.sha \}\}/);
+  for (const name of ['build', 'smoke']) assert.match(job(text, name), /ref: \$\{\{ github.sha \}\}/);
+  const script = runBlock(text, 'Verify release, commit on main and green staging run');
+  const dir = await mkdtemp(join(tmpdir(), 'release-gate-'));
+  try {
+    const mock = `gh() {
+      case "$*" in
+        */releases/tags/*) echo '{"draft":false}';;
+        */commits/*) echo "$TEST_RESOLVED_SHA";;
+        */compare/*) echo ahead;;
+        */actions/workflows/*) echo 1;;
+        *) return 1;;
+      esac
+    }\n`;
+    const run = (resolved: string) => execFileSync('bash', ['-eu', '-c', mock + script], {
+      env: { ...process.env, TAG: 'v1.2.3', RUN_SHA: 'verified-commit', TEST_RESOLVED_SHA: resolved,
+        GITHUB_REPOSITORY: 'example/site', GITHUB_OUTPUT: join(dir, 'output') }, stdio: 'pipe',
+    });
+    assert.throws(() => run('different-commit'));
+    assert.doesNotThrow(() => run('verified-commit'));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+}
+
+test('OPS-04/06: setup protects v* tags and enables new checks only after bootstrap on main', () => {
+  assert.match(setup, /tag ruleset[\s\S]*?`v\*`[\s\S]*?Restrict updates[\s\S]*?Restrict deletions[\s\S]*?empty bypass list/);
+  assert.match(setup, /Merge the installation PR under the existing protections/);
+  assert.match(setup, /After the workflows are on `main`[\s\S]*?test PR[\s\S]*?required checks/);
 });

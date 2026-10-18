@@ -32,6 +32,7 @@ jobs:
       EVENT_NAME: ${{ github.event_name }}
       REF_TYPE: ${{ github.ref_type }}
       REF_NAME: ${{ github.ref_name }}
+      RUN_SHA: ${{ github.sha }}
     steps:
       - name: Validate dispatch ref
         run: |
@@ -47,6 +48,7 @@ jobs:
           release=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}")
           [ "$(echo "${release}" | jq -r '.draft')" = "false" ] || { echo "Release is a draft"; exit 1; }
           sha=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha)
+          [ "${sha}" = "${RUN_SHA}" ] || { echo "Release tag does not match the triggering commit"; exit 1; }
           status=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${sha}...main" --jq .status)
           case "${status}" in identical|ahead) ;; *) echo "Commit ${sha} is not on main"; exit 1;; esac
           ok=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-staging.yml/runs?head_sha=${sha}&status=success" --jq '.total_count')
@@ -60,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ needs.gate.outputs.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -99,6 +101,12 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
+      - name: Reject Pages Worker entrypoints
+        run: |
+          if [ -e site/_worker.js ] || [ -L site/_worker.js ]; then
+            echo "Refusing a Pages Worker entrypoint in the static artifact."
+            exit 1
+          fi
       - run: rm -f site/wrangler.toml site/wrangler.json site/wrangler.jsonc
       - name: Upload to the production Pages project
         run: npx --yes wrangler@4.151.1 pages deploy site --project-name=artemis-ii --branch=main --commit-hash="${SHA}" --commit-dirty=true
@@ -109,7 +117,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ needs.gate.outputs.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:

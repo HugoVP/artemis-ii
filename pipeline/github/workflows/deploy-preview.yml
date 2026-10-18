@@ -53,6 +53,13 @@ jobs:
         with:
           node-version: 22
       # The artifact is data: nothing in it is executed, and its configuration files are ignored.
+      - name: Reject Pages Worker entrypoints
+        if: env.SAME_REPO == 'true' && steps.current.outputs.current == 'true'
+        run: |
+          if [ -e site/_worker.js ] || [ -L site/_worker.js ]; then
+            echo "Refusing a Pages Worker entrypoint in the static artifact."
+            exit 1
+          fi
       - name: Upload to the staging Pages project (branch preview)
         if: env.SAME_REPO == 'true' && steps.current.outputs.current == 'true'
         run: |

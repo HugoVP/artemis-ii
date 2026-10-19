@@ -31,10 +31,10 @@ Hugo performs these steps. Agents do not create secrets, change variables, appro
    git add -- .github/workflows/agent-run.yml .github/workflows/agent-runner-image.yml .github/workflows/agent-sandbox-smoke.yml .github/workflows/opencode-smoke.yml
    git commit -m 'Install reviewed OpenCode workflow proposals'
    git push origin agent/opencode-agent
-   gh pr checks agent/opencode-agent -R HugoVP/artemis-ii --watch
+   gh pr checks agent/opencode-agent -R HugoVP/artemis-ii
    ```
 
-   Review the PR image smoke, including its credential-free OpenCode step. Resolve any failing checks on this branch; do not disable them. Review the remaining pending live-provider items, mark the PR ready, then merge it yourself. The following setup runs after merge. This is maintenance, not a new stage; do not change the site-stage status.
+   Review the PR image smoke, including its credential-free OpenCode step. Resolve any failing checks on this branch; do not disable them. The `approval` check intentionally stays pending until Hugo reviews and approves the `approval` environment job in the Approval workflow; a new push needs a new approval. Review the remaining pending live-provider items, mark the PR ready, approve that environment job yourself, then merge it yourself. The following setup runs after merge. This is maintenance, not a new stage; do not change the site-stage status.
 
 1. **Browser: Go Console.** Create a dedicated pipeline API key in the single-member Go workspace. Confirm its limits and keep `Use balance` disabled if requests must stop at the subscription allowance. Never paste the key into a prompt, command argument, PR or chat.
 2. **Git Bash: store the key through the hidden prompt.** The existing `agents` environment must remain restricted to `main`.

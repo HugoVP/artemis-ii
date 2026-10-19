@@ -1,6 +1,6 @@
 # Stage 05: Photo curation
 
-- **Status:** draft (approved when Stage 04 is merged)
+- **Status:** approved (merged with Stage 04)
 - **Requirements covered:** `CONT-01`, `CONT-02`, `CONT-03`, `CONT-06`, `LEGAL-02`, `SEC-08`, `QA-01`, `QA-06`
 - **Depends on:** Stage 04 (approved site shell and preferences); the brief's curation goals
 

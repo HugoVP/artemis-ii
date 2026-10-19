@@ -15,7 +15,7 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | 01 | 🎨 Design in Figma: tokens, components and screens | `figma-write` | [stage-01-design](specs/stage-01-design.md) | approved | #4 | `HUG-5` |
 | 02 | Project base: Astro, Tailwind with design tokens, es/en routes, layout, tests | `node`, `browser`, `figma-read` | [stage-02-base](specs/stage-02-base.md) | approved | #8 | `HUG-6` |
 | 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | [stage-03-pipeline](specs/stage-03-pipeline.md) | approved | #14 | `HUG-7` |
-| 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | [stage-04-preferences](specs/stage-04-preferences.md) | in review | | |
+| 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | [stage-04-preferences](specs/stage-04-preferences.md) | in review | #31 | |
 | 05 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | `web` | [stage-05-curation](specs/stage-05-curation.md) | pending | | |
 | 06 | Ingestion: script, variants with sharp, static Pages packaging | `node`, `web` | written in 05 | pending | | |
 | 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | written in 06 | pending | | |
@@ -133,4 +133,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 
 - 2026-10-18 — Stage 03 — PR #14 — Hugo replaced R2 with static Pages media, approved external NASA downloads for originals above 25 MiB, and required complete-artifact limits and rollback of HTML/media together. Evaluation is illustrative, not final curation or visual approval.
 
-- 2026-10-19 — Stage 04 — Added accessible theme, language, density and gallery-view preferences, storage-safe persistence and pre-paint restoration; wrote the Stage 05 curation spec. <!-- notion -->
+- 2026-10-19 — Stage 04 — PR #31 — Added accessible theme, language, density and gallery-view preferences, storage-safe persistence and pre-paint restoration; wrote the Stage 05 curation spec. <!-- notion -->

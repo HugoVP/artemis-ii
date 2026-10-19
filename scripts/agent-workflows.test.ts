@@ -31,7 +31,8 @@ test("every action is pinned to a full commit SHA, and is a GitHub-created actio
 test("P2-2: the work job has read-only permissions and no App credential", () => {
   const work = job(run, "work");
   const perms = /permissions:\n((?:      .+\n)+)/.exec(work)![1];
-  assert.doesNotMatch(perms, /write/);
+  // The only write permission is id-token, which can mint OIDC tokens but writes nothing (docs/specs/claude-wif.md).
+  assert.doesNotMatch(perms.replace("id-token: write", ""), /write/);
   assert.doesNotMatch(work, /AGENT_APP_/);
   assert.match(work, /git [^\n]*push --dry-run/);
 });
@@ -39,11 +40,11 @@ test("P2-2: the work job has read-only permissions and no App credential", () =>
 test("the model key is read in exactly one step of one job, and the App key only in publish", () => {
   assert.equal([...run.matchAll(/secrets\[needs\.prepare\.outputs\.key_secret\]/g)].length, 1);
   const agentStep = /- name: Run the agent\n([\s\S]*?)(?=\n      - )/.exec(run)![1]!;
-  assert.match(agentStep, /AGENT_MODEL_KEY: \$\{\{ secrets\[needs\.prepare\.outputs\.key_secret\] \}\}/);
+  assert.match(agentStep, /AGENT_MODEL_KEY: \$\{\{ needs\.prepare\.outputs\.auth == 'api-key' && secrets\[needs\.prepare\.outputs\.key_secret\] \|\| '' \}\}/);
   // Handed to the CLI under its own name, and removed from the environment that the CLI inherits.
   assert.match(agentStep, /unset AGENT_MODEL_KEY/);
   assert.match(agentStep, /CODEX_API_KEY="\$KEY" codex exec/);
-  assert.match(agentStep, /ANTHROPIC_API_KEY="\$KEY" claude -p/);
+  assert.match(agentStep, /export ANTHROPIC_API_KEY="\$KEY"\n\s+fi\n\s+claude -p/);
   for (const name of ["prepare", "work", "escalate"]) assert.doesNotMatch(job(run, name), /AGENT_APP_PRIVATE_KEY/);
   assert.equal([...run.matchAll(/secrets\.AGENT_APP_PRIVATE_KEY/g)].length, 1);
   assert.doesNotMatch(image, /secrets\./);
@@ -367,4 +368,58 @@ test("a failed or cancelled token replacement is escalated, and its intended ski
   assert.match(esc, /needs\.figma-revoke\.result == 'failure' \|\| needs\.figma-revoke\.result == 'cancelled'/);
   assert.doesNotMatch(esc, /figma-revoke\.result != 'success'/);
   assert.match(esc, /was not replaced/);
+});
+
+test("WIF-03: id-token: write is granted only to the work job, and the OIDC request variables never reach a container", () => {
+  assert.equal([...run.matchAll(/id-token:/g)].length, 1);
+  assert.match(job(run, "work"), /permissions:\n(?:      .+\n)*      id-token: write\n/);
+  for (const name of ["prepare", "publish", "figma-revoke", "escalate"]) assert.doesNotMatch(job(run, name), /id-token/, name);
+  // Passed by name (-e NAME) or not at all: neither request variable is ever named in a docker run or the container script.
+  const code = run.replace(/^\s*#.*$/gm, "");
+  assert.doesNotMatch(code, /-e ACTIONS_ID_TOKEN|ACTIONS_ID_TOKEN_REQUEST_(?:URL|TOKEN)/);
+  assert.doesNotMatch(run, /--env-file|-e [A-Z_]+=\$\{?ACTIONS_/);
+  // Only the refresher process, started from the trusted copy, fetches tokens, and it runs only for federation agents.
+  const start = step(job(run, "work"), "Start the Anthropic OIDC token refresher");
+  assert.match(start, /if: needs\.prepare\.outputs\.auth == 'federation'/);
+  assert.match(start, /node "\$RUNNER_TEMP\/trusted\/scripts\/anthropic-oidc\.ts" start "\$OIDC_DIR"/);
+  assert.doesNotMatch(start, /docker/);
+});
+
+test("WIF-04: the agent's container gets the token folder read-only and the ids by name, never a model key, for federation", () => {
+  const work = job(run, "work");
+  const agent = step(work, "Run the agent");
+  assert.match(agent, /-v "\$RUNNER_TEMP\/anthropic-oidc:\/run\/anthropic-oidc:ro"/);
+  assert.match(agent, /-e ANTHROPIC_IDENTITY_TOKEN_FILE=\/run\/anthropic-oidc\/token/);
+  for (const v of ["ANTHROPIC_FEDERATION_RULE_ID", "ANTHROPIC_ORGANIZATION_ID", "ANTHROPIC_SERVICE_ACCOUNT_ID", "ANTHROPIC_WORKSPACE_ID"]) {
+    assert.match(agent, new RegExp(`-e ${v}(?: |\\n)`), v);
+    assert.match(agent, new RegExp(`${v}: \\$\\{\\{ vars\\.${v} \\}\\}`), v);
+  }
+  // The folder is mounted read-only, never read-write, and the token never goes through a secret or an output.
+  assert.doesNotMatch(run, /anthropic-oidc:[^"\n]*:rw|anthropic-oidc:\/run\/anthropic-oidc"/);
+  assert.doesNotMatch(run, /secrets\.ANTHROPIC|ANTHROPIC_API_KEY: /);
+  assert.match(agent, /A federation agent must not have a model key/);
+  assert.match(agent, /unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN/);
+  assert.doesNotMatch(agent, /--bare/);
+  // The install container never gets any of it.
+  assert.doesNotMatch(step(work, "Install the project dependencies"), /ANTHROPIC|anthropic-oidc/);
+});
+
+test("WIF-03: the refresher starts after the install and before the agent, and stops right after it, whatever happened", () => {
+  const work = job(run, "work");
+  const at = (n: string) => work.indexOf(`- name: ${n}`);
+  assert.ok(at("Install the project dependencies") < at("Start the Anthropic OIDC token refresher"));
+  assert.ok(at("Start the Anthropic OIDC token refresher") < at("Run the agent"));
+  assert.ok(at("Run the agent") < at("Stop the Anthropic OIDC token refresher"));
+  assert.ok(at("Stop the Anthropic OIDC token refresher") < at("Commit the agent's changes"));
+  const stop = step(work, "Stop the Anthropic OIDC token refresher");
+  assert.match(stop, /if: always\(\) && needs\.prepare\.outputs\.auth == 'federation'/);
+  assert.match(stop, /kill "\$OIDC_REFRESHER_PID"/);
+  assert.match(stop, /rm -rf -- "\$RUNNER_TEMP\/anthropic-oidc"/);
+});
+
+test("WIF-02: prepare validates the federation ids of a federation agent and passes the auth mode on", () => {
+  const prepare = job(run, "prepare");
+  assert.match(prepare, /auth: \$\{\{ steps\.order\.outputs\.auth \}\}/);
+  assert.match(prepare, /if \[ "\$AUTH" = federation \]; then node scripts\/anthropic-oidc\.ts validate; fi/);
+  assert.match(prepare, /echo "auth=\$AUTH"/);
 });

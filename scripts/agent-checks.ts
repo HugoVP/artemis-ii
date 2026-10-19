@@ -122,7 +122,10 @@ export const RUNNERS = ["codex-exec", "claude-print", "opencode-run"];
 // One entry of agents/registry.yaml, after the checks of parseRegistry.
 export interface Agent {
   id: string;
+  // "" for an agent with `auth: federation`, which has no static key (docs/specs/claude-wif.md).
   key_secret: string;
+  // api-key (default): a model key from the secret key_secret. federation: Anthropic workload identity federation.
+  auth: "api-key" | "federation";
   runner: string;
   capabilities: string[];
   [field: string]: string | string[];
@@ -132,7 +135,7 @@ export interface Agent {
 export function parseRegistry(yaml: string): Agent[] {
   const agents: Record<string, string | string[]>[] = [];
   let cur: Record<string, string | string[]> | null = null;
-  for (const raw of String(yaml).split("\n")) {
+  for (const raw of String(yaml).split(/\r?\n/)) {
     const line = raw.replace(/\s+#.*$/, "").trimEnd();
     if (line.trim() === "" || line.trim().startsWith("#")) continue;
     const start = /^- (\w+):\s*(.*)$/.exec(line);
@@ -145,11 +148,19 @@ export function parseRegistry(yaml: string): Agent[] {
     cur[m[1]] = v.startsWith("[") ? v.slice(1, -1).split(",").map((x) => x.trim()).filter(Boolean) : v.replace(/^["']|["']$/g, "");
   }
   for (const a of agents) {
-    for (const k of ["id", "key_secret", "runner", "capabilities"]) if (a[k] === undefined) throw new Error(`Agent ${a.id ?? "?"} has no "${k}" in agents/registry.yaml.`);
+    const auth = a.auth === undefined ? "api-key" : String(a.auth);
+    if (auth !== "api-key" && auth !== "federation") throw new Error(`Agent ${a.id ?? "?"} has the unknown auth "${auth}" (known: api-key, federation).`);
+    for (const k of auth === "federation" ? ["id", "runner", "capabilities"] : ["id", "key_secret", "runner", "capabilities"]) if (a[k] === undefined) throw new Error(`Agent ${a.id ?? "?"} has no "${k}" in agents/registry.yaml.`);
+    a.auth = auth;
     if (!/^[a-z0-9-]{1,30}$/.test(String(a.id))) throw new Error(`Agent id "${a.id}" is not a short lowercase slug.`);
     // A registry entry can never point the work job at the App key or any other secret.
     if (!RUNNERS.includes(String(a.runner))) throw new Error(`Agent ${a.id} has the unknown runner "${a.runner}" (known: ${RUNNERS.join(", ")}).`);
-    if (!/^AGENT_KEY_[A-Z0-9_]{1,40}$/.test(String(a.key_secret))) throw new Error(`key_secret "${a.key_secret}" of agent ${a.id} must look like AGENT_KEY_<ID>.`);
+    if (auth === "federation") {
+      // Federation exists only for Claude Code, and an entry never names a static key next to it.
+      if (a.runner !== "claude-print") throw new Error(`Agent ${a.id} uses auth: federation, which only the runner claude-print supports.`);
+      if (a.key_secret !== undefined) throw new Error(`Agent ${a.id} uses auth: federation and must not have a key_secret.`);
+      a.key_secret = "";
+    } else if (!/^AGENT_KEY_[A-Z0-9_]{1,40}$/.test(String(a.key_secret))) throw new Error(`key_secret "${a.key_secret}" of agent ${a.id} must look like AGENT_KEY_<ID>.`);
     if (a.runner === "opencode-run") validateOpenCodeModel(a.model);
   }
   return agents as Agent[];
@@ -308,7 +319,7 @@ async function main(argv: string[]): Promise<number> {
     if (!agent) { console.error(`Agent "${args[3]}" is not in agents/registry.yaml.`); return 1; }
     const missing = missingCapabilities(stage.needs, agent.capabilities);
     if (missing.length > 0) { console.error(`Agent ${agent.id} lacks: ${missing.join(", ")}.`); return 1; }
-    console.log(JSON.stringify({ stage: stage.number, name: stage.name, agent: agent.id, runner: agent.runner, model: agent.model ?? "", keySecret: agent.key_secret, figma: stage.needs.includes("figma-write") ? "write" : stage.needs.includes("figma-read") ? "read" : "none" }));
+    console.log(JSON.stringify({ stage: stage.number, name: stage.name, agent: agent.id, runner: agent.runner, model: agent.model ?? "", keySecret: agent.key_secret, auth: agent.auth, figma: stage.needs.includes("figma-write") ? "write" : stage.needs.includes("figma-read") ? "read" : "none" }));
     return 0;
   }
   if (cmd === "pr-text") {

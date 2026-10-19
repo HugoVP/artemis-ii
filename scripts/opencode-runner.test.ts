@@ -24,6 +24,8 @@ test('OPC-03: pipeline config disables sharing, fallback providers, Figma and in
   assert.equal(config.permission.external_directory, 'deny');
   assert.equal(config.permission.question, 'deny');
   assert.equal(config.permission.task, 'deny');
+  assert.equal(config.permission.websearch, 'deny');
+  assert.equal(config.permission.webfetch, 'allow');
   assert.equal(config.provider['opencode-go'].options.apiKey, '{env:OPENCODE_API_KEY}');
 });
 

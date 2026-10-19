@@ -34,7 +34,9 @@ export function openCodeConfig(model: string) {
         'git ls-files*': 'allow', 'ls*': 'allow', 'mkdir *': 'allow',
         'git push*': 'deny', 'rm *': 'deny',
       },
-      webfetch: 'allow', websearch: 'allow', external_directory: 'deny', question: 'deny', task: 'deny', skill: 'deny',
+      // websearch is built in and sends queries (and to Parallel, the session ID and model name) to Exa or Parallel,
+      // even with no MCP configured. Denied until Hugo approves that data flow; webfetch only fetches the URLs it is given.
+      webfetch: 'allow', websearch: 'deny', external_directory: 'deny', question: 'deny', task: 'deny', skill: 'deny',
     },
   };
 }

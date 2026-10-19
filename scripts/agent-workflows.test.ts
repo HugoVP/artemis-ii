@@ -1,9 +1,12 @@
 // Run with: node --test scripts/*.test.ts
 // Reads the proposed workflows in docs/agents/workflows/ and checks the security properties of the design
-// (docs/MULTI-AGENT-PHASES.md, Phase 2). These are text checks: they catch regressions in the YAML, they do not run it.
+// (docs/MULTI-AGENT-PHASES.md, Phase 2). Text checks cover the YAML; commit-step tests run in temporary repositories.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const read = (n: string) => readFile(new URL(`../docs/agents/workflows/${n}`, import.meta.url), "utf8");
 const run = await read("agent-run.yml");
@@ -126,9 +129,50 @@ test("a trusted step makes the commit, with hooks off and without the scratch fo
   assert.ok(work.indexOf("- name: Run the agent") < work.indexOf("- name: Commit the agent's changes"));
   const step = /- name: Commit the agent's changes\n([\s\S]*?)(?=\n      - name:)/.exec(work)![1]!;
   assert.match(step, /core\.hooksPath=\/dev\/null/);
-  assert.match(step, /':!\.agent'/);
+  assert.match(step, /':\(exclude,glob\)\*\*\/\.agent\/\*\*'/);
   assert.doesNotMatch(step, /CODEX_API_KEY|secrets\./);
 });
+
+for (const workflowPath of [".github/workflows/agent-run.yml", "docs/agents/workflows/agent-run.yml"]) {
+  for (const ignored of [true, false]) {
+    test(`SEC-04: ${workflowPath} commits changes without scratch files when ignore rules are ${ignored ? "present" : "absent"}`, async () => {
+      const workflow = await readFile(new URL(`../${workflowPath}`, import.meta.url), "utf8");
+      const commitStep = step(job(workflow, "work"), "Commit the agent's changes");
+      const script = /        run: \|\n([\s\S]*)/.exec(commitStep)![1]!.replace(/^          /gm, "");
+      const dir = await mkdtemp(join(tmpdir(), "agent-commit-"));
+      const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
+      const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, env, encoding: "utf8" });
+      try {
+        git("init", "-q");
+        git("config", "user.name", "Test");
+        git("config", "user.email", "test@example.invalid");
+        await writeFile(join(dir, ".gitignore"), ignored ? ".agent/\nnode_modules/\n" : "");
+        await writeFile(join(dir, "modified.ts"), "export const value = 1;\n");
+        await writeFile(join(dir, "deleted.ts"), "export {};\n");
+        git("add", ".gitignore", "modified.ts", "deleted.ts");
+        git("commit", "-qm", "Initial fixture");
+        for (const folder of [".agent", "node_modules", "nested/.agent", "nested/node_modules"]) {
+          await mkdir(join(dir, folder, "nested"), { recursive: true });
+          await writeFile(join(dir, folder, "nested", "scratch.txt"), "scratch\n");
+        }
+        await writeFile(join(dir, ".agent/pr-title.txt"), "Fixture changes\n");
+        await writeFile(join(dir, "added.ts"), "export {};\n");
+        await writeFile(join(dir, "modified.ts"), "export const value = 2;\n");
+        await rm(join(dir, "deleted.ts"));
+        execFileSync("bash", ["-eu", "-o", "pipefail", "-c", script], { cwd: dir, env, stdio: "pipe" });
+        assert.equal(git("log", "-1", "--format=%s").trim(), "Fixture changes");
+        assert.deepEqual(git("diff", "--no-renames", "HEAD^", "HEAD", "--name-status").trim().split("\n"), [
+          "A\tadded.ts", "D\tdeleted.ts", "M\tmodified.ts",
+        ]);
+        assert.deepEqual(git("ls-tree", "-r", "--name-only", "HEAD").trim().split("\n"), [
+          ".gitignore", "added.ts", "modified.ts",
+        ]);
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+  }
+}
 
 test("the work order line is matched on a numeric boundary, and prepare checks merged stage PRs", () => {
   assert.match(run, /grep -Eq "Closes #\$\{ISSUE\}\(\[\^0-9\]\|\$\)"/);

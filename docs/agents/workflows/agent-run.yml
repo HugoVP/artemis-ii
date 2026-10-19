@@ -360,7 +360,7 @@ jobs:
             exit 1
           fi
           G=(git -c core.hooksPath=/dev/null -c core.fsmonitor=false)
-          "${G[@]}" add -A -- . ':!.agent' ':!node_modules'
+          "${G[@]}" add -A -- . ':(exclude,glob)**/.agent/**' ':(exclude,glob)**/node_modules/**'
           if "${G[@]}" diff --cached --quiet; then echo "The agent changed nothing."; exit 1; fi
           "${G[@]}" commit -q -F .agent/pr-title.txt
 

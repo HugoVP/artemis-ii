@@ -21,6 +21,8 @@ const fullTitle = title === ui[lang].siteName ? title : `${title} · ${ui[lang].
 <html lang={lang} data-theme="dark" data-density="comfortable">
   <head>
     <meta charset="utf-8" />
+    <!-- External classic script deliberately blocks parsing to restore preferences before paint. -->
+    <script is:inline src="/preferences.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     {description && <meta name="description" content={description} />}

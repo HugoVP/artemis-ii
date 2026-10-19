@@ -81,3 +81,28 @@
     color: var(--color-accent);
   }
 }
+
+/* Figma PreferencesPanel / Chip: token-sized controls, wrapping for narrow screens. */
+@layer components {
+  .preferences { display: grid; gap: var(--space-3); }
+  .preference-group { border: 0; padding: 0; margin: 0; min-width: 0; }
+  .preference-group legend { color: var(--color-text-muted); font-size: var(--text-caption); margin-bottom: var(--space-2); }
+  .preference-options { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .preference-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    background: transparent; color: var(--color-text); font-size: var(--text-label);
+    text-decoration: none; cursor: pointer;
+  }
+  .preference-chip[aria-pressed='true'], .preference-chip[aria-current='true'] {
+    background: var(--color-accent); color: var(--color-background); border-color: var(--color-accent); font-weight: 600;
+  }
+}
+
+.preferences-popover {
+  width: max-content;
+  max-width: calc(100vw - var(--space-3) * 2);
+  max-height: calc(100dvh - var(--space-6));
+  overflow-y: auto;
+}

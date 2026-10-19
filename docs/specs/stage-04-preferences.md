@@ -1,6 +1,6 @@
 # Stage 04: Preferences
 
-- **Status:** draft (approved when Stage 03 is merged)
+- **Status:** amended in stage 04 (approved baseline merged with Stage 03)
 - **Requirements covered:** `PREF-01` to `PREF-06`, `I18N-02`, `I18N-03`
 - **Depends on:** Stage 02 (layout, tokens with theme and density modes, top bar); Stage 03 (previews to review in)
 
@@ -13,6 +13,7 @@ A visitor can choose theme, language and density, and the choices are remembered
 - TypeScript only, checked with TypeScript 7: `.ts`, `.tsx` and TypeScript in `.astro` files; no JavaScript files. Use an `agent/stage-04-*` branch (for example `agent/stage-04-preferences`), following `AGENTS.md`.
 - React island in the top bar Settings panel: theme (light / dark / system, dark default), language, density (Compact / Comfortable / Spacious) and, only on gallery pages, gallery view (Mosaic / Gallery / Immersive), as designed in Figma.
 - A TypeScript source compiled to a bundled external script in `<head>` applies theme and density before first paint (`PREF-02`). If an inline script is unavoidable, keep it minimal, state the reason in a comment and allow it through a CSP hash; no `'unsafe-inline'` for scripts.
+- The static build emits Astro’s generated island bootstrap scripts as same-origin external files, preserving the existing CSP without inline-script exceptions. The pre-paint TypeScript source is standalone and compiled with Node’s type stripping.
 - `localStorage` always inside try/catch; the site works with storage blocked (`PREF-05`).
 - Browser language detection only on the first visit (`I18N-02`); the language selector keeps the equivalent page (`I18N-03`).
 - Controls reachable by keyboard and labelled for screen readers (`PREF-06`); the Stage 02 panel placeholders ("not yet available") are replaced.

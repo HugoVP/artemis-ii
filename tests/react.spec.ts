@@ -9,11 +9,18 @@ function htmlFiles(dir: string): string[] {
   });
 }
 
-test('AC-7 no React or JavaScript is shipped on pages without an island (TECH-03)', () => {
+test('AC-7 TECH-03 React is limited to the preferences island, with CSP-safe external scripts', () => {
   for (const file of htmlFiles('dist')) {
     const html = readFileSync(file, 'utf8');
-    expect(html, file).not.toContain('<astro-island');
-    expect(html, file).not.toMatch(/<script[^>]*\ssrc=/);
-    expect(html, file).not.toMatch(/react/i);
+    if (file === 'dist/index.html') expect(html).not.toContain('<astro-island');
+    else {
+      expect(html.match(/<astro-island /g), file).toHaveLength(1);
+      expect(html, file).toMatch(/component-url="[^"]*Preferences/);
+    }
+    for (const script of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+      expect(script[1], file).toMatch(/\bsrc=/);
+      expect(script[2].trim(), file).toBe('');
+    }
+    expect(html, file).toContain('src="/preferences.js"');
   }
 });

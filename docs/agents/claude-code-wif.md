@@ -4,7 +4,7 @@ Claude Code runs in `agent-run.yml` without a stored Anthropic API key. The `wor
 
 ## How it works
 
-1. The registry entry `claude` has `auth: federation` and no `key_secret`. `prepare` checks the four repository variables below and passes `auth=federation` on.
+1. The registry entry `claude` has `auth: federation` and no `key_secret`. `prepare` passes `auth=federation` on; the `work` job checks the four federation ids before the agent starts.
 2. The `work` job has `permissions: id-token: write`. That lets its own steps ask GitHub for an OIDC token; it writes nothing to the repository.
 3. A trusted script from `main` (`scripts/anthropic-oidc.ts`) runs on the runner, outside the agent's container. It fetches a token with the audience `https://api.anthropic.com` and writes it to a file, then replaces the file every two minutes. GitHub's tokens last about five minutes and work once, so a long run needs fresh ones.
 4. The agent's container gets only that folder, read-only (`/run/anthropic-oidc`), and the four ids by name. `ACTIONS_ID_TOKEN_REQUEST_URL` and `ACTIONS_ID_TOKEN_REQUEST_TOKEN`, which can mint tokens, never enter any container.
@@ -15,10 +15,11 @@ Claude Code runs in `agent-run.yml` without a stored Anthropic API key. The `wor
 
 1. **Claude Console → Connect workload**, GitHub Actions tile:
    - Issuer: `https://token.actions.githubusercontent.com`.
-   - Federation rule: match `subject_prefix` `repo:HugoVP/artemis-ii:environment:agents` (the `sub` of a job with `environment: agents`), audience `https://api.anthropic.com`, claim `repository_owner` equal to `HugoVP`. Optionally pin `job_workflow_ref` with a CEL condition to `HugoVP/artemis-ii/.github/workflows/agent-run.yml@refs/heads/main` (and the smoke workflow `claude-wif-smoke.yml`, same ref).
+   - Federation rule: the `sub` claim must **equal** `repo:HugoVP/artemis-ii:environment:agents` (the `sub` of a job with `environment: agents`). Do not use a plain `subject_prefix` match: it would also accept `repo:HugoVP/artemis-ii:environment:agents-other`, an environment without the main-only policy. If the wizard offers only a prefix, add a CEL condition that requires the exact value. Also: audience `https://api.anthropic.com`, and claim `repository_owner` equal to `HugoVP`.
+   - Optional pin: a CEL condition on `workflow_ref` allowing only `HugoVP/artemis-ii/.github/workflows/agent-run.yml@refs/heads/main` and `HugoVP/artemis-ii/.github/workflows/claude-wif-smoke.yml@refs/heads/main`. Use `workflow_ref`, not `job_workflow_ref`: the second claim only appears in reusable workflows, and these jobs are defined directly.
    - Scope `workspace:developer`, token lifetime 600 seconds.
    - Service account: create one and add it to a **dedicated workspace** with a **spend limit**, as with the old key.
-2. **Repository variables** (not secrets; Settings → Secrets and variables → Actions → Variables): `ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`, `ANTHROPIC_WORKSPACE_ID`. Their values are shown in the Console after step 1.
+2. **Secrets of the environment `agents`** (Settings → Environments → agents → Environment secrets): `ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`, `ANTHROPIC_WORKSPACE_ID`. They are not credentials, but they are account identifiers, and GitHub prints a step's environment in public logs without masking variables; secrets are masked. Their values are shown in the Console after step 1.
 3. **Delete** the secret `AGENT_KEY_CLAUDE` from the environment `agents` if it exists, and revoke the API key behind it.
 4. **Copy the workflows** `agent-run.yml` and `claude-wif-smoke.yml` from `docs/agents/workflows/` to `.github/workflows/`.
 5. **Smoke:** run "Claude WIF smoke" by hand on `main`, first without `long`, then with `long`.
@@ -31,7 +32,7 @@ The agent can read the token file (Claude Code must), so it can use a token for 
 
 ## To verify on the first real run
 
-- **Refresh past ten minutes:** the CLI's refresh behaviour is not documented. Run the smoke with `long`; if the run fails near minute 10 or 20 with an authentication error, the CLI does not re-read the file, and the fallback is the static key.
+- **Refresh past ten minutes:** the CLI's refresh behaviour is not documented. Run the smoke with `long` (it fails if the process ends before 15 minutes); if the run fails near minute 10 or 20 with an authentication error, the CLI does not re-read the file, and the fallback is the static key.
 - **Spend limit:** that the workspace spend limit applies to federated tokens (check the workspace's usage after the smoke).
 - **Console history:** that the exchange appears in the Console's history for the service account, with the run's `sub`.
 - **Single-use tokens:** that a token is accepted even if the CLI reads the same file twice; if not, shorten `REFRESH_MS` in `scripts/anthropic-oidc.ts`.

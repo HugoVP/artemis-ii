@@ -392,11 +392,13 @@ test("WIF-04: the agent's container gets the token folder read-only and the ids 
   assert.match(agent, /-e ANTHROPIC_IDENTITY_TOKEN_FILE=\/run\/anthropic-oidc\/token/);
   for (const v of ["ANTHROPIC_FEDERATION_RULE_ID", "ANTHROPIC_ORGANIZATION_ID", "ANTHROPIC_SERVICE_ACCOUNT_ID", "ANTHROPIC_WORKSPACE_ID"]) {
     assert.match(agent, new RegExp(`-e ${v}[ )\\n]`), v);
-    assert.match(agent, new RegExp(`${v}: \\$\\{\\{ vars\\.${v} \\}\\}`), v);
+    assert.match(agent, new RegExp(`${v}: \\$\\{\\{ needs\\.prepare\\.outputs\\.auth == 'federation' && secrets\\.${v} \\|\\| '' \\}\\}`), v);
+    // Secrets, so GitHub masks them; a repository variable would be printed in the step's logged environment.
+    assert.doesNotMatch(run, new RegExp(`vars\\.${v}`), v);
   }
   // The folder is mounted read-only, never read-write, and the token never goes through a secret or an output.
   assert.doesNotMatch(run, /anthropic-oidc:[^"\n]*:rw|anthropic-oidc:\/run\/anthropic-oidc"/);
-  assert.doesNotMatch(run, /secrets\.ANTHROPIC|ANTHROPIC_API_KEY: /);
+  assert.doesNotMatch(run, /secrets\.ANTHROPIC_API_KEY|ANTHROPIC_API_KEY: /);
   assert.match(agent, /A federation agent must not have a model key/);
   assert.match(agent, /unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN/);
   assert.doesNotMatch(agent, /--bare/);
@@ -417,11 +419,15 @@ test("WIF-03: the refresher starts after the install and before the agent, and s
   assert.match(stop, /rm -rf -- "\$RUNNER_TEMP\/anthropic-oidc"/);
 });
 
-test("WIF-02: prepare validates the federation ids of a federation agent and passes the auth mode on", () => {
+test("WIF-02: prepare passes the auth mode on, and the work job validates the masked federation ids before the agent starts", () => {
   const prepare = job(run, "prepare");
   assert.match(prepare, /auth: \$\{\{ steps\.order\.outputs\.auth \}\}/);
-  assert.match(prepare, /if \[ "\$AUTH" = federation \]; then node scripts\/anthropic-oidc\.ts validate; fi/);
   assert.match(prepare, /echo "auth=\$AUTH"/);
+  assert.doesNotMatch(prepare, /ANTHROPIC_/);
+  const start = step(job(run, "work"), "Start the Anthropic OIDC token refresher");
+  for (const v of ["ANTHROPIC_FEDERATION_RULE_ID", "ANTHROPIC_ORGANIZATION_ID", "ANTHROPIC_SERVICE_ACCOUNT_ID", "ANTHROPIC_WORKSPACE_ID"]) assert.match(start, new RegExp(`${v}: \\$\\{\\{ secrets\\.${v} \\}\\}`), v);
+  assert.match(start, /node "\$RUNNER_TEMP\/trusted\/scripts\/anthropic-oidc\.ts" validate\n/);
+  assert.ok(start.indexOf("validate") < start.indexOf("start \"$OIDC_DIR\""));
 });
 
 test("WIF-05: the Claude WIF smoke runs only for the trusted login on main, with no model key, no repository write and a read-only token folder", async () => {
@@ -430,7 +436,9 @@ test("WIF-05: the Claude WIF smoke runs only for the trusted login on main, with
   assert.match(wif, /if: github\.ref == 'refs\/heads\/main' && github\.actor == vars\.AGENT_TRUSTED_LOGIN && github\.triggering_actor == vars\.AGENT_TRUSTED_LOGIN/);
   assert.match(wif, /^permissions: \{\}/m);
   assert.match(wif, /permissions:\n      contents: read\n      packages: read\n      id-token: write\n/);
-  assert.doesNotMatch(code, /secrets\.|ACTIONS_ID_TOKEN|ANTHROPIC_API_KEY=|pull-requests|contents: write/);
+  assert.doesNotMatch(code, /secrets\.(?!ANTHROPIC_(?:FEDERATION_RULE|ORGANIZATION|SERVICE_ACCOUNT|WORKSPACE)_ID \})|vars\.ANTHROPIC|ACTIONS_ID_TOKEN|ANTHROPIC_API_KEY=|pull-requests|contents: write/);
+  // A long run that ends early does not prove the refresh.
+  assert.match(wif, /if \[ "\$LONG" = true \] && \[ "\$ELAPSED" -lt 900 \]; then/);
   assert.match(wif, /-v "\$RUNNER_TEMP\/anthropic-oidc:\/run\/anthropic-oidc:ro"/);
   assert.match(wif, /unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN/);
   assert.match(wif, /node scripts\/anthropic-oidc\.ts start "\$OIDC_DIR"/);

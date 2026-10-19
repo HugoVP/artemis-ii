@@ -11,7 +11,7 @@ export const AUDIENCE = "https://api.anthropic.com";
 export const REFRESH_MS = 120_000;
 export const FEDERATION_VARIABLES = ["ANTHROPIC_FEDERATION_RULE_ID", "ANTHROPIC_ORGANIZATION_ID", "ANTHROPIC_SERVICE_ACCOUNT_ID", "ANTHROPIC_WORKSPACE_ID"];
 
-// The ids are repository variables, so they are data: short opaque ids only, never a path or a shell fragment.
+// The ids come from secrets of the environment "agents" (masked in logs); they are still data: short opaque ids only, never a path or a shell fragment.
 export function isFederationId(value: unknown): boolean {
   return typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 }
@@ -90,7 +90,7 @@ async function main(argv: string[]): Promise<number> {
   const [cmd, dir] = argv;
   if (cmd === "validate") {
     const bad = badFederationVariables(process.env);
-    if (bad.length) { console.error(`Missing or malformed repository variables: ${bad.join(", ")}.`); return 1; }
+    if (bad.length) { console.error(`Missing or malformed secrets of the environment "agents": ${bad.join(", ")}.`); return 1; }
     console.log("The federation variables are set.");
     return 0;
   }

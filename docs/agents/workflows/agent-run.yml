@@ -87,11 +87,6 @@ jobs:
           LABEL: ${{ github.event.label.name }}
           INPUT_STAGE: ${{ inputs.stage }}
           INPUT_AGENT: ${{ inputs.agent }}
-          # Workload identity federation (docs/specs/claude-wif.md): ids, not secrets. Only their shape is checked here.
-          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
-          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
-          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
-          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
         run: |
           set -euo pipefail
           if [ "$EVENT" = workflow_dispatch ]; then
@@ -124,7 +119,6 @@ jobs:
           OPENCODE_MODEL=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).model" "$RUNNER_TEMP/plan.json")
           # api-key: a model key from the secret named by the registry. federation: no static key (claude-print only).
           AUTH=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).auth" "$RUNNER_TEMP/plan.json")
-          if [ "$AUTH" = federation ]; then node scripts/anthropic-oidc.ts validate; fi
           if [ "$RUNNER" = opencode-run ]; then node scripts/opencode-runner.ts validate "$OPENCODE_MODEL"; fi
           {
             echo "stage=$STAGE"
@@ -264,10 +258,17 @@ jobs:
       # keeps a fresh GitHub OIDC token in a file of the runner, replaced every two minutes (GitHub's tokens last about
       # five minutes and work once). Only that file reaches the agent's container, read-only: ACTIONS_ID_TOKEN_REQUEST_URL
       # and ACTIONS_ID_TOKEN_REQUEST_TOKEN, which can mint tokens, never do.
+      # The federation ids are secrets of the environment "agents", so GitHub masks them wherever a step prints them.
       - name: Start the Anthropic OIDC token refresher
         if: needs.prepare.outputs.auth == 'federation'
+        env:
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
         run: |
           set -euo pipefail
+          node "$RUNNER_TEMP/trusted/scripts/anthropic-oidc.ts" validate
           OIDC_DIR="$RUNNER_TEMP/anthropic-oidc"
           nohup node "$RUNNER_TEMP/trusted/scripts/anthropic-oidc.ts" start "$OIDC_DIR" > "$RUNNER_TEMP/anthropic-oidc.log" 2>&1 &
           echo "OIDC_REFRESHER_PID=$!" >> "$GITHUB_ENV"
@@ -285,10 +286,10 @@ jobs:
           # Empty for a federation agent: it has no static key.
           AGENT_MODEL_KEY: ${{ needs.prepare.outputs.auth == 'api-key' && secrets[needs.prepare.outputs.key_secret] || '' }}
           AUTH: ${{ needs.prepare.outputs.auth }}
-          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
-          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
-          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
-          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ needs.prepare.outputs.auth == 'federation' && secrets.ANTHROPIC_FEDERATION_RULE_ID || '' }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ needs.prepare.outputs.auth == 'federation' && secrets.ANTHROPIC_ORGANIZATION_ID || '' }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ needs.prepare.outputs.auth == 'federation' && secrets.ANTHROPIC_SERVICE_ACCOUNT_ID || '' }}
+          ANTHROPIC_WORKSPACE_ID: ${{ needs.prepare.outputs.auth == 'federation' && secrets.ANTHROPIC_WORKSPACE_ID || '' }}
           RUNNER: ${{ needs.prepare.outputs.runner }}
           OPENCODE_MODEL: ${{ needs.prepare.outputs.model }}
           FIGMA: ${{ needs.prepare.outputs.figma }}

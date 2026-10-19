@@ -3,7 +3,8 @@ name: Claude WIF smoke
 # Trusted fixture only: no stage, repository edits, PR publication or deployment. Checks that Claude Code signs in with
 # Anthropic workload identity federation (docs/specs/claude-wif.md, WIF-05). With `long`, one `claude -p` process stays
 # alive for about 23 minutes, longer than two Anthropic token lifetimes, so the run shows that the CLI re-reads the
-# token file that the refresher replaces.
+# token file that the refresher replaces; a long run shorter than 15 minutes fails. The federation ids are secrets of
+# the environment "agents", so GitHub masks them in the log.
 on:
   workflow_dispatch:
     inputs:
@@ -33,10 +34,10 @@ jobs:
     env:
       IMAGE: ${{ vars.AGENT_RUNNER_IMAGE }}
       LONG: ${{ inputs.long }}
-      ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
-      ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
-      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
-      ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+      ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -93,8 +94,13 @@ jobs:
             PROMPT='Reply with exactly: wif-ok'
             ARGS=()
           fi
+          START=$(date +%s)
           claude -p "$PROMPT" --permission-mode dontAsk --no-session-persistence "${ARGS[@]}" | tee /tmp/answer.txt
+          ELAPSED=$(( $(date +%s) - START ))
           grep -q 'wif-ok' /tmp/answer.txt
+          # The long run proves the token refresh only if this one process outlived the token: at least 15 minutes.
+          if [ "$LONG" = true ] && [ "$ELAPSED" -lt 900 ]; then echo "The long run ended after ${ELAPSED}s, before 15 minutes."; exit 1; fi
+          echo "Claude Code answered after ${ELAPSED}s."
           IN_CONTAINER
           docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
             -v "$RUNNER_TEMP/wif-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \

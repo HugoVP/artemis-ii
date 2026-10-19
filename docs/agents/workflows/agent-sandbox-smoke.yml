@@ -42,7 +42,17 @@ jobs:
             --security-opt "seccomp=$GITHUB_WORKSPACE/agents/agent-seccomp.json" --pids-limit 4096 \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
             --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
-            artemis-ii-sandbox-smoke codex sandbox -- /bin/true
+            artemis-ii-sandbox-smoke codex sandbox -c sandbox_mode=workspace-write -c sandbox_workspace_write.network_access=true -- /bin/sh -c '
+              set -eu
+              probe=$(mktemp /work/.sandbox-smoke.XXXXXX)
+              printf sandbox-ok > "$probe"
+              test "$(cat "$probe")" = sandbox-ok
+              if ( : > /work/.git/sandbox-smoke-write ) 2>/dev/null; then
+                echo ".git unexpectedly writable" >&2
+                exit 1
+              fi
+              rm -f "$probe"
+            '
 
       - name: Remove the nested sandbox AppArmor profile
         if: always()

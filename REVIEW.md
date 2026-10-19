@@ -7,7 +7,7 @@ You are a reviewer, not the builder. Report findings with the file and line, mos
 ## What to check
 
 1. **Spec first.** Compare the diff with the stage spec in `docs/specs/` and the requirement IDs in `docs/specs/product.md`. Report every acceptance criterion not met and any change outside the stage scope.
-2. **Security.** Flag any secret, token, private URL or session link (`claude.ai/code/session_…`); any new dependency, network call or third-party resource; any weakened check (skipped or disabled tests or scans, lowered thresholds, new ignore entries); any change to protected paths (`.github/**`, `AGENTS.md`, `CLAUDE.md`, `REVIEW.md`, `docs/DELIVERY.md`, `docs/agents/**`, `public/_headers`) not listed under "Security-relevant changes" in the PR.
+2. **Security.** Flag any secret, token, private URL or session link (`claude.ai/code/session_…`); any new dependency, network call or third-party resource; any weakened check (skipped or disabled tests or scans, lowered thresholds, new ignore entries); any change to protected paths (`.github/**`, `AGENTS.md`, `CLAUDE.md`, `REVIEW.md`, `docs/DELIVERY.md`, `docs/agents/**`, `agents/agent-seccomp.json`, `agents/agent-apparmor.profile`, `public/_headers`) not listed under "Security-relevant changes" in the PR.
 3. **Consistency.** Flag contradictions between `AGENTS.md`, `docs/DELIVERY.md`, `docs/PLAN.md` and the specs, and any rule that depends on one AI vendor.
 4. **Content.** Flag facts without a source link, literal Spanish/English translations, NASA logos, wording that suggests NASA endorsement, and any advertising.
 5. **Language.** All Markdown must be English; flag any Spanish or bilingual copy of a Markdown file.

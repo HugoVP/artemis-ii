@@ -202,7 +202,12 @@ test("the sandbox smoke workflow has no secrets and tests bwrap and Codex on the
   assert.match(smoke, /head\.repo\.full_name == github\.repository/);
   assert.doesNotMatch(smoke, /secrets\.|packages: write|--privileged|seccomp=unconfined|apparmor=unconfined/);
   assert.match(smoke, /bwrap --unshare-user --unshare-pid/);
-  assert.match(smoke, /codex sandbox -- \/bin\/true/);
+  assert.match(smoke, /codex sandbox -c sandbox_mode=workspace-write -c sandbox_workspace_write\.network_access=true -- \/bin\/sh -c/);
+  assert.match(smoke, /mktemp \/work\/\.sandbox-smoke\.XXXXXX/);
+  assert.match(smoke, /printf sandbox-ok > "\$probe"/);
+  assert.match(smoke, /test "\$\(cat "\$probe"\)" = sandbox-ok/);
+  assert.match(smoke, /if \( : > \/work\/\.git\/sandbox-smoke-write \) 2>\/dev\/null; then/);
+  assert.match(smoke, /\.git unexpectedly writable/);
 });
 
 test("the nested sandbox uses a trusted, bounded seccomp profile", async () => {

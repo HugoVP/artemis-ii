@@ -1,13 +1,17 @@
 // Run with: node --test scripts/*.test.ts
 // Reads the proposed workflows in docs/agents/workflows/ and checks the security properties of the design
-// (docs/MULTI-AGENT-PHASES.md, Phase 2). These are text checks: they catch regressions in the YAML, they do not run it.
+// (docs/MULTI-AGENT-PHASES.md, Phase 2). Text checks cover the YAML; commit-step tests run in temporary repositories.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const read = (n: string) => readFile(new URL(`../docs/agents/workflows/${n}`, import.meta.url), "utf8");
 const run = await read("agent-run.yml");
 const image = await read("agent-runner-image.yml");
+const smoke = await read("agent-sandbox-smoke.yml");
 
 // The text of one job, from its key to the next top-level job.
 function job(text: string, name: string): string {
@@ -17,7 +21,7 @@ function job(text: string, name: string): string {
 }
 
 test("every action is pinned to a full commit SHA, and is a GitHub-created action", () => {
-  for (const text of [run, image]) {
+  for (const text of [run, image, smoke]) {
     for (const m of text.matchAll(/^\s*- uses: (\S+)/gm)) {
       assert.match(m[1], /^actions\/[a-z-]+@[0-9a-f]{40}$/, m[1]);
     }
@@ -125,9 +129,50 @@ test("a trusted step makes the commit, with hooks off and without the scratch fo
   assert.ok(work.indexOf("- name: Run the agent") < work.indexOf("- name: Commit the agent's changes"));
   const step = /- name: Commit the agent's changes\n([\s\S]*?)(?=\n      - name:)/.exec(work)![1]!;
   assert.match(step, /core\.hooksPath=\/dev\/null/);
-  assert.match(step, /':!\.agent'/);
+  assert.match(step, /':\(exclude,glob\)\*\*\/\.agent\/\*\*'/);
   assert.doesNotMatch(step, /CODEX_API_KEY|secrets\./);
 });
+
+for (const workflowPath of [".github/workflows/agent-run.yml", "docs/agents/workflows/agent-run.yml"]) {
+  for (const ignored of [true, false]) {
+    test(`SEC-04: ${workflowPath} commits changes without scratch files when ignore rules are ${ignored ? "present" : "absent"}`, async () => {
+      const workflow = await readFile(new URL(`../${workflowPath}`, import.meta.url), "utf8");
+      const commitStep = step(job(workflow, "work"), "Commit the agent's changes");
+      const script = /        run: \|\n([\s\S]*)/.exec(commitStep)![1]!.replace(/^          /gm, "");
+      const dir = await mkdtemp(join(tmpdir(), "agent-commit-"));
+      const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
+      const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, env, encoding: "utf8" });
+      try {
+        git("init", "-q");
+        git("config", "user.name", "Test");
+        git("config", "user.email", "test@example.invalid");
+        await writeFile(join(dir, ".gitignore"), ignored ? ".agent/\nnode_modules/\n" : "");
+        await writeFile(join(dir, "modified.ts"), "export const value = 1;\n");
+        await writeFile(join(dir, "deleted.ts"), "export {};\n");
+        git("add", ".gitignore", "modified.ts", "deleted.ts");
+        git("commit", "-qm", "Initial fixture");
+        for (const folder of [".agent", "node_modules", "nested/.agent", "nested/node_modules"]) {
+          await mkdir(join(dir, folder, "nested"), { recursive: true });
+          await writeFile(join(dir, folder, "nested", "scratch.txt"), "scratch\n");
+        }
+        await writeFile(join(dir, ".agent/pr-title.txt"), "Fixture changes\n");
+        await writeFile(join(dir, "added.ts"), "export {};\n");
+        await writeFile(join(dir, "modified.ts"), "export const value = 2;\n");
+        await rm(join(dir, "deleted.ts"));
+        execFileSync("bash", ["-eu", "-o", "pipefail", "-c", script], { cwd: dir, env, stdio: "pipe" });
+        assert.equal(git("log", "-1", "--format=%s").trim(), "Fixture changes");
+        assert.deepEqual(git("diff", "--no-renames", "HEAD^", "HEAD", "--name-status").trim().split("\n"), [
+          "A\tadded.ts", "D\tdeleted.ts", "M\tmodified.ts",
+        ]);
+        assert.deepEqual(git("ls-tree", "-r", "--name-only", "HEAD").trim().split("\n"), [
+          ".gitignore", "added.ts", "modified.ts",
+        ]);
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+  }
+}
 
 test("the work order line is matched on a numeric boundary, and prepare checks merged stage PRs", () => {
   assert.match(run, /grep -Eq "Closes #\$\{ISSUE\}\(\[\^0-9\]\|\$\)"/);
@@ -180,15 +225,69 @@ test("the agent runs in a docker run container without the Docker socket, as the
   assert.doesNotMatch(run, /docker\.sock|--privileged|--cap-add|seccomp=unconfined|--network host|--pid host/);
   for (const name of ["Install the project dependencies", "Run the agent"]) {
     const s = step(work, name);
-    assert.match(s, /docker run --rm --init --user "\$\(id -u\):\$\(id -g\)" --cap-drop ALL --security-opt no-new-privileges --pids-limit \d+/, name);
+    assert.match(s, /docker run --rm --init --user "\$\(id -u\):\$\(id -g\)" --cap-drop ALL --security-opt no-new-privileges/, name);
+    assert.match(s, /--pids-limit \d+/, name);
     assert.match(s, /-v "\$GITHUB_WORKSPACE:\/work" -v "\$GITHUB_WORKSPACE\/\.git:\/work\/\.git:ro"/, name);
-    assert.doesNotMatch(s, /RUNNER_TEMP\/trusted|-v "\$RUNNER_TEMP:/, name);
+    assert.doesNotMatch(s, /-v "\$RUNNER_TEMP\/trusted|-v "\$RUNNER_TEMP:/, name);
   }
   // Project code runs only in the container: npm on the runner would run install scripts next to the trusted steps.
   assert.equal([...run.matchAll(/npm ci/g)].length, 1);
   assert.match(step(work, "Install the project dependencies"), /"\$IMAGE" npm ci/);
   assert.match(step(work, "Pull the runner image"), /@sha256:\[0-9a-f\]\{64\}\$/);
   assert.match(step(work, "Pull the runner image"), /docker logout ghcr\.io/);
+});
+
+test("the sandbox smoke workflow has no secrets and tests bwrap and Codex on the PR image", () => {
+  assert.match(smoke, /pull_request:/);
+  assert.match(smoke, /runs-on: ubuntu-22\.04/);
+  assert.match(smoke, /apparmor=artemis-ii-agent-bwrap/);
+  assert.match(smoke, /sudo apparmor_parser -r agents\/agent-apparmor\.profile/);
+  assert.match(smoke, /permissions:\n  contents: read/);
+  assert.match(smoke, /head\.repo\.full_name == github\.repository/);
+  assert.doesNotMatch(smoke, /secrets\.|packages: write|--privileged|seccomp=unconfined|apparmor=unconfined/);
+  assert.match(smoke, /bwrap --unshare-user --unshare-pid/);
+  assert.match(smoke, /codex sandbox -c sandbox_mode=workspace-write -c sandbox_workspace_write\.network_access=true -- \/bin\/sh -c/);
+  assert.match(smoke, /mktemp \/work\/\.sandbox-smoke\.XXXXXX/);
+  assert.match(smoke, /printf sandbox-ok > "\$probe"/);
+  assert.match(smoke, /test "\$\(cat "\$probe"\)" = sandbox-ok/);
+  assert.match(smoke, /if \( : > \/work\/\.git\/sandbox-smoke-write \) 2>\/dev\/null; then/);
+  assert.match(smoke, /\.git unexpectedly writable/);
+});
+
+test("the nested sandbox uses a trusted, bounded seccomp profile", async () => {
+  const installed = await readFile(new URL("../.github/workflows/agent-run.yml", import.meta.url), "utf8");
+  const apparmor = await readFile(new URL("../agents/agent-apparmor.profile", import.meta.url), "utf8");
+  assert.match(apparmor, /profile "artemis-ii-agent-bwrap"/);
+  assert.match(apparmor, /  mount,/);
+  assert.match(apparmor, /  pivot_root,/);
+  assert.doesNotMatch(apparmor, /deny mount,/);
+  const profile = JSON.parse(await readFile(new URL("../agents/agent-seccomp.json", import.meta.url), "utf8")) as {
+    defaultAction: string;
+    syscalls: Array<{ names: string[]; action: string; args?: Array<{ index: number; value: number; valueTwo?: number; op: string }> }>;
+  };
+  assert.equal(profile.defaultAction, "SCMP_ACT_ERRNO");
+  assert.ok(profile.syscalls.some((rule) => rule.names.includes("clone") && rule.action === "SCMP_ACT_ALLOW" &&
+    rule.args?.some((arg) => arg.value === 0x10000000 && arg.valueTwo === 0x10000000 && arg.op === "SCMP_CMP_MASKED_EQ")));
+  for (const name of ["mount", "umount2", "pivot_root", "unshare"]) {
+    assert.ok(profile.syscalls.some((rule) => rule.names.includes(name) && rule.action === "SCMP_ACT_ALLOW"), name);
+  }
+  for (const workflow of [run, installed]) {
+    const work = job(workflow, "work");
+    const prepare = step(work, "Prepare the workspace");
+    const install = step(work, "Install the project dependencies");
+    const agent = step(work, "Run the agent");
+    assert.match(prepare, /cp agents\/agent-seccomp\.json "\$RUNNER_TEMP\/trusted\/agent-seccomp\.json"/);
+    assert.match(prepare, /cp agents\/agent-apparmor\.profile "\$RUNNER_TEMP\/trusted\/agent-apparmor\.profile"/);
+    assert.match(work, /runs-on: ubuntu-22\.04/);
+    assert.match(work, /sudo apparmor_parser -r "\$RUNNER_TEMP\/trusted\/agent-apparmor\.profile"/);
+    assert.match(work, /sudo apparmor_parser -R "\$RUNNER_TEMP\/trusted\/agent-apparmor\.profile"/);
+    assert.match(agent, /--security-opt "seccomp=\$RUNNER_TEMP\/trusted\/agent-seccomp\.json"/);
+    assert.match(agent, /--security-opt apparmor=artemis-ii-agent-bwrap/);
+    assert.doesNotMatch(install, /agent-seccomp\.json/);
+    assert.doesNotMatch(agent, /-v "\$RUNNER_TEMP\/trusted/);
+    assert.ok(work.indexOf("cp agents/agent-seccomp.json") < work.indexOf("npm ci"));
+    assert.ok(work.indexOf("cp agents/agent-apparmor.profile") < work.indexOf("npm ci"));
+  }
 });
 
 test("the Figma refresh token is read only by the gateway and the replacement job, from trusted scripts, and the agent gets no Figma credential", () => {

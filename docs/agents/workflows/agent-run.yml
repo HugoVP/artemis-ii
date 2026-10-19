@@ -137,7 +137,7 @@ jobs:
     needs: prepare
     # Gated again: re-running only the failed jobs can reuse a successful prepare. Comparison of strings is case-insensitive.
     if: github.triggering_actor == vars.AGENT_TRUSTED_LOGIN
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 90
     # The environment is restricted to main and holds the model keys. This job reads one of them, in one step.
     environment: agents
@@ -180,6 +180,8 @@ jobs:
           # container never sees this folder.
           mkdir -p "$RUNNER_TEMP/trusted"
           cp -r scripts AGENTS.md "$RUNNER_TEMP/trusted/"
+          cp agents/agent-seccomp.json "$RUNNER_TEMP/trusted/agent-seccomp.json"
+          cp agents/agent-apparmor.profile "$RUNNER_TEMP/trusted/agent-apparmor.profile"
 
       # The image is pinned by digest. The registry login lives in a throwaway Docker config and is removed after the pull.
       - name: Pull the runner image
@@ -208,6 +210,9 @@ jobs:
             -v "$RUNNER_TEMP/agent-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
             "$IMAGE" npm ci --no-audit --no-fund
+
+      - name: Load the nested sandbox AppArmor profile
+        run: sudo apparmor_parser -r "$RUNNER_TEMP/trusted/agent-apparmor.profile"
 
       # Figma's MCP server accepts OAuth access tokens issued to approved clients (Codex, Claude Code, …), not personal
       # access tokens. Hugo signed in once with such a client. The gateway, a trusted script from main running on the
@@ -323,7 +328,8 @@ jobs:
           # (-e NAME), so their values are not on the command line. No stdin: the CLIs must not wait for input.
           HOSTS=()
           if [ "$FIGMA" != none ]; then HOSTS=(--add-host figma-gateway:host-gateway); fi
-          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
+            --security-opt apparmor=artemis-ii-agent-bwrap --security-opt "seccomp=$RUNNER_TEMP/trusted/agent-seccomp.json" --pids-limit 4096 \
             -v "$RUNNER_TEMP/agent-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
             -e GIT_OPTIONAL_LOCKS=0 -e CI=true -e STAGE -e RUNNER -e FIGMA -e FIGMA_FILE_URL -e AGENT_MODEL_KEY \
@@ -336,6 +342,10 @@ jobs:
         run: |
           if [ -n "${FIGMA_GATEWAY_PID:-}" ]; then kill "$FIGMA_GATEWAY_PID" 2>/dev/null || true; fi
           cat "$RUNNER_TEMP/figma-gateway.log" 2>/dev/null || true
+
+      - name: Remove the nested sandbox AppArmor profile
+        if: always()
+        run: sudo apparmor_parser -R "$RUNNER_TEMP/trusted/agent-apparmor.profile" || true
 
       # The trusted steps below run git in the workspace the agent wrote to. Its .git was read-only to the agent; git
       # still reads no global or system configuration, and runs no hooks or fsmonitor.
@@ -350,7 +360,7 @@ jobs:
             exit 1
           fi
           G=(git -c core.hooksPath=/dev/null -c core.fsmonitor=false)
-          "${G[@]}" add -A -- . ':!.agent' ':!node_modules'
+          "${G[@]}" add -A -- . ':(exclude,glob)**/.agent/**' ':(exclude,glob)**/node_modules/**'
           if "${G[@]}" diff --cached --quiet; then echo "The agent changed nothing."; exit 1; fi
           "${G[@]}" commit -q -F .agent/pr-title.txt
 

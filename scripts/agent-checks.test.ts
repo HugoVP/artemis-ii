@@ -44,7 +44,7 @@ test("P2-5: publish refuses a destination outside agent/stage-NN-* and another s
 });
 
 test("protected paths are read from AGENTS.md and cover the documented list and scanner configs", () => {
-  for (const f of [".github/workflows/ci.yml", "AGENTS.md", "CLAUDE.md", "REVIEW.md", "docs/DELIVERY.md", "docs/agents/README.md", "public/_headers", ".gitleaks.toml"]) {
+  for (const f of [".github/workflows/ci.yml", "AGENTS.md", "CLAUDE.md", "REVIEW.md", "docs/DELIVERY.md", "docs/agents/README.md", "public/_headers", ".gitleaks.toml", "agents/agent-seccomp.json", "agents/agent-apparmor.profile"]) {
     assert.equal(matchesProtected(f, patterns), true, f);
   }
   for (const f of ["src/pages/index.astro", "docs/PLAN.md", "docs/agents-notes.md", "public/robots.txt", "README.md"]) {
@@ -53,8 +53,8 @@ test("protected paths are read from AGENTS.md and cover the documented list and 
   assert.throws(() => parseProtectedPaths("# nothing here"), /Protected paths/);
 });
 
-test("P2-3: a run that touches a protected path opens a draft (AGENTS.md, _headers, a scanner config)", () => {
-  for (const f of ["AGENTS.md", "public/_headers", ".gitleaks.toml"]) {
+test("P2-3: a run that touches a protected path opens a draft, including sandbox profiles", () => {
+  for (const f of ["AGENTS.md", "public/_headers", ".gitleaks.toml", "agents/agent-seccomp.json", "agents/agent-apparmor.profile"]) {
     const d = decidePublication({ files: ["src/a.ts", f], patterns, texts: ["clean"] });
     assert.equal(d.action, "draft", f);
     assert.deepEqual(d.protectedFiles, [f]);

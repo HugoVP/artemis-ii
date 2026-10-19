@@ -174,6 +174,8 @@ Remove the label `agent:<id>`, or disable `agent-run.yml` in the Actions tab. Ve
 
 Capabilities use the IDs of `docs/agents/README.md`. Adding an agent is a PR that Hugo approves.
 
+**Phase 3a (built first).** The registry fields and the leader and reviewer choice below are built before iterations, as recommendations only: `scripts/orchestrate.ts` appends them to each work order, and Hugo starts the run with the label `agent:<id>` and merges every stage into `main` as today. The actual fields are `status`, `roles` (`lead`, `lead-small`, `review`), `family` (model vendor, because a tool such as Copilot or OpenCode can run another lab's model), `cost` and `avoid`. Reviewers must differ from the leader in model family, not only in provider. Contract: [`docs/specs/orchestration.md`](specs/orchestration.md).
+
 ### Orchestrator
 
 `scripts/orchestrate.ts`, with tests, runs in a workflow on `main` with read-only permissions and writes its decision as a file artifact. A second job, with `issues: write` and no project code, posts that decision as a comment on the iteration issue, so every choice can be audited.

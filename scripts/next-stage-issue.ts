@@ -17,6 +17,8 @@ export interface Stage {
   status: string;
   pr: string;
   linear: string | null;
+  // The symbols before the name: 🔍 for a content review stage, 🎨 for a design stage.
+  marker?: string;
 }
 
 export interface Issue {
@@ -40,6 +42,7 @@ export function parseStages(markdown: string): Stage[] {
       status: c[4],
       pr: c[5],
       linear: c[6].match(/HUG-\d+/)?.[0] ?? null,
+      marker: (c[1].match(/^[^\p{L}\p{N}]+/u)?.[0] ?? "").trim(),
     });
   }
   return rows;
@@ -105,17 +108,42 @@ export type RunResult =
   | { action: "dry-run"; issue: Issue }
   | { action: "exists" | "created"; number: number };
 
-export async function run({ token, repo, prNumber, markdown, base = "https://api.github.com", dryRun = false }: {
+// The orchestrator's recommendation (docs/specs/orchestration.md), appended to the work order. A failure to read the
+// merge history only drops the rotation; it never stops the work order.
+async function recommendation(stage: Stage, stages: Stage[], registry: string, read: () => Promise<string[] | null>): Promise<{ text: string; escalate: boolean }> {
+  const { parseRegistry } = await import("./agent-checks.ts");
+  const { recommend, formatRecommendation, leadersFromMerges } = await import("./orchestrate.ts");
+  const agents = parseRegistry(registry);
+  const subjects = await read();
+  const r = recommend({ stages, stageNumber: stage.number, agents, leaders: leadersFromMerges(subjects ?? [], agents.map(a => a.id)) });
+  const note = subjects ? "" : "\n- The merge history could not be read, so rotation was not applied.";
+  return { text: formatRecommendation(r) + note, escalate: r.leader === null };
+}
+
+export async function run({ token, repo, prNumber, markdown, registry, base = "https://api.github.com", dryRun = false }: {
   token?: string | undefined;
   repo: string;
   prNumber: string | number;
   markdown: string;
+  registry?: string;
   base?: string;
   dryRun?: boolean;
 }): Promise<RunResult> {
-  const stage = pickNext(parseStages(markdown), prNumber);
+  const stages = parseStages(markdown);
+  const stage = pickNext(stages, prNumber);
   if (!stage) return { action: "none", reason: "no pending stage left" };
   const issue = buildIssue(stage, { repo, prNumber });
+  if (registry !== undefined) {
+    const readMerges = async () => {
+      if (dryRun) return null;
+      const commits = await api(base, token, "GET", `/repos/${repo}/commits?sha=main&per_page=100`);
+      if (!commits.ok || !Array.isArray(commits.json)) return null;
+      return (commits.json as { commit?: { message?: string } }[]).map(c => (c.commit?.message ?? "").split("\n")[0]);
+    };
+    const extra = await recommendation(stage, stages, registry, readMerges);
+    issue.body += `\n\n${extra.text}`;
+    if (extra.escalate) issue.labels.push("needs-hugo");
+  }
   if (dryRun) return { action: "dry-run", issue };
 
   const open = await api(base, token, "GET", `/repos/${repo}/issues?state=open&labels=${LABEL.name}&per_page=100`);
@@ -136,6 +164,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(GITHUB_REPOSITORY ?? "")) throw new Error("GITHUB_REPOSITORY must be owner/name.");
   if (!DRY_RUN && !GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not set.");
   const markdown = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
-  const result = await run({ token: GITHUB_TOKEN, repo: GITHUB_REPOSITORY!, prNumber: PR_NUMBER!, markdown, base: GITHUB_API_URL || "https://api.github.com", dryRun: Boolean(DRY_RUN) });
+  const registry = await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8");
+  const result = await run({ token: GITHUB_TOKEN, repo: GITHUB_REPOSITORY!, prNumber: PR_NUMBER!, markdown, registry, base: GITHUB_API_URL || "https://api.github.com", dryRun: Boolean(DRY_RUN) });
   console.log(result.action === "dry-run" ? JSON.stringify(result.issue, null, 2) : JSON.stringify(result));
 }

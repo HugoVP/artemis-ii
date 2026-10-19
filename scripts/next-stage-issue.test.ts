@@ -30,8 +30,9 @@ test("parseStages reads the opening table of the real PLAN.md", () => {
 test("parseStages reads name, needs, spec, status, PR and Linear issue, and ignores later sections", () => {
   const s = parseStages(sample);
   assert.equal(s.length, 4);
-  assert.deepEqual(s[2], { number: "02", name: "Project base", needs: ["node", "browser"], specPath: "specs/stage-02-base.md", status: "pending", pr: "", linear: "HUG-6" });
+  assert.deepEqual(s[2], { number: "02", name: "Project base", needs: ["node", "browser"], specPath: "specs/stage-02-base.md", status: "pending", pr: "", linear: "HUG-6", marker: "" });
   assert.equal(s[1].name, "Design");
+  assert.equal(s[1].marker, "🎨");
   assert.equal(s[3].specPath, null);
 });
 
@@ -93,6 +94,53 @@ test("run ignores a pull request that has the same title", async () => {
   const r = await run({ token: "t", repo: "o/r", prNumber: 4, markdown: sample, base: m.base });
   m.server.close();
   assert.equal(r.action, "created");
+});
+
+const registry = [
+  "- id: alpha\n  key_secret: AGENT_KEY_ALPHA\n  runner: codex-exec\n  capabilities: [git, node, browser]\n  status: active\n  roles: [lead, review]\n  family: one\n  cost: api",
+  "- id: beta\n  key_secret: AGENT_KEY_BETA\n  runner: codex-exec\n  capabilities: [git, node, browser]\n  status: active\n  roles: [lead, review]\n  family: two\n  cost: api",
+].join("\n");
+
+function mockWithMerges(subjects: string[], commitsStatus = 200) {
+  const calls: { method: string; path: string; body: string }[] = [];
+  const server = http.createServer((req, res) => {
+    let data = "";
+    req.on("data", (c) => (data += c));
+    req.on("end", () => {
+      const path = req.url!.split("?")[0];
+      calls.push({ method: req.method!, path, body: data });
+      res.setHeader("content-type", "application/json");
+      if (req.method === "GET" && path.endsWith("/commits")) { res.statusCode = commitsStatus; return res.end(JSON.stringify(subjects.map((m) => ({ commit: { message: `${m}\n\nbody` } })))); }
+      if (req.method === "GET") return res.end("[]");
+      if (path.endsWith("/labels")) { res.statusCode = 422; return res.end("{}"); }
+      res.statusCode = 201;
+      res.end(JSON.stringify({ number: 7 }));
+    });
+  }).listen(0);
+  return { server, calls, base: `http://127.0.0.1:${(server.address() as AddressInfo).port}` };
+}
+
+test("run appends the recommendation, applying rotation from the merged stage branches", async () => {
+  const m = mockWithMerges(["Merge pull request #8 from o/agent/stage-01-alpha"]);
+  const r = await run({ token: "t", repo: "o/r", prNumber: 4, markdown: sample, registry, base: m.base });
+  m.server.close();
+  assert.deepEqual(r, { action: "created", number: 7 });
+  const issue = JSON.parse(m.calls.find((c) => c.method === "POST" && c.path === "/repos/o/r/issues")!.body);
+  assert.match(issue.body, /## Recommended agents/);
+  assert.match(issue.body, /\*\*Leader: `beta`/);
+  assert.match(issue.body, /`alpha` \(excluded by rotation\)/);
+  assert.deepEqual(issue.labels, ["agent-task"]);
+});
+
+test("run escalates with needs-hugo when nobody can lead, and survives an unreadable history", async () => {
+  const m = mockWithMerges([], 500);
+  const lonely = registry.split("\n- id: beta")[0];
+  await run({ token: "t", repo: "o/r", prNumber: 4, markdown: sample, registry: lonely.replace("status: active", "status: pending"), base: m.base });
+  m.server.close();
+  const issue = JSON.parse(m.calls.find((c) => c.method === "POST" && c.path === "/repos/o/r/issues")!.body);
+  assert.deepEqual(issue.labels, ["agent-task", "needs-hugo"]);
+  assert.match(issue.body, /No leader recommended/);
+  assert.match(issue.body, /merge history could not be read/);
 });
 
 test("run does nothing when no stage is pending", async () => {

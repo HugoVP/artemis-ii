@@ -371,7 +371,7 @@ test("a failed or cancelled token replacement is escalated, and its intended ski
 });
 
 test("WIF-03: id-token: write is granted only to the work job, and the OIDC request variables never reach a container", () => {
-  assert.equal([...run.matchAll(/id-token:/g)].length, 1);
+  assert.equal([...run.replace(/^\s*#.*$/gm, "").matchAll(/id-token:/g)].length, 1);
   assert.match(job(run, "work"), /permissions:\n(?:      .+\n)*      id-token: write\n/);
   for (const name of ["prepare", "publish", "figma-revoke", "escalate"]) assert.doesNotMatch(job(run, name), /id-token/, name);
   // Passed by name (-e NAME) or not at all: neither request variable is ever named in a docker run or the container script.
@@ -391,7 +391,7 @@ test("WIF-04: the agent's container gets the token folder read-only and the ids 
   assert.match(agent, /-v "\$RUNNER_TEMP\/anthropic-oidc:\/run\/anthropic-oidc:ro"/);
   assert.match(agent, /-e ANTHROPIC_IDENTITY_TOKEN_FILE=\/run\/anthropic-oidc\/token/);
   for (const v of ["ANTHROPIC_FEDERATION_RULE_ID", "ANTHROPIC_ORGANIZATION_ID", "ANTHROPIC_SERVICE_ACCOUNT_ID", "ANTHROPIC_WORKSPACE_ID"]) {
-    assert.match(agent, new RegExp(`-e ${v}(?: |\\n)`), v);
+    assert.match(agent, new RegExp(`-e ${v}[ )\\n]`), v);
     assert.match(agent, new RegExp(`${v}: \\$\\{\\{ vars\\.${v} \\}\\}`), v);
   }
   // The folder is mounted read-only, never read-write, and the token never goes through a secret or an output.

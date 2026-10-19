@@ -18,6 +18,14 @@ export const DENIED_TOOLS = [
   'shell(git push)', 'shell(git commit)', 'shell(git config)', 'shell(rm)', 'shell(gh:*)', 'shell(curl)', 'shell(wget)',
   'write(/work/.git)',
 ];
+// Review mode (docs/specs/agent-review.md, REV-06): write only the review file and run only read-only git. No URL is
+// allowed. The build denials still apply, and denials win over approvals.
+export const REVIEW_ALLOWED_TOOLS = [
+  'write(.agent/review.md)',
+  'shell(git status)', 'shell(git diff)', 'shell(git log)', 'shell(git show)', 'shell(git ls-files)',
+];
+export const REVIEW_DENIED_TOOLS = [...DENIED_TOOLS, 'shell(npm:*)', 'shell(npx:*)', 'shell(node:*)'];
+export type Mode = 'build' | 'review';
 // The npm registry and the NASA domains of docs/SETUP.md, as for the other agents.
 export const ALLOWED_URLS = [
   'registry.npmjs.org', 'eol.jsc.nasa.gov', 'pds-imaging.jpl.nasa.gov', 'www.nasa.gov',
@@ -32,7 +40,8 @@ export function validateCopilotModel(value: unknown): string {
   return value;
 }
 
-export function copilotArgs(model: string, prompt: string): string[] {
+export function copilotArgs(model: string, prompt: string, mode: Mode = 'build'): string[] {
+  const review = mode === 'review';
   return [
     '-p', prompt,
     '--model', validateCopilotModel(model),
@@ -41,13 +50,13 @@ export function copilotArgs(model: string, prompt: string): string[] {
     // Stripped from shell and MCP environments and redacted from output. Joined with "=" so the list cannot swallow
     // the next flag.
     '--secret-env-vars=COPILOT_GITHUB_TOKEN',
-    ...ALLOWED_TOOLS.map(tool => `--allow-tool=${tool}`),
-    ...DENIED_TOOLS.map(tool => `--deny-tool=${tool}`),
-    ...ALLOWED_URLS.map(url => `--allow-url=${url}`),
+    ...(review ? REVIEW_ALLOWED_TOOLS : ALLOWED_TOOLS).map(tool => `--allow-tool=${tool}`),
+    ...(review ? REVIEW_DENIED_TOOLS : DENIED_TOOLS).map(tool => `--deny-tool=${tool}`),
+    ...(review ? [] : ALLOWED_URLS).map(url => `--allow-url=${url}`),
   ];
 }
 
-export async function runCopilot(prompt: string, env: NodeJS.ProcessEnv = process.env, binary = 'copilot'): Promise<void> {
+export async function runCopilot(prompt: string, env: NodeJS.ProcessEnv = process.env, binary = 'copilot', mode: Mode = 'build'): Promise<void> {
   const model = validateCopilotModel(env.COPILOT_MODEL);
   if (!env.COPILOT_GITHUB_TOKEN) throw new Error('AGENT_KEY_COPILOT is missing from the agents environment.');
   if (env.FIGMA !== 'none') throw new Error('Copilot is not qualified for Figma stages.');
@@ -66,7 +75,7 @@ export async function runCopilot(prompt: string, env: NodeJS.ProcessEnv = proces
       throw new Error(`The runner image must contain Copilot CLI ${COPILOT_VERSION}; rebuild it before running.`);
     }
     childEnv.COPILOT_GITHUB_TOKEN = env.COPILOT_GITHUB_TOKEN;
-    const child = spawn(binary, copilotArgs(model, prompt), { env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(binary, copilotArgs(model, prompt, mode), { env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
     // The transcript and provider messages can hold private data; only a short, redacted error line is kept.
     child.stdout.resume();
     let firstError = '';
@@ -91,7 +100,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     if (process.argv[2] === 'validate') validateCopilotModel(process.argv[3]);
     else if (process.argv[2] === 'run' && process.argv[3]) await runCopilot(process.argv[3]);
-    else throw new Error('Usage: copilot-runner.ts validate <model> | run <prompt>');
+    else if (process.argv[2] === 'review' && process.argv[3]) await runCopilot(process.argv[3], process.env, 'copilot', 'review');
+    else throw new Error('Usage: copilot-runner.ts validate <model> | run <prompt> | review <prompt>');
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Copilot launcher failed.');
     process.exitCode = 1;

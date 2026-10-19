@@ -69,17 +69,28 @@ export async function runCopilot(prompt: string, env: NodeJS.ProcessEnv = proces
     const child = spawn(binary, copilotArgs(model, prompt), { env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
     // The transcript and provider messages can hold private data; only a short, redacted error line is kept.
     child.stdout.resume();
+    // Chunks are not lines: an "Error:" or the token may be split across two of them. Only complete lines are scanned,
+    // and they are redacted before they are cut, so no prefix of the token can survive.
     let firstError = '';
+    let pending = '';
+    const scan = (text: string) => {
+      if (!firstError && /^Error:/.test(text.trim())) firstError = text.trim().split(env.COPILOT_GITHUB_TOKEN!).join('[redacted]').slice(0, 200);
+    };
     child.stderr.setEncoding('utf8');
     child.stderr.on('data', (chunk: string) => {
       if (firstError) return;
-      const line = chunk.split('\n').find(text => /^Error:/.test(text.trim()));
-      if (line) firstError = line.trim().split(env.COPILOT_GITHUB_TOKEN!).join('[redacted]').slice(0, 200);
+      const lines = (pending + chunk).split('\n');
+      pending = lines.pop() ?? '';
+      lines.forEach(scan);
+      // A line without an end is kept only up to a bound; its start, where "Error:" sits, is what matters.
+      if (pending.length > 65_536) pending = pending.slice(0, 65_536);
     });
     const status = await new Promise<number | null>((accept, reject) => {
       child.once('error', () => reject(new Error('Copilot CLI could not start.')));
       child.once('close', accept);
     });
+    // 'close' comes after the streams end, so the last line, even without a newline, is complete here.
+    scan(pending);
     if (status !== 0 || firstError) {
       throw new Error(`Copilot CLI did not complete successfully${firstError ? ` (${firstError})` : ''}; its transcript was suppressed.`);
     }

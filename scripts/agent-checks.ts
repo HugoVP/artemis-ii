@@ -5,6 +5,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { parseStages, type Stage } from "./next-stage-issue.ts";
+import { validateOpenCodeModel } from "./opencode-runner.ts";
 
 // Who may start a run. The trusted login is a repository variable, never derived from the repository owner.
 export function isTrusted(actor: unknown, trustedLogin: unknown): boolean {
@@ -116,7 +117,7 @@ export function findSecrets(text: string | null | undefined): string[] {
 }
 
 // How agent-run.yml can start an agent; each value has a branch in its "Run the agent" step.
-export const RUNNERS = ["codex-exec", "claude-print"];
+export const RUNNERS = ["codex-exec", "claude-print", "opencode-run"];
 
 // One entry of agents/registry.yaml, after the checks of parseRegistry.
 export interface Agent {
@@ -149,6 +150,7 @@ export function parseRegistry(yaml: string): Agent[] {
     // A registry entry can never point the work job at the App key or any other secret.
     if (!RUNNERS.includes(String(a.runner))) throw new Error(`Agent ${a.id} has the unknown runner "${a.runner}" (known: ${RUNNERS.join(", ")}).`);
     if (!/^AGENT_KEY_[A-Z0-9_]{1,40}$/.test(String(a.key_secret))) throw new Error(`key_secret "${a.key_secret}" of agent ${a.id} must look like AGENT_KEY_<ID>.`);
+    if (a.runner === "opencode-run") validateOpenCodeModel(a.model);
   }
   return agents as Agent[];
 }
@@ -306,7 +308,7 @@ async function main(argv: string[]): Promise<number> {
     if (!agent) { console.error(`Agent "${args[3]}" is not in agents/registry.yaml.`); return 1; }
     const missing = missingCapabilities(stage.needs, agent.capabilities);
     if (missing.length > 0) { console.error(`Agent ${agent.id} lacks: ${missing.join(", ")}.`); return 1; }
-    console.log(JSON.stringify({ stage: stage.number, name: stage.name, agent: agent.id, runner: agent.runner, keySecret: agent.key_secret, figma: stage.needs.includes("figma-write") ? "write" : stage.needs.includes("figma-read") ? "read" : "none" }));
+    console.log(JSON.stringify({ stage: stage.number, name: stage.name, agent: agent.id, runner: agent.runner, model: agent.model ?? "", keySecret: agent.key_secret, figma: stage.needs.includes("figma-write") ? "write" : stage.needs.includes("figma-read") ? "read" : "none" }));
     return 0;
   }
   if (cmd === "pr-text") {

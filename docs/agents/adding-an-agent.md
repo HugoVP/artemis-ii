@@ -9,7 +9,8 @@ How the `agent-run` workflow runs an agent on a stage, how Hugo sets it up, and 
 | `agents/registry.yaml` | The agents the pipeline can run: id, model key secret, how it starts, capabilities |
 | `docs/agents/workflows/agent-run.yml` | Proposed workflow. Hugo copies it to `.github/workflows/agent-run.yml` |
 | `docs/agents/workflows/agent-runner-image.yml` | Proposed workflow that builds and publishes the runner image. Hugo copies it too |
-| `Dockerfile`, target `agent-runner` | The CI toolchain plus the pinned agent CLIs (Codex and Claude Code) and Claude Code's shell sandbox |
+| `Dockerfile`, target `agent-runner` | The CI toolchain plus pinned Codex, Claude Code and OpenCode CLIs, Claude Code's shell sandbox, and the root-owned OpenCode launcher |
+| `scripts/opencode-runner.ts`, `scripts/opencode-smoke-fixture.ts` | OpenCode headless launch with private output handling, and the fixed manual smoke fixture |
 | `scripts/figma-mcp-gateway.ts` | The run's Figma MCP gateway: holds the access token and forwards only the stage's tools, on the design file only ("Figma in the pipeline") |
 | `scripts/figma-mcp-token.ts`, `scripts/figma-mcp-credentials.ts` | Exchange the refresh token for an access token and replace the run's token at the end; extract the one-time grant on Hugo's machine |
 | `scripts/agent-checks.ts` | The checks of `prepare`, `work` and `publish`, with unit tests in `scripts/agent-checks.test.ts` and `scripts/agent-workflows.test.ts` |
@@ -45,6 +46,8 @@ A result that touches `.github/workflows/**` or contains secret-like text is rej
 
 ## Verified for Codex
 
+The 2026-10-19 Stage 04 pipeline run completed work, Figma gateway startup, token replacement and publication of PR #31. The stage itself still requires code and visual review. OpenCode's setup and the remaining owner checks are in [`opencode.md`](opencode.md).
+
 Checked on 2026-10-17 with `@openai/codex` 0.163.0 installed from npm (`codex exec --help`, `codex login --help` and the strings of the binary), not with a real run:
 
 - `codex exec [PROMPT]` runs non-interactively. Options used: `--sandbox workspace-write`, `--ephemeral` (no session files) and `--color never`. `--output-last-message <file>` is not used: the CLI writes it as itself, outside the command sandbox, so an agent-chosen path could point at a trusted file. `--json` prints events as JSONL, which we do not upload.
@@ -53,7 +56,7 @@ Checked on 2026-10-17 with `@openai/codex` 0.163.0 installed from npm (`codex ex
 
 **First live run (2026-10-18):** Codex reached OpenAI and connected to the Figma gateway, but its first shell command failed because Docker's default seccomp profile denied the namespace creation used by `bwrap`. The agent made no changes. The work job uses Ubuntu 22.04 because the current `ubuntu-latest` runner refused to write the nested user namespace's UID map even with an otherwise permissive container profile. The agent container uses two bounded profiles: `agents/agent-seccomp.json` starts from [Moby's default seccomp profile at `4b8214f`](https://github.com/moby/profiles/blob/4b8214fc4971e06172938a1f1554ccff6647ee80/seccomp/default.json) and permits `clone` only with `CLONE_NEWUSER`, plus `unshare`, `mount`, `umount2` and `pivot_root`; `agents/agent-apparmor.profile` starts from [Moby's default AppArmor profile at the same commit](https://github.com/moby/profiles/blob/4b8214fc4971e06172938a1f1554ccff6647ee80/apparmor/testdata/default.golden) and permits `mount` and `pivot_root`. The work job copies both profiles from the trusted default-branch checkout before `npm ci`; it loads AppArmor from that copy and never mounts either file into the agent container. The container remains non-root, with all capabilities dropped, no new privileges, no Docker socket and `.git` read-only. `Agent sandbox smoke` builds the image on Ubuntu 22.04 and verified both `bwrap` and `codex sandbox` without model or Figma credentials. The Codex sandbox remains required; do not switch to `--dangerously-bypass-approvals-and-sandbox`. Revisit the runner pin before Ubuntu 22.04 reaches end of support.
 
-**Still to verify in a full agent run:** that the sandbox can execute project commands, which directories it leaves writable, that `codex exec` follows `AGENTS.md` and the kickoff prompt, and the cost and duration of a real stage.
+**Remaining owner checks:** Stage 04's visual acceptance against Figma, review of PR #31, and whether duration and usage are acceptable for future stages. The successful run demonstrates project command execution and PR publication; it does not establish compliance for every future task.
 
 ## Verified for Claude Code
 

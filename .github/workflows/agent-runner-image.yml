@@ -12,6 +12,7 @@ on:
       - Dockerfile
       - package.json
       - package-lock.json
+      - scripts/opencode-runner.ts
       - .github/workflows/agent-runner-image.yml
   workflow_dispatch:
 

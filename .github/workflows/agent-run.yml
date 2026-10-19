@@ -52,6 +52,7 @@ jobs:
       branch: ${{ steps.order.outputs.branch }}
       figma: ${{ steps.order.outputs.figma }}
       runner: ${{ steps.order.outputs.runner }}
+      model: ${{ steps.order.outputs.model }}
     steps:
       # Always main: the checks come from main and an issue or PR cannot change them.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -114,12 +115,15 @@ jobs:
           # none, read or write: only stages that need Figma get a Figma MCP token, and only write stages get write tools.
           FIGMA=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).figma" "$RUNNER_TEMP/plan.json")
           RUNNER=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).runner" "$RUNNER_TEMP/plan.json")
+          OPENCODE_MODEL=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).model" "$RUNNER_TEMP/plan.json")
+          if [ "$RUNNER" = opencode-run ]; then node scripts/opencode-runner.ts validate "$OPENCODE_MODEL"; fi
           {
             echo "stage=$STAGE"
             echo "agent=$AGENT"
             echo "key_secret=$KEY_SECRET"
             echo "figma=$FIGMA"
             echo "runner=$RUNNER"
+            echo "model=$OPENCODE_MODEL"
             echo "branch=agent/stage-${STAGE}-${AGENT}"
           } >> "$GITHUB_OUTPUT"
 
@@ -248,6 +252,7 @@ jobs:
           # The only step that sees the model key. It is handed to the agent's CLI under the name that CLI reads.
           AGENT_MODEL_KEY: ${{ secrets[needs.prepare.outputs.key_secret] }}
           RUNNER: ${{ needs.prepare.outputs.runner }}
+          OPENCODE_MODEL: ${{ needs.prepare.outputs.model }}
           FIGMA: ${{ needs.prepare.outputs.figma }}
           FIGMA_FILE_URL: ${{ vars.FIGMA_FILE_URL }}
         run: |
@@ -319,6 +324,9 @@ jobs:
                 --no-session-persistence \
                 --allowedTools "${ALLOWED[@]}"
               ;;
+            opencode-run)
+              OPENCODE_API_KEY="$KEY" node /opt/artemis/opencode-runner.ts run "$KICKOFF All code must be TypeScript with erasable syntax; do not create JavaScript files."
+              ;;
             *)
               echo "Unknown runner '$RUNNER'."; exit 1 ;;
           esac
@@ -332,7 +340,7 @@ jobs:
             --security-opt apparmor=artemis-ii-agent-bwrap --security-opt "seccomp=$RUNNER_TEMP/trusted/agent-seccomp.json" --pids-limit 4096 \
             -v "$RUNNER_TEMP/agent-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
-            -e GIT_OPTIONAL_LOCKS=0 -e CI=true -e STAGE -e RUNNER -e FIGMA -e FIGMA_FILE_URL -e AGENT_MODEL_KEY \
+            -e GIT_OPTIONAL_LOCKS=0 -e CI=true -e STAGE -e RUNNER -e FIGMA -e FIGMA_FILE_URL -e AGENT_MODEL_KEY -e OPENCODE_MODEL \
             "${HOSTS[@]}" "$IMAGE" bash -c "$IN_CONTAINER" < /dev/null
 
       # The gateway stops as soon as the agent is done, and its log (decisions only: method, tool, node id, never the

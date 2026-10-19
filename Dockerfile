@@ -26,7 +26,7 @@ FROM deps AS tools
 # ~/.cache/ms-playwright of this image would not be found there.
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 # Git is not in the slim Node image; the dev container needs it for source control.
-RUN apt-get update && apt-get install -y --no-install-recommends git \
+RUN apt-get update && apt-get install -y --no-install-recommends git jq \
  && rm -rf /var/lib/apt/lists/*
 RUN npx playwright install --with-deps chromium
 
@@ -41,13 +41,17 @@ CMD ["sh", "-c", "npm run check && npm run test"]
 FROM tools AS agent-runner
 ARG CODEX_VERSION=0.163.0
 ARG CLAUDE_CODE_VERSION=2.1.302
+ARG OPENCODE_VERSION=1.19.3
 # bubblewrap and socat: the sandbox that Claude Code uses for shell commands on Linux.
 # Codex uses the system CA store for its OpenAI HTTPS and WebSocket connections; the slim base
 # removes ca-certificates after building Node, so the agent image must install it explicitly.
 RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap socat ca-certificates \
  && test -s /etc/ssl/certs/ca-certificates.crt \
  && rm -rf /var/lib/apt/lists/*
-RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION} @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
+RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION} @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} opencode-ai@${OPENCODE_VERSION} \
+ && test "$(opencode --version)" = "${OPENCODE_VERSION}"
+# Root-owned launcher from the reviewed image; the agent cannot edit it or see runner folders.
+COPY scripts/opencode-runner.ts /opt/artemis/opencode-runner.ts
 
 # Static build. MEDIA_BASE_URL defaults to the preview layout (media served from /media).
 FROM deps AS build

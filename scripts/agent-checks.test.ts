@@ -75,6 +75,9 @@ test("the secret scan finds model keys, tokens, private keys and session links, 
   assert.deepEqual(findSecrets(`token ${key}`), ["OpenAI-style API key"]);
   assert.deepEqual(findSecrets("sk-ant-" + "b".repeat(30)), ["Anthropic API key"]);
   assert.deepEqual(findSecrets("ghp_" + "c".repeat(36)), ["GitHub token"]);
+  // Built at run time, so the source itself holds no token-shaped text.
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  assert.deepEqual(findSecrets(`${b64({ alg: "RS256" })}.${b64({ sub: "repo:x" })}.${"s".repeat(20)}`), ["JSON Web Token"]);
   assert.deepEqual(findSecrets("-----BEGIN " + "RSA PRIVATE KEY-----"), ["private key"]);
   assert.deepEqual(findSecrets("see https://claude.ai/code/" + "session_" + "A1b2C3d4E5f6G7h8"), ["session link"]);
   assert.deepEqual(findSecrets("plain text, a sk-ip, and AGENT_KEY_CODEX as a name"), []);

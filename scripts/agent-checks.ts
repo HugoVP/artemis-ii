@@ -107,6 +107,8 @@ const SECRET_PATTERNS: [name: string, pattern: RegExp][] = [
   ["Notion token", /(?:ntn_|secret_)[A-Za-z0-9]{40,}/],
   // Figma: personal access tokens (figd_) and OAuth tokens (figu_, figur_), including the MCP access token of a run.
   ["Figma token", /(?:figd|figu|figur)_[A-Za-z0-9_-]{20,}/],
+  // OIDC tokens of a federation run (docs/specs/claude-wif.md): short-lived, but never published.
+  ["JSON Web Token", /eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/],
   ["private key", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
   ["session link", /claude\.ai\/code\/session_[A-Za-z0-9]{8,}|chatgpt\.com\/codex\/tasks\/[A-Za-z0-9_-]{8,}/],
 ];

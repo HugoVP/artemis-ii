@@ -3,7 +3,9 @@
 // container: only the file reaches the container, mounted read-only. No dependencies (Node 22).
 //   node scripts/anthropic-oidc.ts validate        checks the four federation ids in the environment
 //   node scripts/anthropic-oidc.ts start <dir>     writes <dir>/token now and every 120 seconds, until killed
+//   ... | node scripts/anthropic-oidc.ts redact    copies stdin to stdout with every JWT replaced, line by line
 import { mkdir, rename, writeFile, rm } from "node:fs/promises";
+import { createInterface } from "node:readline";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -56,6 +58,14 @@ export function jwtExpiry(token: string): number | null {
   }
 }
 
+// The agent can read the token file, so it could print a token. GitHub's masker only knows values registered before
+// they appear, and the refresher runs in another step, so the agent's output is filtered instead: anything shaped like
+// a JWT (base64url header and payload of a JSON object, then a signature) is replaced before it reaches the log.
+export const JWT_PATTERN = /eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*/g;
+export function redactJwts(text: string): string {
+  return text.replace(JWT_PATTERN, "[redacted token]");
+}
+
 export interface RefreshOptions {
   dir: string;
   requestUrl: string;
@@ -105,7 +115,11 @@ async function main(argv: string[]): Promise<number> {
     process.on("SIGINT", end);
     return new Promise<number>(() => {});
   }
-  console.error("Usage: anthropic-oidc.ts validate | start <dir>");
+  if (cmd === "redact") {
+    for await (const line of createInterface({ input: process.stdin, crlfDelay: Infinity })) process.stdout.write(`${redactJwts(line)}\n`);
+    return 0;
+  }
+  console.error("Usage: anthropic-oidc.ts validate | start <dir> | redact");
   return 2;
 }
 

@@ -106,7 +106,7 @@ jobs:
             -v "$RUNNER_TEMP/wif-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
             -v "$RUNNER_TEMP/anthropic-oidc:/run/anthropic-oidc:ro" -e ANTHROPIC_IDENTITY_TOKEN_FILE=/run/anthropic-oidc/token \
             -e ANTHROPIC_FEDERATION_RULE_ID -e ANTHROPIC_ORGANIZATION_ID -e ANTHROPIC_SERVICE_ACCOUNT_ID -e ANTHROPIC_WORKSPACE_ID -e LONG \
-            "$IMAGE" bash -c "$IN_CONTAINER" < /dev/null
+            "$IMAGE" bash -c "$IN_CONTAINER" < /dev/null 2>&1 | node scripts/anthropic-oidc.ts redact
 
       - name: Stop the Anthropic OIDC token refresher
         if: always()

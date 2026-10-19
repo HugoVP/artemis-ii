@@ -402,6 +402,8 @@ test("WIF-04: the agent's container gets the token folder read-only and the ids 
   assert.match(agent, /A federation agent must not have a model key/);
   assert.match(agent, /unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN/);
   assert.doesNotMatch(agent, /--bare/);
+  // The agent can read the token file, so its output passes through the trusted JWT filter before the log.
+  assert.match(agent, /< \/dev\/null 2>&1 \\\n\s+\| node "\$RUNNER_TEMP\/trusted\/scripts\/anthropic-oidc\.ts" redact/);
   // The install container never gets any of it.
   assert.doesNotMatch(step(work, "Install the project dependencies"), /ANTHROPIC|anthropic-oidc/);
 });
@@ -444,5 +446,6 @@ test("WIF-05: the Claude WIF smoke runs only for the trusted login on main, with
   assert.match(wif, /node scripts\/anthropic-oidc\.ts start "\$OIDC_DIR"/);
   assert.match(wif, /- name: Stop the Anthropic OIDC token refresher\n        if: always\(\)/);
   assert.match(wif, /ref: main/);
+  assert.match(wif, /< \/dev\/null 2>&1 \| node scripts\/anthropic-oidc\.ts redact/);
   for (const m of wif.matchAll(/^\s*- uses: (\S+)/gm)) assert.match(m[1]!, /^actions\/[a-z-]+@[0-9a-f]{40}$/, m[1]);
 });

@@ -5,7 +5,9 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { AUDIENCE, badFederationVariables, fetchOidcToken, isFederationId, jwtExpiry, startRefresher } from "./anthropic-oidc.ts";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { AUDIENCE, badFederationVariables, fetchOidcToken, isFederationId, jwtExpiry, redactJwts, startRefresher } from "./anthropic-oidc.ts";
 
 const jwt = (exp: number) => `${Buffer.from("{}").toString("base64url")}.${Buffer.from(JSON.stringify({ exp })).toString("base64url")}.sig`;
 const fake = (fn: (url: URL, init: RequestInit) => Promise<Response>) => fn as unknown as typeof fetch;
@@ -42,8 +44,10 @@ test("WIF-03: the refresher writes the token atomically, refreshes, survives a f
     if (t === "FAIL") throw new Error("network down");
     return new Response(JSON.stringify({ value: t ?? jwt(200) }), { status: 200 });
   });
+  // Stopped in finally too, so a failed assertion cannot leave the interval writing into a removed folder.
+  let stop = () => {};
   try {
-    const stop = await startRefresher({ dir, requestUrl: "https://example.invalid/t", requestToken: "req-secret", intervalMs: 20, doFetch, log: (l) => logs.push(l) });
+    stop = await startRefresher({ dir, requestUrl: "https://example.invalid/t", requestToken: "req-secret", intervalMs: 20, doFetch, log: (l) => logs.push(l) });
     assert.equal(await readFile(join(dir, "token"), "utf8"), jwt(100));
     if (process.platform !== "win32") assert.equal((await stat(join(dir, "token"))).mode & 0o777, 0o600);
     for (let i = 0; i < 100 && (await readFile(join(dir, "token"), "utf8")) !== jwt(200); i++) await new Promise((r) => setTimeout(r, 20));
@@ -53,6 +57,7 @@ test("WIF-03: the refresher writes the token atomically, refreshes, survives a f
     for (const l of logs) assert.ok(!l.includes("sig") && !l.includes("req-secret"), l);
     assert.deepEqual(await readdir(dir), ["token"], "no temporary file is left behind");
   } finally {
+    stop();
     await rm(dir, { recursive: true, force: true });
   }
 });
@@ -64,6 +69,16 @@ test("the first token must be written, or the refresher fails", async () => {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("WIF-04: a token printed by the agent is redacted before it reaches the log, by the function and by the redact command", () => {
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const token = `${b64({ alg: "RS256", kid: "k" })}.${b64({ sub: "repo:x", aud: "y", exp: 1 })}.${"s".repeat(40)}`;
+  assert.equal(redactJwts(`here: ${token} done`), "here: [redacted token] done");
+  assert.equal(redactJwts("plain text with eyJ but no token"), "plain text with eyJ but no token");
+  const script = fileURLToPath(new URL("./anthropic-oidc.ts", import.meta.url));
+  const out = execFileSync(process.execPath, [script, "redact"], { input: `a ${token}\nno token here\nlast ${token}`, encoding: "utf8" });
+  assert.equal(out, "a [redacted token]\nno token here\nlast [redacted token]\n");
 });
 
 test("jwtExpiry reads exp and tolerates junk", () => {

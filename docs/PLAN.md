@@ -134,4 +134,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-18 — Stage 03 — PR #14 — Hugo replaced R2 with static Pages media, approved external NASA downloads for originals above 25 MiB, and required complete-artifact limits and rollback of HTML/media together. Evaluation is illustrative, not final curation or visual approval.
 
 - 2026-10-19 — Stage 04 — PR #31 — Added accessible theme, language, density and gallery-view preferences, storage-safe persistence and pre-paint restoration; wrote the Stage 05 curation spec. <!-- notion -->
-- 2026-10-19 — Stage 04 approved (PR #31 merged); Stage 05 — PR #34 — Curation document with 28 mission and 7 launch candidates (verified NASA IDs, original URLs, sizes and rights notes) and a validation test; Stage 06 spec written.
+- 2026-10-19 — Stage 04 approved (PR #31 merged); Stage 05 — PR #34 — Curation document with 26 mission and 7 launch candidates (verified NASA IDs, original URLs, sizes and rights notes) and a validation test; Stage 06 spec written.

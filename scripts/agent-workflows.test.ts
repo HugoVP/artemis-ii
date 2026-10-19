@@ -426,20 +426,15 @@ test("WIF-02: prepare validates the federation ids of a federation agent and pas
 
 test("WIF-05: the Claude WIF smoke runs only for the trusted login on main, with no model key, no repository write and a read-only token folder", async () => {
   const wif = await read("claude-wif-smoke.yml");
-  assert.match(wif, /if: github.ref == 'refs/heads/main' && github.actor == vars.AGENT_TRUSTED_LOGIN && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN/);
-  assert.match(wif, /^permissions: {}/m);
-  assert.match(wif, /permissions:
-      contents: read
-      packages: read
-      id-token: write
-/);
-  assert.doesNotMatch(wif.replace(/^s*#.*$/gm, ""), /secrets.|ACTIONS_ID_TOKEN|ANTHROPIC_API_KEY=|pull-requests|contents: write/);
-  assert.match(wif, /-v "$RUNNER_TEMP/anthropic-oidc:/run/anthropic-oidc:ro"/);
+  const code = wif.replace(/^\s*#.*$/gm, "");
+  assert.match(wif, /if: github\.ref == 'refs\/heads\/main' && github\.actor == vars\.AGENT_TRUSTED_LOGIN && github\.triggering_actor == vars\.AGENT_TRUSTED_LOGIN/);
+  assert.match(wif, /^permissions: \{\}/m);
+  assert.match(wif, /permissions:\n      contents: read\n      packages: read\n      id-token: write\n/);
+  assert.doesNotMatch(code, /secrets\.|ACTIONS_ID_TOKEN|ANTHROPIC_API_KEY=|pull-requests|contents: write/);
+  assert.match(wif, /-v "\$RUNNER_TEMP\/anthropic-oidc:\/run\/anthropic-oidc:ro"/);
   assert.match(wif, /unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN/);
-  assert.match(wif, /node scripts/anthropic-oidc.ts start "$OIDC_DIR"/);
-  assert.match(wif, /if: always()
-        run: |
-          if [ -n "${OIDC_REFRESHER_PID:-}" ]/);
+  assert.match(wif, /node scripts\/anthropic-oidc\.ts start "\$OIDC_DIR"/);
+  assert.match(wif, /- name: Stop the Anthropic OIDC token refresher\n        if: always\(\)/);
   assert.match(wif, /ref: main/);
-  for (const m of wif.matchAll(/^s*- uses: (S+)/gm)) assert.match(m[1], /^actions/[a-z-]+@[0-9a-f]{40}$/, m[1]);
+  for (const m of wif.matchAll(/^\s*- uses: (\S+)/gm)) assert.match(m[1]!, /^actions\/[a-z-]+@[0-9a-f]{40}$/, m[1]);
 });

@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { parseStages, type Stage } from "./next-stage-issue.ts";
 import { validateOpenCodeModel } from "./opencode-runner.ts";
+import { validateCopilotModel } from "./copilot-runner.ts";
 
 // Who may start a run. The trusted login is a repository variable, never derived from the repository owner.
 export function isTrusted(actor: unknown, trustedLogin: unknown): boolean {
@@ -117,7 +118,7 @@ export function findSecrets(text: string | null | undefined): string[] {
 }
 
 // How agent-run.yml can start an agent; each value has a branch in its "Run the agent" step.
-export const RUNNERS = ["codex-exec", "claude-print", "opencode-run"];
+export const RUNNERS = ["codex-exec", "claude-print", "opencode-run", "copilot-cli"];
 
 // One entry of agents/registry.yaml, after the checks of parseRegistry.
 export interface Agent {
@@ -151,6 +152,9 @@ export function parseRegistry(yaml: string): Agent[] {
     if (!RUNNERS.includes(String(a.runner))) throw new Error(`Agent ${a.id} has the unknown runner "${a.runner}" (known: ${RUNNERS.join(", ")}).`);
     if (!/^AGENT_KEY_[A-Z0-9_]{1,40}$/.test(String(a.key_secret))) throw new Error(`key_secret "${a.key_secret}" of agent ${a.id} must look like AGENT_KEY_<ID>.`);
     if (a.runner === "opencode-run") validateOpenCodeModel(a.model);
+    // Copilot's model is chosen by Hugo from his own `/model` list; until then the entry has none, and a run of that
+    // agent stops in prepare (copilot-runner.ts validate) before any key is read.
+    if (a.runner === "copilot-cli" && a.model !== undefined) validateCopilotModel(a.model);
   }
   return agents as Agent[];
 }

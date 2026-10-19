@@ -8,6 +8,7 @@ on:
       - scripts/opencode-runner.ts
       - scripts/verify-opencode-cli.ts
       - scripts/opencode-smoke-fixture.ts
+      - scripts/copilot-runner.ts
       - agents/agent-seccomp.json
       - agents/agent-apparmor.profile
       - .github/workflows/agent-run.yml
@@ -68,3 +69,12 @@ jobs:
             --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
             -v "$GITHUB_WORKSPACE:/repo:ro" -w /repo \
             artemis-ii-sandbox-smoke bash -c 'test -r /opt/artemis/opencode-runner.ts && test ! -w /opt/artemis/opencode-runner.ts && node scripts/verify-opencode-cli.ts'
+
+      # No credential: only that the image holds the pinned CLI and a launcher the agent's user cannot change.
+      - name: Check the pinned Copilot CLI and its root-owned launcher
+        run: |
+          set -euo pipefail
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent -e CI=true \
+            artemis-ii-sandbox-smoke bash -c 'test -r /opt/artemis/copilot-runner.ts && test ! -w /opt/artemis/copilot-runner.ts \
+              && copilot --version | grep -q "^GitHub Copilot CLI " && ! node /opt/artemis/copilot-runner.ts validate auto'

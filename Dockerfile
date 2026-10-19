@@ -42,6 +42,8 @@ FROM tools AS agent-runner
 ARG CODEX_VERSION=0.163.0
 ARG CLAUDE_CODE_VERSION=2.1.302
 ARG OPENCODE_VERSION=1.19.3
+# The npm package is a loader; it pins the native binary as @github/copilot-linux-x64 at the same version.
+ARG COPILOT_VERSION=1.0.92
 # bubblewrap and socat: the sandbox that Claude Code uses for shell commands on Linux.
 # Codex uses the system CA store for its OpenAI HTTPS and WebSocket connections; the slim base
 # removes ca-certificates after building Node, so the agent image must install it explicitly.
@@ -49,9 +51,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap soca
  && test -s /etc/ssl/certs/ca-certificates.crt \
  && rm -rf /var/lib/apt/lists/*
 RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION} @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} opencode-ai@${OPENCODE_VERSION} \
- && test "$(opencode --version)" = "${OPENCODE_VERSION}"
-# Root-owned launcher from the reviewed image; the agent cannot edit it or see runner folders.
+    @github/copilot@${COPILOT_VERSION} \
+ && test "$(opencode --version)" = "${OPENCODE_VERSION}" \
+ && CI=true copilot --version | grep -qx "GitHub Copilot CLI ${COPILOT_VERSION}\."
+# Root-owned launchers from the reviewed image; the agent cannot edit them or see runner folders.
 COPY scripts/opencode-runner.ts /opt/artemis/opencode-runner.ts
+COPY scripts/copilot-runner.ts /opt/artemis/copilot-runner.ts
 
 # Static build. MEDIA_BASE_URL defaults to the preview layout (media served from /media).
 FROM deps AS build

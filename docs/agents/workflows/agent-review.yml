@@ -29,10 +29,12 @@ permissions: {}
 
 # One run per PR and reviewer, never cancelling a run in progress. Both start paths build the reviewer part the same way
 # (the label name `review:<id>`; the manual path formats it from its input), so a manual request and a label cannot run
-# together for the same PR and reviewer. Events that prepare would ignore or refuse get a group
+# together for the same PR and reviewer. The condition repeats every guard of `prepare` (default branch, trusted actor,
+# and for labels a stage PR of this repository), so an event that prepare would refuse, such as a manual run from another
+# branch, gets a group of its own and cannot replace a pending review. Events that prepare would ignore or refuse get a group
 # of their own, so they cannot displace a waiting run.
 concurrency:
-  group: ${{ (github.actor == vars.AGENT_TRUSTED_LOGIN && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && (github.event_name == 'workflow_dispatch' || startsWith(github.event.label.name, 'review:'))) && format('agent-review-{0}-{1}', github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number, github.event_name == 'workflow_dispatch' && format('review:{0}', inputs.reviewer) || github.event.label.name) || format('agent-review-ignored-{0}', github.run_id) }}
+  group: ${{ (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.actor == vars.AGENT_TRUSTED_LOGIN && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && (github.event_name == 'workflow_dispatch' || (startsWith(github.event.label.name, 'review:') && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'agent/stage-')))) && format('agent-review-{0}-{1}', github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number, github.event_name == 'workflow_dispatch' && format('review:{0}', inputs.reviewer) || github.event.label.name) || format('agent-review-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -284,6 +286,9 @@ jobs:
                 require("fs").writeFileSync(process.argv[1], JSON.stringify({
                   sandbox: {
                     enabled: true, failIfUnavailable: true, enableWeakerNestedSandbox: true, allowUnsandboxedCommands: false,
+                    // The default (true) approves any sandboxed Bash command without asking, which would let project
+                    // scripts run beside the reviewer's credential. dontAsk then leaves only the read-only git commands below.
+                    autoAllowBashIfSandboxed: false,
                     network: { allowedDomains: [] },
                   },
                   permissions: { deny: ["Edit(//work/.git/**)", "Write(//work/.git/**)"] },

@@ -57,6 +57,8 @@ References: [GitHub App installation permissions](https://docs.github.com/en/app
 
 The secret scan keeps the complete Git history and all default gitleaks rules. `.gitleaks.toml` adds one narrowly scoped false-positive exception: the public design file ID already linked in `docs/specs/design.md`, used as `fileKey` in historical and current Figma mock-server tests. The exception applies only to `generic-api-key`, the two exact test-file paths and that exact identifier together. It never exempts OAuth tokens, other values, other files or whole commits. Its scope is covered by `scripts/pipeline-review.test.ts` and was verified with synthetic credentials through gitleaks itself.
 
+A second exception covers photos' public NASA image IDs, stored as `pathKey` in `media-lock.json`, `src/content/photos/*.json` and `scripts/ingest.test.ts`. It applies only to `generic-api-key`, only to a `pathKey` assignment and only to the verified NASA ID forms, so a credential-shaped value in the same file and field is still reported. `npm run test:gitleaks` proves both cases with the real binary; it needs gitleaks 8.28.0 on `PATH` or in `GITLEAKS_BIN`, fails without it, and runs in the `secrets` job right after the checksum-verified download. The scanner-free part of that scope is covered by `scripts/pipeline-review.test.ts`.
+
 ## 2. Cloudflare
 
 1. **Pages:** the project connected to the repo (already done). Until Stage 03 it deploys previews and `main` on its own; the production URL is not shared with anyone yet. **(Stage 03)** Two projects in the same Cloudflare account: `artemis-ii` for production and `artemis-ii-staging` for staging and previews (see "Cloudflare Pages setup" in `docs/DELIVERY.md`).

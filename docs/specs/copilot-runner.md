@@ -19,7 +19,7 @@ Copilot's cloud coding agent pushes its own `copilot/…` branches and opens PRs
 
 ## Allowed protected changes
 
-The integration changes only the proposed `agent-run.yml`, `agent-runner-image.yml` and `agent-sandbox-smoke.yml` under `docs/agents/workflows/`, adds the proposed `copilot-smoke.yml` there, and updates `docs/agents/README.md`, `other-agents.md` and `adding-an-agent.md`, with setup in a new `docs/agents/copilot.md`. Hugo copies the four proposals to `.github/workflows/` on the same PR branch before merging. Every protected path and the new CLI dependency must be listed in the PR. No repository setting, environment, secret or variable is changed by an agent.
+The integration changes only the proposed `agent-run.yml`, `agent-runner-image.yml` and `agent-sandbox-smoke.yml` under `docs/agents/workflows/`, adds the proposed `copilot-smoke.yml` there, and updates `docs/agents/README.md`, `other-agents.md` and `adding-an-agent.md`, with setup in a new `docs/agents/copilot.md`. It also records the credential-policy exception Hugo approved on 2026-10-19 for the Copilot CLI token, a GitHub fine-grained token that is not a capped model API key: the exception and its controls in `docs/DELIVERY.md`, and one sentence in the Credentials rule and the environment-variables paragraph of `AGENTS.md` (committed by Hugo, `d5e4b96`). Hugo copies the four proposals to `.github/workflows/` on the same PR branch before merging. Every protected path and the new CLI dependency must be listed in the PR. No repository setting, environment, secret or variable is changed by an agent.
 
 ## Verification
 

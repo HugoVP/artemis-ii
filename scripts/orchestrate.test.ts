@@ -111,3 +111,35 @@ test("the real registry and plan give a recommendation for every pending stage",
     if (r.leader) assert.ok(agents.find(a => a.id === r.leader!.id)!.status === "active");
   }
 });
+
+test("ORC-01: a present registry value that is a list or empty is rejected, and only an absent status defaults", () => {
+  const entry = (extra: string) => parseRegistry(agent("x", `  capabilities: [git]\n${extra}`));
+  for (const bad of ["  status: [activ]\n", "  status:\n", "  cost: [free]\n", "  cost:\n", "  family: [x]\n", "  family:\n", "  family: Bad Family\n"]) {
+    assert.throws(() => validateOrchestration(entry(bad)), /invalid|unknown/, bad);
+  }
+  validateOrchestration(entry("")); // absent status is pending, absent cost and family are allowed
+  validateOrchestration(entry("  status: active\n  cost: api\n  family: acme\n"));
+});
+
+test("ORC-04: the local history comes from this repository's main, not from the checked-out branch", async () => {
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { execFileSync } = await import("node:child_process");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { readLocalHistory } = await import("./orchestrate.ts");
+  const dir = mkdtempSync(join(tmpdir(), "orc-history-"));
+  const git = (...args: string[]) => execFileSync("git", ["-C", dir, "-c", "user.name=t", "-c", "user.email=t@example.com", ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  try {
+    git("init", "-q", "-b", "main");
+    git("commit", "-q", "--allow-empty", "-m", "Merge pull request #1 from o/agent/stage-01-alpha");
+    git("switch", "-q", "-c", "feature");
+    git("commit", "-q", "--allow-empty", "-m", "Merge pull request #2 from o/agent/stage-02-beta");
+    git("switch", "-q", "-c", "stale", "HEAD~1");
+    const subjects = readLocalHistory(dir)!;
+    assert.ok(subjects.includes("Merge pull request #1 from o/agent/stage-01-alpha"));
+    assert.ok(!subjects.includes("Merge pull request #2 from o/agent/stage-02-beta"));
+    assert.equal(readLocalHistory(join(dir, "missing")), null);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+  const empty = mkdtempSync(join(tmpdir(), "orc-nogit-"));
+  try { assert.equal(readLocalHistory(empty), null); } finally { rmSync(empty, { recursive: true, force: true }); }
+});

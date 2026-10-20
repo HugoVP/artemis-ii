@@ -6,8 +6,7 @@
 // No dependencies (Node 22). `DRY_RUN=1` reads Linear and prints what it would change.
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { parseStages } from "./next-stage-issue.ts";
-import type { Stage } from "./next-stage-issue.ts";
+import { parseStages, type Stage } from "./plan.ts";
 
 const API_URL = "https://api.linear.app/graphql";
 // Plan status -> the Linear status name to reach. `pending` never needs a move (Todo or Backlog both count).

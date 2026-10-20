@@ -14,6 +14,7 @@ on:
       - package-lock.json
       - scripts/opencode-runner.ts
       - scripts/copilot-runner.ts
+      - scripts/antigravity-runner.ts
       - .github/workflows/agent-runner-image.yml
   workflow_dispatch:
 

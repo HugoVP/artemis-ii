@@ -52,3 +52,15 @@
   status: pending                  # becomes active after the model is set and the Copilot smoke passes
   roles: [lead, review]
   cost: subscription
+
+- id: antigravity
+  name: Google Antigravity CLI
+  provider: google
+  key_secret: AGENT_KEY_ANTIGRAVITY  # Gemini API key from Google AI Studio, in a project with a spend cap; see docs/agents/antigravity.md
+  runner: antigravity-cli
+  # model: <slug from `agy models`> # Hugo picks it with the key; runs stop until it is set
+  capabilities: [git, node, browser, web]
+  status: pending                  # becomes active after the model is set and the Antigravity smoke passes
+  roles: [lead, review]
+  family: google                   # every model reachable with a Gemini API key is a Gemini model
+  cost: api

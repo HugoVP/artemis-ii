@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { parseStages, type Stage } from "./next-stage-issue.ts";
 import { validateOpenCodeModel } from "./opencode-runner.ts";
 import { validateCopilotModel } from "./copilot-runner.ts";
+import { validateAntigravityModel } from "./antigravity-runner.ts";
 
 // Who may start a run. The trusted login is a repository variable, never derived from the repository owner.
 export function isTrusted(actor: unknown, trustedLogin: unknown): boolean {
@@ -120,7 +121,7 @@ export function findSecrets(text: string | null | undefined): string[] {
 }
 
 // How agent-run.yml can start an agent; each value has a branch in its "Run the agent" step.
-export const RUNNERS = ["codex-exec", "claude-print", "opencode-run", "copilot-cli"];
+export const RUNNERS = ["codex-exec", "claude-print", "opencode-run", "copilot-cli", "antigravity-cli"];
 
 // One entry of agents/registry.yaml, after the checks of parseRegistry.
 export interface Agent {
@@ -168,6 +169,8 @@ export function parseRegistry(yaml: string): Agent[] {
     // Copilot's model is chosen by Hugo from his own `/model` list; until then the entry has none, and a run of that
     // agent stops in prepare (copilot-runner.ts validate) before any key is read.
     if (a.runner === "copilot-cli" && a.model !== undefined) validateCopilotModel(a.model);
+    // Antigravity's model slug comes from `agy models` with the Gemini API key; same rule as Copilot until it is set.
+    if (a.runner === "antigravity-cli" && a.model !== undefined) validateAntigravityModel(a.model);
   }
   return agents as Agent[];
 }

@@ -9,6 +9,7 @@ on:
       - scripts/verify-opencode-cli.ts
       - scripts/opencode-smoke-fixture.ts
       - scripts/copilot-runner.ts
+      - scripts/antigravity-runner.ts
       - agents/agent-seccomp.json
       - agents/agent-apparmor.profile
       - .github/workflows/agent-run.yml
@@ -78,3 +79,13 @@ jobs:
             --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent -e CI=true \
             artemis-ii-sandbox-smoke bash -c 'test -r /opt/artemis/copilot-runner.ts && test ! -w /opt/artemis/copilot-runner.ts \
               && copilot --version | grep -q "^GitHub Copilot CLI " && ! node /opt/artemis/copilot-runner.ts validate auto'
+
+      # No credential: the pinned Antigravity binary is root-owned and read-only to the agent, and so is its launcher.
+      - name: Check the pinned Antigravity CLI and its root-owned launcher
+        run: |
+          set -euo pipefail
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent -e CI=true \
+            artemis-ii-sandbox-smoke bash -c 'test -r /opt/artemis/antigravity-runner.ts && test ! -w /opt/artemis/antigravity-runner.ts \
+              && test ! -w /opt/agy/antigravity && agy --version | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+$" \
+              && ! node /opt/artemis/antigravity-runner.ts validate auto'

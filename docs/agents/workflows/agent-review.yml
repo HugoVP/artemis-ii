@@ -302,6 +302,10 @@ jobs:
             copilot-cli)
               COPILOT_GITHUB_TOKEN="$KEY" COPILOT_MODEL="$OPENCODE_MODEL" node /opt/artemis/copilot-runner.ts review "$PROMPT $OUT"
               ;;
+            antigravity-cli)
+              # Plan mode cannot write files: the launcher saves the printed answer as .agent/review.md.
+              GEMINI_API_KEY="$KEY" ANTIGRAVITY_MODEL="$OPENCODE_MODEL" node /opt/artemis/antigravity-runner.ts review "$PROMPT Do not write any file: print the whole review as your answer, which is saved as .agent/review.md."
+              ;;
             *)
               echo "Unknown runner '$RUNNER'."; exit 1 ;;
           esac

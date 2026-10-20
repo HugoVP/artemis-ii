@@ -8,6 +8,7 @@ import { validateOrchestration } from "./orchestrate.ts";
 import { parseStages, type Stage } from "./next-stage-issue.ts";
 import { validateOpenCodeModel } from "./opencode-runner.ts";
 import { validateCopilotModel } from "./copilot-runner.ts";
+import { validateAntigravityModel } from "./antigravity-runner.ts";
 
 export type VerdictKind = "pass" | "blocking";
 export interface Verdict { verdict: VerdictKind; findings: number }
@@ -91,6 +92,7 @@ export function checkReviewer(agents: Agent[], reviewerId: string, leaderId: str
   try {
     if (reviewer.runner === "opencode-run") validateOpenCodeModel(reviewer.model);
     if (reviewer.runner === "copilot-cli") validateCopilotModel(reviewer.model);
+    if (reviewer.runner === "antigravity-cli") validateAntigravityModel(reviewer.model);
   } catch { return { ok: false, reason: `Reviewer ${reviewer.id} has no valid explicit model.` }; }
   const leader = agents.find((a) => a.id === leaderId);
   if (!leader) return { ok: false, reason: `The head branch names "${leaderId}", which is not a registry agent, so its model family is unknown. Hugo reviews this PR.` };
@@ -150,6 +152,8 @@ export function reviewFacts({ agents, stages, pr, reviewerId, defaultBranch }: {
 export const AGENT_CONFIG_PATHS = [
   ".agent", ".agent/**",
   ".claude", ".claude/**", ".codex", ".codex/**", ".opencode", ".opencode/**", ".copilot", ".copilot/**",
+  // Antigravity loads rules from GEMINI.md and .agents/, and settings from .gemini/.
+  ".gemini", ".gemini/**", ".agents", ".agents/**", "GEMINI.md",
   "opencode.json", "opencode.jsonc", ".mcp.json", ".github/hooks/**",
 ];
 

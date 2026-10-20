@@ -261,3 +261,27 @@ test("REV-10: the failure notice carries only the publisher's reason, never the 
 test("REV-09: output values with unsafe characters are refused", () => {
   assert.throws(() => outputLines({ ...facts(), model: "a\nb=c" }), /Unsafe/);
 });
+
+test("REV-03: the stage spec path comes out of a real PLAN.md link, which is relative to docs/", async () => {
+  const { stageSpecPath } = await import("./agent-review.ts");
+  const { parseStages } = await import("./plan.ts");
+  const { readFile } = await import("node:fs/promises");
+  const plan = parseStages(await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8"));
+  const link = plan.find(s => s.number === "05")!.specPath;
+  assert.equal(link, "specs/stage-05-curation.md");
+  assert.equal(stageSpecPath(link), "docs/specs/stage-05-curation.md");
+  assert.equal(stageSpecPath("docs/specs/stage-05-curation.md"), "docs/specs/stage-05-curation.md");
+  for (const bad of [null, undefined, "", "specs/README.md", "../secrets.md", "docs/specs/../x.md", "specs/stage-5-x.md", "https://example.com/stage-05-x.md"]) assert.equal(stageSpecPath(bad), "", String(bad));
+  const stages = [{ number: "05", name: "Curation", needs: [], specPath: link, status: "pending", pr: "", linear: null }];
+  const r = reviewFacts({ agents: parseRegistry(REGISTRY), stages, pr: { number: 7, state: "OPEN", isCrossRepository: false, headRefName: "agent/stage-05-codex", headRefOid: "a".repeat(40), baseRefName: "main", title: "Stage 05: x" }, reviewerId: "claude", defaultBranch: "main" });
+  assert.ok(r.ok && r.facts.spec === "docs/specs/stage-05-curation.md");
+});
+
+test("REV-04: a symlinked .github/hooks or .github is refused as the exact path, not only its descendants", () => {
+  for (const layout of [[".github/hooks"], [".github"], [".github", ".github/workflows/x.yml"], [".github/hooks", "src/a.ts"]]) {
+    assert.ok(agentConfigTouched(layout).length >= 1, layout.join(","));
+  }
+  // A file inside .github that is not agent configuration is still a protected path for Hugo, but not one more reason to
+  // keep an agent away; only the directory entries above are.
+  assert.deepEqual(agentConfigTouched([".github/workflows/ci.yml", ".githubx", "x/.github"]), []);
+});

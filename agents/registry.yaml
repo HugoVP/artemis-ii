@@ -23,7 +23,7 @@
   auth: federation                 # Anthropic workload identity federation with the job's GitHub OIDC token; no static key, see docs/specs/claude-wif.md
   runner: claude-print             # claude -p, see agent-run.yml
   capabilities: [git, node, browser, web, figma-read, figma-write]
-  status: pending                  # becomes active after Hugo sets AGENT_KEY_CLAUDE and a first run passes
+  status: pending                  # becomes active after Hugo sets up federation (docs/agents/claude-code-wif.md) and a first run passes
   roles: [lead, review]
   family: anthropic
   cost: api

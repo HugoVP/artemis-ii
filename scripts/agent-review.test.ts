@@ -285,7 +285,8 @@ test("REV-03: the stage spec path comes out of a real PLAN.md link, which is rel
 });
 
 test("REV-04: a symlinked .github/hooks or .github is refused as the exact path, not only its descendants", () => {
-  for (const layout of [[".github/hooks"], [".github"], [".github", ".github/workflows/x.yml"], [".github/hooks", "src/a.ts"]]) {
+  for (const layout of [[".github/hooks"], [".github"], [".github", ".github/workflows/x.yml"], [".github/hooks", "src/a.ts"],
+    [".github/instructions", "rules/ts.instructions.md"], [".github/agents", "rules/a.md"], [".github/prompts"], [".github/skills", "rules/s.md"]]) {
     assert.ok(agentConfigTouched(layout).length >= 1, layout.join(","));
   }
   // A file inside .github that is not agent configuration is still a protected path for Hugo, but not one more reason to

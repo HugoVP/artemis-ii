@@ -170,6 +170,8 @@ export const AGENT_CONFIG_PATHS = [
   // Instruction files that Copilot, Codex, Claude Code and Antigravity load from the checkout on their own.
   "AGENTS.override.md", "CLAUDE.local.md", ".github/copilot-instructions.md", ".github/instructions/**", ".github/agents/**",
   ".github/prompts/**", ".github/skills/**",
+  // Their directories as exact paths too, for the same symlink reason as `.github/hooks` above.
+  ".github/instructions", ".github/agents", ".github/prompts", ".github/skills",
   // The instructions the reviewer follows. They sit in the PR's own checkout, and the CLIs load AGENTS.md, CLAUDE.md and
   // GEMINI.md from the working directory by themselves, so a PR that edits them would rewrite the review rules before
   // anyone approved the change. Such a PR is reviewed by Hugo, not by an agent.

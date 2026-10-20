@@ -6,6 +6,7 @@
 //   ... | node scripts/anthropic-oidc.ts redact    copies stdin to stdout with every JWT replaced, line by line
 import { mkdir, rename, writeFile, rm } from "node:fs/promises";
 import { createInterface } from "node:readline";
+import { once } from "node:events";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -116,11 +117,15 @@ async function main(argv: string[]): Promise<number> {
     return new Promise<number>(() => {});
   }
   if (cmd === "redact") {
-    for await (const line of createInterface({ input: process.stdin, crlfDelay: Infinity })) process.stdout.write(`${redactJwts(line)}\n`);
+    // Waits for the log to drain when it falls behind, so a slow reader loses nothing.
+    for await (const line of createInterface({ input: process.stdin, crlfDelay: Infinity })) {
+      if (!process.stdout.write(`${redactJwts(line)}\n`)) await once(process.stdout, "drain");
+    }
     return 0;
   }
   console.error("Usage: anthropic-oidc.ts validate | start <dir> | redact");
   return 2;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) process.exit(await main(process.argv.slice(2)));
+// exitCode, not process.exit(): Node then exits only after stdout has been written out (the redact output included).
+if (process.argv[1] === fileURLToPath(import.meta.url)) process.exitCode = await main(process.argv.slice(2));

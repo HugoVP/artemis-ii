@@ -79,6 +79,10 @@ test("WIF-04: a token printed by the agent is redacted before it reaches the log
   const script = fileURLToPath(new URL("./anthropic-oidc.ts", import.meta.url));
   const out = execFileSync(process.execPath, [script, "redact"], { input: `a ${token}\nno token here\nlast ${token}`, encoding: "utf8" });
   assert.equal(out, "a [redacted token]\nno token here\nlast [redacted token]\n");
+  // A large output is copied in full: the command exits only after stdout drains.
+  const lines = Array.from({ length: 50_000 }, (_, i) => `line ${i} ${"x".repeat(60)}`);
+  const big = execFileSync(process.execPath, [script, "redact"], { input: lines.join("\n"), encoding: "utf8", maxBuffer: 1 << 28 });
+  assert.equal(big, `${lines.join("\n")}\n`);
 });
 
 test("jwtExpiry reads exp and tolerates junk", () => {

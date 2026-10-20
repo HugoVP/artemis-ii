@@ -221,3 +221,27 @@ test('REV-03: every job after prepare reads main at the revision prepare recorde
     assert.ok(!refs(job).some(w => w.includes('default_branch')));
   }
 });
+
+test('REV-01: an event that prepare would refuse gets a group of its own, so it cannot replace a pending review', () => {
+  const group = workflow.concurrency.group;
+  // The condition mirrors prepare's `if`: default branch, trusted actor and triggering actor, and for a label a stage PR of
+  // this repository.
+  for (const guard of [
+    "github.ref == format('refs/heads/{0}', github.event.repository.default_branch)",
+    'github.actor == vars.AGENT_TRUSTED_LOGIN',
+    'github.triggering_actor == vars.AGENT_TRUSTED_LOGIN',
+    'github.event.pull_request.head.repo.full_name == github.repository',
+    "startsWith(github.event.pull_request.head.ref, 'agent/stage-')",
+  ]) {
+    assert.ok(group.includes(guard), guard);
+    assert.ok(prepare.if!.includes(guard.replace(/\s+/g, ' ')) || prepare.if!.replace(/\s+/g, ' ').includes(guard), `prepare: ${guard}`);
+  }
+  assert.match(group, /format\('agent-review-ignored-\{0\}', github\.run_id\)/);
+});
+
+test('REV-05: the Claude reviewer does not auto-approve sandboxed Bash commands', () => {
+  assert.match(source, /autoAllowBashIfSandboxed: false/);
+  const settings = source.slice(source.indexOf('claude-print)'), source.indexOf('opencode-run)'));
+  assert.ok(settings.indexOf('autoAllowBashIfSandboxed: false') > settings.indexOf('sandbox: {'));
+  assert.match(settings, /--permission-mode dontAsk/);
+});

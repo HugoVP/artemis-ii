@@ -167,6 +167,10 @@ export const AGENT_CONFIG_PATHS = [
   // controls is listed as that one path, which `.github/hooks/**` does not match, and the checkout would then hold hook
   // configuration beside the reviewer's credential.
   ".github/hooks", ".github",
+  // The instructions the reviewer follows. They sit in the PR's own checkout, and the CLIs load AGENTS.md, CLAUDE.md and
+  // GEMINI.md from the working directory by themselves, so a PR that edits them would rewrite the review rules before
+  // anyone approved the change. Such a PR is reviewed by Hugo, not by an agent.
+  "AGENTS.md", "CLAUDE.md", "GEMINI.md", "REVIEW.md", "docs/specs/agent-review.md",
 ];
 
 export function agentConfigTouched(files: string[]): string[] {
@@ -215,7 +219,11 @@ export async function readArtifact(path: string): Promise<ReturnType<typeof vali
 
 // The reviewer's text cannot add blocks, ping people or exceed the comment limit.
 export function neutralize(text: string): string {
-  let s = String(text).replace(/<!--/g, "&lt;!--").replace(/(^|[^A-Za-z0-9_`])@(?=[A-Za-z0-9])/g, "$1@​");
+  // Every "@" gets a zero-width space after it, wherever it is, so no mention can form: not after "_" or "__" (which
+  // Markdown can render as emphasis, leaving "@name" live), not after an unmatched backtick, and not in an e-mail
+  // address. Deciding which ones sit in code would need a Markdown parser; the cost of the simple rule is an invisible
+  // character in front of a handle.
+  let s = String(text).replace(/<!--/g, "&lt;!--").replace(/@/g, "@\u200b");
   if (s.length > MAX_COMMENT_CHARS) s = `${s.slice(0, MAX_COMMENT_CHARS)}\n\n_(Cut by the publisher at ${MAX_COMMENT_CHARS} characters.)_`;
   return s;
 }

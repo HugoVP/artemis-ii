@@ -102,6 +102,8 @@ test('WIF-07: a Claude reviewer uses federation like the builder: refresher on t
   const stop = review.steps.find(s => s.name === 'Stop the Anthropic OIDC token refresher')!;
   assert.equal(stop.if, "always() && needs.prepare.outputs.auth == 'federation'");
   assert.match(stop.run!, /rm -rf -- "\$RUNNER_TEMP\/anthropic-oidc"/);
+  assert.match(start.run!, /start "\$OIDC_DIR" "\$RUNNER_TEMP\/anthropic-oidc-issued"/);
+  assert.match(stop.run!, /echo "::add-mask::\$t"; fi; done < "\$RUNNER_TEMP\/anthropic-oidc-issued"/);
   const agent = review.steps.find(s => s.name === 'Run the reviewer')!;
   assert.equal(agent.env!.AGENT_MODEL_KEY, "${{ needs.prepare.outputs.auth == 'api-key' && secrets[needs.prepare.outputs.key_secret] || '' }}");
   assert.match(agent.run!, /-v "\$RUNNER_TEMP\/anthropic-oidc:\/run\/anthropic-oidc:ro"/);

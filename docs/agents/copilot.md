@@ -16,8 +16,11 @@ Copilot's cloud coding agent (assigning an issue to Copilot) is not used: it pus
 
 Hugo performs these steps. Agents do not create tokens, secrets, labels or variables, approve environment jobs or merge PRs.
 
-1. **Browser: Copilot plan.** Confirm that your Copilot plan includes Copilot CLI and how many AI credits it allows a month. Each run of the agent spends them under your account.
-2. **Browser: create the token.** GitHub, **Settings**, **Developer settings**, **Personal access tokens**, **Fine-grained tokens**, **Generate new token**. Give it a name such as `artemis-ii agent pipeline`, an expiration date, and no repository access beyond the minimum the form requires (public repositories, read-only). Under **Account permissions**, set **Copilot Requests** to read-only. Grant nothing else. Copy the token; never paste it into a prompt, command argument, PR or chat.
+These steps apply the controls of the approved token exception in `docs/DELIVERY.md` ("Approved exception: the GitHub Copilot CLI token").
+
+0. **Recommended: a dedicated GitHub account.** Create a GitHub account used only by the pipeline and give it its own Copilot plan, then do steps 1 to 3 signed in as that account. A leaked token then spends only that account's credits and never reaches your personal account. If you use your own account, every other step still applies.
+1. **Browser: Copilot plan and spending cap.** Confirm that the plan includes Copilot CLI and how many AI credits it allows a month; each run spends them. Then, in that account's billing settings, set the budget for Copilot premium requests so that usage stops when it is reached: zero overage, or a small amount you accept. Check the exact names of these settings on GitHub when you do it, and note the limit in the PR that sets the model.
+2. **Browser: create the token.** GitHub, **Settings**, **Developer settings**, **Personal access tokens**, **Fine-grained tokens**, **Generate new token**. Give it a name such as `artemis-ii agent pipeline`, an expiration of 90 days or less (set a reminder to rotate it), and no repository access beyond the minimum the form requires (public repositories, read-only). Under **Account permissions**, set **Copilot Requests** to read-only. Grant nothing else. Copy the token; never paste it into a prompt, command argument, PR or chat. To rotate or revoke it later, use the same page: a revoked token stops working at once.
 3. **Git Bash: store it through the hidden prompt.**
 
    ```bash

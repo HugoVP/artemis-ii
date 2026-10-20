@@ -49,6 +49,7 @@ jobs:
       agent: ${{ steps.order.outputs.agent }}
       issue: ${{ steps.order.outputs.issue }}
       key_secret: ${{ steps.order.outputs.key_secret }}
+      auth: ${{ steps.order.outputs.auth }}
       branch: ${{ steps.order.outputs.branch }}
       figma: ${{ steps.order.outputs.figma }}
       runner: ${{ steps.order.outputs.runner }}
@@ -116,6 +117,8 @@ jobs:
           FIGMA=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).figma" "$RUNNER_TEMP/plan.json")
           RUNNER=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).runner" "$RUNNER_TEMP/plan.json")
           OPENCODE_MODEL=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).model" "$RUNNER_TEMP/plan.json")
+          # api-key: a model key from the secret named by the registry. federation: no static key (claude-print only).
+          AUTH=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).auth" "$RUNNER_TEMP/plan.json")
           if [ "$RUNNER" = opencode-run ]; then node scripts/opencode-runner.ts validate "$OPENCODE_MODEL"; fi
           # OPENCODE_MODEL carries the registry's model for every runner that has one; Copilot needs an explicit id.
           if [ "$RUNNER" = copilot-cli ]; then node scripts/copilot-runner.ts validate "$OPENCODE_MODEL"; fi
@@ -123,6 +126,7 @@ jobs:
             echo "stage=$STAGE"
             echo "agent=$AGENT"
             echo "key_secret=$KEY_SECRET"
+            echo "auth=$AUTH"
             echo "figma=$FIGMA"
             echo "runner=$RUNNER"
             echo "model=$OPENCODE_MODEL"
@@ -147,10 +151,13 @@ jobs:
     timeout-minutes: 90
     # The environment is restricted to main and holds the model keys. This job reads one of them, in one step.
     environment: agents
-    # No write permission of any kind: the agent cannot push, comment or open a PR with this token.
+    # No write permission on the repository: the agent cannot push, comment or open a PR with this token.
+    # id-token: write only lets this job's own steps ask GitHub for an OIDC token (docs/specs/claude-wif.md): the request
+    # variables stay on the runner, and only the refresher step below uses them, never the agent's container.
     permissions:
       contents: read
       packages: read
+      id-token: write
     defaults:
       run:
         shell: bash
@@ -208,14 +215,16 @@ jobs:
           printf 'agent:x:%s:%s::/home/agent:/bin/bash\n' "$(id -u)" "$(id -g)" >> "$RUNNER_TEMP/agent-passwd"
 
       # Project dependencies are installed in the agent's container, without any credential in it and before the Figma
-      # gateway starts: their install scripts are project code.
+      # gateway starts: their install scripts are project code. Their output goes through the trusted filter, so it
+      # cannot run workflow commands (docs/specs/claude-wif.md).
       - name: Install the project dependencies
         run: |
           set -euo pipefail
           docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
             -v "$RUNNER_TEMP/agent-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
-            "$IMAGE" npm ci --no-audit --no-fund
+            "$IMAGE" npm ci --no-audit --no-fund < /dev/null 2>&1 \
+            | node "$RUNNER_TEMP/trusted/scripts/anthropic-oidc.ts" redact
 
       - name: Load the nested sandbox AppArmor profile
         run: sudo apparmor_parser -r "$RUNNER_TEMP/trusted/agent-apparmor.profile"
@@ -249,10 +258,42 @@ jobs:
           echo "The Figma MCP gateway did not start."
           exit 1
 
+      # Anthropic workload identity federation for Claude Code (docs/specs/claude-wif.md). A trusted script from main
+      # keeps a fresh GitHub OIDC token in a file of the runner, replaced every minute (GitHub's tokens last about five
+      # minutes and work once; Claude Code re-reads the file at each refresh). Only that file reaches the agent's container, read-only: ACTIONS_ID_TOKEN_REQUEST_URL
+      # and ACTIONS_ID_TOKEN_REQUEST_TOKEN, which can mint tokens, never do.
+      # The federation ids are secrets of the environment "agents", so GitHub masks them wherever a step prints them.
+      - name: Start the Anthropic OIDC token refresher
+        if: needs.prepare.outputs.auth == 'federation'
+        env:
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+        run: |
+          set -euo pipefail
+          node "$RUNNER_TEMP/trusted/scripts/anthropic-oidc.ts" validate
+          OIDC_DIR="$RUNNER_TEMP/anthropic-oidc"
+          nohup node "$RUNNER_TEMP/trusted/scripts/anthropic-oidc.ts" start "$OIDC_DIR" "$RUNNER_TEMP/anthropic-oidc-issued" > "$RUNNER_TEMP/anthropic-oidc.log" 2>&1 &
+          echo "OIDC_REFRESHER_PID=$!" >> "$GITHUB_ENV"
+          for _ in $(seq 1 30); do
+            if [ -s "$OIDC_DIR/token" ]; then echo "OIDC token refresher ready."; exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/anthropic-oidc.log"
+          echo "The OIDC token refresher did not write a token."
+          exit 1
+
       - name: Run the agent
         env:
           # The only step that sees the model key. It is handed to the agent's CLI under the name that CLI reads.
-          AGENT_MODEL_KEY: ${{ secrets[needs.prepare.outputs.key_secret] }}
+          # Empty for a federation agent: it has no static key.
+          AGENT_MODEL_KEY: ${{ needs.prepare.outputs.auth == 'api-key' && secrets[needs.prepare.outputs.key_secret] || '' }}
+          AUTH: ${{ needs.prepare.outputs.auth }}
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ needs.prepare.outputs.auth == 'federation' && secrets.ANTHROPIC_FEDERATION_RULE_ID || '' }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ needs.prepare.outputs.auth == 'federation' && secrets.ANTHROPIC_ORGANIZATION_ID || '' }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ needs.prepare.outputs.auth == 'federation' && secrets.ANTHROPIC_SERVICE_ACCOUNT_ID || '' }}
+          ANTHROPIC_WORKSPACE_ID: ${{ needs.prepare.outputs.auth == 'federation' && secrets.ANTHROPIC_WORKSPACE_ID || '' }}
           RUNNER: ${{ needs.prepare.outputs.runner }}
           OPENCODE_MODEL: ${{ needs.prepare.outputs.model }}
           FIGMA: ${{ needs.prepare.outputs.figma }}
@@ -319,7 +360,16 @@ jobs:
               fi
               # dontAsk: anything not in the allow list is denied, edits outside the workspace and Figma write tools
               # (unless this is a write stage) included.
-              ANTHROPIC_API_KEY="$KEY" claude -p "$KICKOFF" \
+              if [ "$AUTH" = federation ]; then
+                # No static key anywhere: Claude Code selects federation from the rule and organization ids, and an
+                # ANTHROPIC_API_KEY would outrank it. It re-reads the token file when it refreshes.
+                [ -z "$KEY" ] || { echo "A federation agent must not have a model key."; exit 1; }
+                [ -s "$ANTHROPIC_IDENTITY_TOKEN_FILE" ] || { echo "The agent's container cannot read the OIDC token file."; exit 1; }
+                unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
+              else
+                export ANTHROPIC_API_KEY="$KEY"
+              fi
+              claude -p "$KICKOFF" \
                 --strict-mcp-config "${MCP_ARGS[@]}" \
                 --settings "$CFG/settings.json" \
                 --permission-mode dontAsk \
@@ -339,16 +389,24 @@ jobs:
           esac
           IN_CONTAINER
 
+          # The agent's output goes through a trusted filter that replaces any JWT, since it can read the OIDC token file.
           # Same container as the install step, plus the gateway's name for Figma stages. Variables are passed by name
           # (-e NAME), so their values are not on the command line. No stdin: the CLIs must not wait for input.
           HOSTS=()
           if [ "$FIGMA" != none ]; then HOSTS=(--add-host figma-gateway:host-gateway); fi
+          # Federation: the token folder, read-only (a folder, so the refresher's renames are visible), and the ids by name.
+          AUTH_ARGS=()
+          if [ "$AUTH" = federation ]; then
+            AUTH_ARGS=(-v "$RUNNER_TEMP/anthropic-oidc:/run/anthropic-oidc:ro" -e ANTHROPIC_IDENTITY_TOKEN_FILE=/run/anthropic-oidc/token
+                       -e ANTHROPIC_FEDERATION_RULE_ID -e ANTHROPIC_ORGANIZATION_ID -e ANTHROPIC_SERVICE_ACCOUNT_ID -e ANTHROPIC_WORKSPACE_ID)
+          fi
           docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
             --security-opt apparmor=artemis-ii-agent-bwrap --security-opt "seccomp=$RUNNER_TEMP/trusted/agent-seccomp.json" --pids-limit 4096 \
             -v "$RUNNER_TEMP/agent-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
             -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/.git:/work/.git:ro" -w /work \
-            -e GIT_OPTIONAL_LOCKS=0 -e CI=true -e STAGE -e RUNNER -e FIGMA -e FIGMA_FILE_URL -e AGENT_MODEL_KEY -e OPENCODE_MODEL \
-            "${HOSTS[@]}" "$IMAGE" bash -c "$IN_CONTAINER" < /dev/null
+            -e GIT_OPTIONAL_LOCKS=0 -e CI=true -e STAGE -e RUNNER -e AUTH -e FIGMA -e FIGMA_FILE_URL -e AGENT_MODEL_KEY -e OPENCODE_MODEL \
+            "${HOSTS[@]}" "${AUTH_ARGS[@]}" "$IMAGE" bash -c "$IN_CONTAINER" < /dev/null 2>&1 \
+            | node "$RUNNER_TEMP/trusted/scripts/anthropic-oidc.ts" redact
 
       # The gateway stops as soon as the agent is done, and its log (decisions only: method, tool, node id, never the
       # arguments or the token) goes into the job log.
@@ -357,6 +415,19 @@ jobs:
         run: |
           if [ -n "${FIGMA_GATEWAY_PID:-}" ]; then kill "$FIGMA_GATEWAY_PID" 2>/dev/null || true; fi
           cat "$RUNNER_TEMP/figma-gateway.log" 2>/dev/null || true
+
+      - name: Stop the Anthropic OIDC token refresher
+        if: always() && needs.prepare.outputs.auth == 'federation'
+        run: |
+          if [ -n "${OIDC_REFRESHER_PID:-}" ]; then kill "$OIDC_REFRESHER_PID" 2>/dev/null || true; fi
+          cat "$RUNNER_TEMP/anthropic-oidc.log" 2>/dev/null || true
+          rm -rf -- "$RUNNER_TEMP/anthropic-oidc"
+          # Every token of the run is registered with GitHub's log masker before any later step reads the workspace the
+          # agent wrote (a git diagnostic could otherwise print a token copied into a file). The list never left the runner.
+          if [ -f "$RUNNER_TEMP/anthropic-oidc-issued" ]; then
+            while IFS= read -r t; do if [ -n "$t" ]; then echo "::add-mask::$t"; fi; done < "$RUNNER_TEMP/anthropic-oidc-issued"
+            rm -f -- "$RUNNER_TEMP/anthropic-oidc-issued"
+          fi
 
       - name: Remove the nested sandbox AppArmor profile
         if: always()

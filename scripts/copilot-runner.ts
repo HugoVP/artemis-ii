@@ -81,6 +81,10 @@ export async function runCopilot(prompt: string, env: NodeJS.ProcessEnv = proces
       PLAYWRIGHT_BROWSERS_PATH: env.PLAYWRIGHT_BROWSERS_PATH,
       COPILOT_HOME: state, COPILOT_AUTO_UPDATE: 'false',
     };
+    // The gateway requires the design file's key in every call, and agent-run.yml gives the agent that file's URL (not a
+    // secret) in FIGMA_FILE_URL: forward it on a Figma read build, so the CLI targets the configured file and not whatever
+    // a checked-in link says.
+    if (figma && env.FIGMA_FILE_URL) childEnv.FIGMA_FILE_URL = env.FIGMA_FILE_URL;
     // The user MCP configuration lives in COPILOT_HOME (format written by `copilot mcp add --transport http --tools`).
     if (figma) await writeFile(join(state, 'mcp-config.json'), JSON.stringify(figmaMcpConfig()), { mode: 0o600 });
     const version = spawnSync(binary, ['--version'], { env: childEnv, encoding: 'utf8', timeout: 30_000 });

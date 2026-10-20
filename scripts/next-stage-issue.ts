@@ -80,22 +80,31 @@ export type RunResult =
   | { action: "dry-run"; issue: Issue }
   | { action: "exists" | "created"; number: number };
 
-// Subjects of the commits of `main`, newest first (the API lists the commits merged in as well; only the subjects of the
-// merges of approved PRs are used), read page by page until the history ends or 1,000 commits are read, so a long branch
-// of ordinary commits cannot push older stage merges out of the result. Any failure (a rejected request, an error status, a body that is not a list) means "history unavailable":
-// null, and the work order says rotation was not applied (ORC-04).
+// Subjects of the first-parent chain of `main` (the merges of approved PRs), newest first. The commits API lists every
+// commit reachable from main, merges made on side branches included, so the chain is rebuilt from each commit's parents:
+// a nested `Merge pull request ... agent/stage-04-beta` inside a maintenance PR is not a merge into main and must not
+// decide who led Stage 04. The history is read page by page until it ends or 1,000 commits are read, so a long branch of
+// ordinary commits cannot push older stage merges out of it. Any failure (a rejected request, an error status, a body that
+// is not a list of commits with their ids and parents) means "history unavailable": null, and the work order says
+// rotation was not applied (ORC-04).
 export const HISTORY_PAGE = 100;
 export const HISTORY_MAX_PAGES = 10;
+interface ApiCommit { sha?: string; parents?: { sha?: string }[]; commit?: { message?: string } }
 export async function readMergeSubjects(base: string, token: string | undefined, repo: string): Promise<string[] | null> {
   try {
-    const subjects: string[] = [];
+    const commits: ApiCommit[] = [];
     for (let page = 1; page <= HISTORY_MAX_PAGES; page++) {
-      const commits = await api(base, token, "GET", `/repos/${repo}/commits?sha=main&per_page=${HISTORY_PAGE}&page=${page}`);
-      if (!commits.ok || !Array.isArray(commits.json)) return null;
-      const batch = commits.json as { commit?: { message?: string } }[];
-      subjects.push(...batch.map(c => (c.commit?.message ?? "").split("\n")[0]));
-      if (batch.length < HISTORY_PAGE) return subjects;
+      const res = await api(base, token, "GET", `/repos/${repo}/commits?sha=main&per_page=${HISTORY_PAGE}&page=${page}`);
+      if (!res.ok || !Array.isArray(res.json)) return null;
+      const batch = res.json as ApiCommit[];
+      commits.push(...batch);
+      if (batch.length < HISTORY_PAGE) break;
     }
+    if (commits.some(c => typeof c.sha !== "string" || !Array.isArray(c.parents))) return null;
+    const bySha = new Map(commits.map(c => [c.sha!, c]));
+    const subjects: string[] = [];
+    // From the tip of main along the first parent only; it ends at the root or where the pages end.
+    for (let c: ApiCommit | undefined = commits[0]; c; c = bySha.get(c.parents![0]?.sha ?? "")) subjects.push((c.commit?.message ?? "").split("\n")[0]);
     return subjects;
   } catch {
     return null;
@@ -149,8 +158,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!/^\d+$/.test(PR_NUMBER ?? "")) throw new Error("PR_NUMBER must be a number.");
   if (!/^[\w.-]+\/[\w.-]+$/.test(GITHUB_REPOSITORY ?? "")) throw new Error("GITHUB_REPOSITORY must be owner/name.");
   if (!DRY_RUN && !GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not set.");
-  const markdown = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
-  const registry = await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8");
+  // PLAN_FILE and REGISTRY_FILE only take effect in a dry run, which writes nothing: they let a test run the real CLI on a
+  // fixed plan instead of the repository's, which has no pending stage once the last stage is in review. The workflow
+  // never sets DRY_RUN, so it always reads the files of main.
+  const planFile = DRY_RUN && process.env.PLAN_FILE ? process.env.PLAN_FILE : fileURLToPath(new URL("../docs/PLAN.md", import.meta.url));
+  const registryFile = DRY_RUN && process.env.REGISTRY_FILE ? process.env.REGISTRY_FILE : fileURLToPath(new URL("../agents/registry.yaml", import.meta.url));
+  const markdown = await readFile(planFile, "utf8");
+  const registry = await readFile(registryFile, "utf8");
   const result = await run({ token: GITHUB_TOKEN, repo: GITHUB_REPOSITORY!, prNumber: PR_NUMBER!, markdown, registry, base: GITHUB_API_URL || "https://api.github.com", dryRun: Boolean(DRY_RUN) });
   console.log(result.action === "dry-run" ? JSON.stringify(result.issue, null, 2) : JSON.stringify(result));
 }

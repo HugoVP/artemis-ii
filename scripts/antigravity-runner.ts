@@ -95,18 +95,31 @@ export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = pr
       MEDIA_BASE_URL: '/media', CONTACT_URL: env.CONTACT_URL ?? '',
       PLAYWRIGHT_BROWSERS_PATH: env.PLAYWRIGHT_BROWSERS_PATH,
     };
+    // The gateway requires the design file's key in every call, and agent-run.yml gives the agent that file's URL (not a
+    // secret) in FIGMA_FILE_URL: forward it on a Figma read build, so the CLI targets the configured file and not whatever
+    // a checked-in link says.
+    if (figma && env.FIGMA_FILE_URL) childEnv.FIGMA_FILE_URL = env.FIGMA_FILE_URL;
     const version = spawnSync(binary, ['--version'], { env: childEnv, encoding: 'utf8', timeout: 30_000 });
     if (version.status !== 0 || version.stdout.trim() !== AGY_VERSION) {
       throw new Error(`The runner image must contain Antigravity CLI ${AGY_VERSION}; rebuild it before running.`);
     }
     childEnv.GEMINI_API_KEY = key;
     const child = spawn(binary, antigravityArgs(model, prompt, mode, join(home, 'cli.log')), { env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
-    // Transcripts and provider messages can hold private data. Only one short, redacted problem line is kept; the review
-    // mode keeps stdout, which is the printed answer, for the review file.
+    // Transcripts and provider messages can hold private data. Only one short problem line is kept, always redacted and then
+    // cut (never the other way round, so a cut cannot leave a part of the key). In review mode stdout is the printed answer,
+    // kept for the review file, and is not a diagnostic channel: a review that quotes "Error: ENOENT..." or an AGY_ERROR
+    // line is still a review. Diagnostics are read from stderr, and, in build mode, from stdout too.
     let problem = '';
     let answer = '';
     let tooLong = false;
     const redact = (text: string) => text.split(key).join('[redacted]');
+    const fail = (message: string) => { if (!problem) problem = redact(message).slice(0, 200); };
+    const SIGN_IN = /^\s*Authentication required/;
+    const stopForSignIn = () => {
+      fail('interactive sign-in requested: the Gemini API key was not used');
+      // Without the key path the CLI waits for a browser sign-in; stop at once instead of waiting for its timeout.
+      child.kill();
+    };
     const scan = (raw: string) => {
       const text = raw.trim();
       if (problem) return;
@@ -116,32 +129,39 @@ export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = pr
           const error = JSON.parse(structured[1]) as Record<string, unknown>;
           // Fields of 1.4.3: status, error_code, code_kind, retryable, error_id; the free-text short_error is never shown.
           const parts = ['status', 'error_code'].map(name => error[name]).filter(value => typeof value === 'string' || typeof value === 'number');
-          problem = `AGY_ERROR ${parts.join(' ')}`.trim();
-        } catch { problem = 'AGY_ERROR'; }
-      } else if (/^Error:/.test(text)) problem = redact(text).slice(0, 200);
-      else if (/^Authentication required/.test(text)) {
-        problem = 'interactive sign-in requested: the Gemini API key was not used';
-        // Without the key path the CLI waits for a browser sign-in; stop at once instead of waiting for its timeout.
-        child.kill();
-      }
+          fail(`AGY_ERROR ${parts.join(' ')}`.trim());
+        } catch { fail('AGY_ERROR'); }
+      } else if (/^Error:/.test(text)) fail(text);
+      else if (SIGN_IN.test(text)) stopForSignIn();
     };
-    const watch = (stream: NodeJS.ReadableStream, keep: boolean) => {
+    const watch = (stream: NodeJS.ReadableStream, role: 'diagnostics' | 'answer') => {
       let pending = '';
+      let first = true;
       stream.setEncoding('utf8');
       stream.on('data', (chunk: string) => {
-        if (keep) {
+        if (role === 'answer') {
           if (answer.length + chunk.length > MAX_REVIEW) tooLong = true;
           else answer += chunk;
+          // The sign-in prompt is the whole of what the CLI prints when it waits, and it has no newline until a person
+          // answers, so it is recognised on the first characters, not on a finished line. Later text is review content.
+          if (first && SIGN_IN.test(chunk)) stopForSignIn();
+          first = false;
+          return;
         }
-        const lines = (pending + chunk).split('\n');
+        pending += chunk;
+        const lines = pending.split('\n');
         pending = lines.pop() ?? '';
         lines.forEach(scan);
+        // The sign-in prompt waits without a newline: look at the unfinished line too. Error lines stay buffered, so the
+        // key is redacted before anything is cut.
+        if (SIGN_IN.test(pending)) stopForSignIn();
         if (pending.length > 65_536) pending = pending.slice(0, 65_536);
       });
-      return () => scan(pending);
+      return () => { if (role === 'diagnostics') scan(pending); };
     };
-    const endStdout = watch(child.stdout, mode === 'review');
-    const endStderr = watch(child.stderr, false);
+    // Build mode reads stdout for diagnostics too; review mode keeps it as the answer.
+    const endStdout = watch(child.stdout, mode === 'review' ? 'answer' : 'diagnostics');
+    const endStderr = watch(child.stderr, 'diagnostics');
     const status = await new Promise<number | null>((accept, reject) => {
       child.once('error', () => reject(new Error('Antigravity CLI could not start.')));
       child.once('close', accept);
@@ -159,12 +179,39 @@ export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = pr
   } finally { await rm(home, { recursive: true, force: true }); }
 }
 
+// The model must be in the pinned CLI's catalog. `agy models` prints the catalog (`slug<TAB>name` lines) whatever the key,
+// so any value stands in for it: no credential is needed to choose or check a model (checked on 1.4.3 with a dummy value),
+// and the pipeline's key never has to be exported to a shell for this. Whether a real key may use the model is what the
+// manual smoke shows.
+export function catalogSlugs(output: string): string[] {
+  return output.split("\n").map(line => line.split("\t")[0].trim()).filter(slug => /^[a-z0-9][a-z0-9._-]{0,79}$/.test(slug));
+}
+
+export async function checkModel(model: string, env: NodeJS.ProcessEnv = process.env, binary = AGY_BINARY): Promise<void> {
+  validateAntigravityModel(model);
+  if (!env.HOME) throw new Error('The isolated agent HOME is required.');
+  const home = await mkdtemp(join(env.HOME, 'agy-catalog-'));
+  try {
+    const settingsDir = join(home, '.gemini', 'antigravity-cli');
+    await mkdir(settingsDir, { recursive: true, mode: 0o700 });
+    await writeFile(join(settingsDir, 'settings.json'), JSON.stringify(antigravitySettings('review')), { mode: 0o600 });
+    const out = spawnSync(binary, ['models'], {
+      env: { PATH: env.PATH, HOME: home, CI: 'true', TERM: 'dumb', NO_COLOR: '1', GEMINI_API_KEY: 'catalog-only' },
+      encoding: 'utf8', timeout: 60_000, maxBuffer: 1_048_576,
+    });
+    if (out.status !== 0) throw new Error(`The model catalog of the pinned Antigravity CLI could not be read (exit ${out.status}).`);
+    if (!catalogSlugs(out.stdout).includes(model)) throw new Error(`${model} is not in the model catalog of the pinned Antigravity CLI ${AGY_VERSION}.`);
+    console.log(`${model} is in the model catalog of the pinned Antigravity CLI ${AGY_VERSION}.`);
+  } finally { await rm(home, { recursive: true, force: true }); }
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     if (process.argv[2] === 'validate') validateAntigravityModel(process.argv[3]);
+    else if (process.argv[2] === 'check-model' && process.argv[3]) await checkModel(process.argv[3]);
     else if (process.argv[2] === 'run' && process.argv[3]) await runAntigravity(process.argv[3]);
     else if (process.argv[2] === 'review' && process.argv[3]) await runAntigravity(process.argv[3], process.env, AGY_BINARY, 'review');
-    else throw new Error('Usage: antigravity-runner.ts validate <model> | run <prompt> | review <prompt>');
+    else throw new Error('Usage: antigravity-runner.ts validate <model> | check-model <model> | run <prompt> | review <prompt>');
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Antigravity launcher failed.');
     process.exitCode = 1;

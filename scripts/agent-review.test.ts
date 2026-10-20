@@ -229,7 +229,14 @@ test("REV-09: the comment binds the reviewer, family, provider and head SHA from
 
 test("REV-09: a comment is cut at the limit and says when the PR head moved", () => {
   assert.ok(neutralize("x".repeat(MAX_COMMENT_CHARS + 500)).length < MAX_COMMENT_CHARS + 200);
-  assert.equal(neutralize("mail a@b.c and `@x`"), "mail a@b.c and `@x`");
+  // Every "@" is defused, wherever it sits: the simple rule is safe where a Markdown-aware one could be fooled.
+  const ZW = "​";
+  assert.equal(neutralize("mail a@b.c and `@x`"), "mail a@" + ZW + "b.c and `@" + ZW + "x`");
+  for (const text of ["_@HugoVP_", "__@HugoVP__", "`@HugoVP", "*@HugoVP*", "(@HugoVP)", "@HugoVP", "x@HugoVP"]) {
+    const out = neutralize(text);
+    assert.ok(!new RegExp("@(?!" + ZW + ")").test(out), text);
+    assert.equal(out.split(ZW).join(""), text, text);
+  }
   const moved = buildComment(facts(), { verdict: "pass", findings: 0 }, "ok", { runUrl: "https://github.com/o/r/actions/runs/1", currentHead: "c".repeat(40) });
   assert.match(moved, /head moved/);
   assert.doesNotMatch(buildComment(facts(), { verdict: "pass", findings: 0 }, "ok", { runUrl: "u", currentHead: HEAD }), /head moved/);
@@ -284,4 +291,11 @@ test("REV-04: a symlinked .github/hooks or .github is refused as the exact path,
   // A file inside .github that is not agent configuration is still a protected path for Hugo, but not one more reason to
   // keep an agent away; only the directory entries above are.
   assert.deepEqual(agentConfigTouched([".github/workflows/ci.yml", ".githubx", "x/.github"]), []);
+});
+
+test("REV-04: a PR that edits the review rules themselves is not reviewed by an agent", () => {
+  for (const f of ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "REVIEW.md", "docs/specs/agent-review.md"]) {
+    assert.deepEqual(agentConfigTouched(["src/a.ts", f]), [f], f);
+  }
+  assert.deepEqual(agentConfigTouched(["docs/AGENTS.md.bak", "src/AGENTS.md", "docs/specs/stage-05-curation.md"]), []);
 });

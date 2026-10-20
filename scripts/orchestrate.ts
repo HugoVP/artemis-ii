@@ -148,7 +148,9 @@ export function recommend({ stages, stageNumber, agents, leaders, history = {} }
   const full = leading(leads.filter(l => !l.small).map(l => l.agent));
   const small = leading(leads.filter(l => l.small).map(l => l.agent));
   const leader = full[0] ?? null;
-  const alternatives = [...full.slice(1), ...small];
+  // ORC-07: agents limited to small stages come first among the alternatives, so one that has never led is not hidden behind
+  // a full leader that has; they are still never the recommended leader.
+  const alternatives = [...small, ...full.slice(1)];
 
   let reviewers: Candidate[] = [];
   if (leader) {

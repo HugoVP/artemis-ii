@@ -102,6 +102,9 @@ const registry = [
   "- id: beta\n  key_secret: AGENT_KEY_BETA\n  runner: codex-exec\n  capabilities: [git, node, browser]\n  status: active\n  roles: [lead, review]\n  family: two\n  cost: api",
 ].join("\n");
 
+// A linear history as the commits API returns it: newest first, each commit with its sha and its parent's.
+const linear = (subjects: string[]) => subjects.map((m, i) => ({ sha: `c${i}`, parents: i + 1 < subjects.length ? [{ sha: `c${i + 1}` }] : [], commit: { message: `${m}\n\nbody` } }));
+
 function mockWithMerges(subjects: string[], commitsStatus = 200) {
   const calls: { method: string; path: string; body: string }[] = [];
   const server = http.createServer((req, res) => {
@@ -111,7 +114,7 @@ function mockWithMerges(subjects: string[], commitsStatus = 200) {
       const path = req.url!.split("?")[0];
       calls.push({ method: req.method!, path, body: data });
       res.setHeader("content-type", "application/json");
-      if (req.method === "GET" && path.endsWith("/commits")) { res.statusCode = commitsStatus; return res.end(JSON.stringify(subjects.map((m) => ({ commit: { message: `${m}\n\nbody` } })))); }
+      if (req.method === "GET" && path.endsWith("/commits")) { res.statusCode = commitsStatus; return res.end(JSON.stringify(linear(subjects))); }
       if (req.method === "GET") return res.end("[]");
       if (path.endsWith("/labels")) { res.statusCode = 422; return res.end("{}"); }
       res.statusCode = 201;
@@ -150,11 +153,20 @@ test("run does nothing when no stage is pending", async () => {
   assert.equal(r.action, "none");
 });
 
-test("ORC-05: the work-order CLI runs as a process with the recommendation (no import cycle with its top-level await)", () => {
+test("ORC-05: the work-order CLI runs as a process with the recommendation (no import cycle with its top-level await)", async () => {
+  // A fixed plan and registry, so the test does not depend on how far the real plan has got: once the last stage is in
+  // review there is no pending row and the CLI correctly prints {action: none}.
+  const { mkdtemp, writeFile, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = await mkdtemp(join(tmpdir(), "work-order-cli-"));
+  await writeFile(join(dir, "PLAN.md"), sample);
+  await writeFile(join(dir, "registry.yaml"), registry);
   const out = spawnSync(process.execPath, ["scripts/next-stage-issue.ts"], {
     cwd: new URL("..", import.meta.url), encoding: "utf8", timeout: 60_000,
-    env: { PATH: process.env.PATH, PR_NUMBER: "1", GITHUB_REPOSITORY: "o/r", DRY_RUN: "1" },
+    env: { PATH: process.env.PATH, PR_NUMBER: "1", GITHUB_REPOSITORY: "o/r", DRY_RUN: "1", PLAN_FILE: join(dir, "PLAN.md"), REGISTRY_FILE: join(dir, "registry.yaml") },
   });
+  await rm(dir, { recursive: true, force: true });
   assert.equal(out.status, 0, out.stderr);
   assert.doesNotMatch(out.stderr, /unsettled top-level await/i);
   const issue = JSON.parse(out.stdout) as { title: string; body: string };
@@ -169,7 +181,6 @@ function mockHistory(handler: (page: number, res: http.ServerResponse) => void) 
   }).listen(0);
   return { server, base: `http://127.0.0.1:${(server.address() as AddressInfo).port}` };
 }
-const commit = (message: string) => ({ commit: { message } });
 
 test("ORC-04: a rejected request or a body that is not JSON means unavailable history, not a crash", async () => {
   const dropped = mockHistory((_page, res) => res.destroy());
@@ -210,9 +221,8 @@ test("ORC-04: the history is read page by page, so older stage merges beyond the
   const m = mockHistory((page, res) => {
     pages.push(page);
     res.setHeader("content-type", "application/json");
-    const batch = page === 1 ? Array.from({ length: HISTORY_PAGE }, (_, i) => commit(`Fix ${i}`))
-      : page === 2 ? [commit("Merge pull request #8 from o/agent/stage-01-alpha"), commit("Initial commit")] : [];
-    res.end(JSON.stringify(batch));
+    const all = linear([...Array.from({ length: HISTORY_PAGE }, (_, i) => `Fix ${i}`), "Merge pull request #8 from o/agent/stage-01-alpha", "Initial commit"]);
+    res.end(JSON.stringify(all.slice((page - 1) * HISTORY_PAGE, page * HISTORY_PAGE)));
   });
   try {
     const subjects = await readMergeSubjects(m.base, "t", "o/r");
@@ -220,4 +230,26 @@ test("ORC-04: the history is read page by page, so older stage merges beyond the
     assert.ok(subjects!.includes("Merge pull request #8 from o/agent/stage-01-alpha"));
     assert.equal(subjects!.length, HISTORY_PAGE + 2);
   } finally { m.server.close(); }
+});
+
+test("ORC-04: only the first-parent chain of main counts, not a nested merge made on a side branch", async () => {
+  // Newest first. M is the tip of main; its first parent is P and its second parent S is a maintenance branch whose own
+  // history holds a nested merge of agent/stage-04-beta. The real Stage 04 merge, by alpha, is further down main.
+  const api = [
+    { sha: "M", parents: [{ sha: "P" }, { sha: "S" }], commit: { message: "Merge pull request #30 from o/agent/maintenance" } },
+    { sha: "S", parents: [{ sha: "N" }], commit: { message: "Touch up the docs" } },
+    { sha: "N", parents: [{ sha: "P" }], commit: { message: "Merge pull request #29 from o/agent/stage-04-beta" } },
+    { sha: "P", parents: [{ sha: "Q" }], commit: { message: "Merge pull request #28 from o/agent/stage-04-alpha" } },
+    { sha: "Q", parents: [], commit: { message: "Initial commit" } },
+  ];
+  const m = mockHistory((_page, res) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify(api)); });
+  try {
+    const subjects = await readMergeSubjects(m.base, "t", "o/r");
+    assert.deepEqual(subjects, ["Merge pull request #30 from o/agent/maintenance", "Merge pull request #28 from o/agent/stage-04-alpha", "Initial commit"]);
+    const { leadersFromMerges } = await import("./orchestrate.ts");
+    assert.deepEqual([...leadersFromMerges(subjects!, ["alpha", "beta"])], [["04", "alpha"]]);
+  } finally { m.server.close(); }
+  // A body without ids and parents is not a usable history.
+  const bare = mockHistory((_page, res) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify([{ commit: { message: "x" } }])); });
+  try { assert.equal(await readMergeSubjects(bare.base, "t", "o/r"), null); } finally { bare.server.close(); }
 });

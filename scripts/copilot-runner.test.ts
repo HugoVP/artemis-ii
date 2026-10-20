@@ -114,3 +114,13 @@ test('CPL-07: a figma-read build gets the gateway, only the read tools of agent-
   try { await runCopilot('Prompt', { ...local.env, FIGMA: 'read' }, local.binary); }
   finally { await rm(local.root, { recursive: true, force: true }); }
 });
+
+test('CPL-07: the design file URL reaches the CLI only on a figma-read build', async () => {
+  const URL_ = 'https://www.figma.com/design/FILEKEY/Artemis';
+  const withUrl = await fixture(`if (process.env.FIGMA_FILE_URL !== '${URL_}') process.exit(3);`);
+  const without = await fixture(`if (process.env.FIGMA_FILE_URL !== undefined) process.exit(3);`);
+  try {
+    await runCopilot('Prompt', { ...withUrl.env, FIGMA: 'read', FIGMA_FILE_URL: URL_ }, withUrl.binary);
+    await runCopilot('Prompt', { ...without.env, FIGMA: 'none', FIGMA_FILE_URL: URL_ }, without.binary);
+  } finally { await rm(withUrl.root, { recursive: true, force: true }); await rm(without.root, { recursive: true, force: true }); }
+});

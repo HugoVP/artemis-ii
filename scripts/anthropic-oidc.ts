@@ -72,12 +72,19 @@ export function redactJwts(text: string): string {
   return text.replace(JWT_PATTERN, "[redacted token]");
 }
 
-// Untrusted output must not run GitHub Actions workflow commands: a line starting with "::" (or the older "##[") is
-// read by the runner as a command, and "::stop-commands::<marker>" would switch off command processing, so the
-// trusted "::add-mask::" of the cleanup step would print the tokens instead of masking them. Such lines are shown
-// with a marker in front, which the runner does not parse.
+// Untrusted output must not run GitHub Actions workflow commands: "::stop-commands::<marker>" would switch off command
+// processing, so the trusted "::add-mask::" of the cleanup step would print the tokens instead of masking them. The
+// runner reads two forms (actions/runner, ActionCommand.cs): a line that starts with "::" after trimming, and the
+// legacy "##[" anywhere in a line. Every "##[" gets a space ("## ["), which the legacy parser does not match, and a
+// line starting with "::" gets a marker in front.
 export function neutralizeWorkflowCommands(line: string): string {
-  return /^\s*(?:::|##\[)/.test(line) ? `[agent output] ${line}` : line;
+  const legacySafe = line.replaceAll("##[", "## [");
+  return /^\s*::/.test(legacySafe) ? `[agent output] ${legacySafe}` : legacySafe;
+}
+
+// What the runner would treat as a workflow command in a line; used by the tests to check rejection, not formatting.
+export function looksLikeWorkflowCommand(line: string): boolean {
+  return line.trim().startsWith("::") || line.includes("##[");
 }
 
 // What the redact command does to each line of the container's output.

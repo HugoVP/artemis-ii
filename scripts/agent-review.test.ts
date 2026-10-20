@@ -154,6 +154,7 @@ test("REV-03: the facts come from the registry and the plan, never from the PR t
 
 test("WIF-07: a federation reviewer has no key secret, and its auth mode reaches the workflow", () => {
   const fed = parseRegistry(REGISTRY.replace("  key_secret: AGENT_KEY_CLAUDE\n", "  auth: federation\n"));
+  const stages = [{ number: "05", name: "Curation", needs: [], specPath: "docs/specs/stage-05-curation.md", status: "pending", pr: "", linear: null }];
   const r = reviewFacts({ agents: fed, stages, pr: pr(), reviewerId: "claude", defaultBranch: "main" });
   assert.ok(r.ok);
   assert.equal(r.facts.auth, "federation");

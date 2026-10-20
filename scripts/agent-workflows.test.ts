@@ -406,8 +406,8 @@ test("WIF-04: the agent's container gets the token folder read-only and the ids 
   assert.doesNotMatch(agent, /--bare/);
   // The agent can read the token file, so its output passes through the trusted JWT filter before the log.
   assert.match(agent, /< \/dev\/null 2>&1 \\\n\s+\| node "\$RUNNER_TEMP\/trusted\/scripts\/anthropic-oidc\.ts" redact/);
-  // The install container never gets any of it.
-  assert.doesNotMatch(step(work, "Install the project dependencies"), /ANTHROPIC|anthropic-oidc/);
+  // The install container never gets any of it (its output only passes through the trusted filter script).
+  assert.doesNotMatch(step(work, "Install the project dependencies"), /ANTHROPIC|anthropic-oidc[:"]|anthropic-oidc-issued/);
 });
 
 test("WIF-03: the refresher starts after the install and before the agent, and stops right after it, whatever happened", () => {

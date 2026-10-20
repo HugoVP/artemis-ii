@@ -33,7 +33,7 @@ These steps apply the controls of the approved token exception in `docs/DELIVERY
    gh label create 'agent:copilot' -R HugoVP/artemis-ii --color '0E8A16' --description 'Run a work order with GitHub Copilot CLI'
    ```
 
-5. **Choose the model.** On your machine, signed in to Copilot CLI, run `copilot` and type `/model` to see the ids your plan offers. Prefer a model whose vendor differs from the other agents' (OpenAI for Codex, Anthropic for Claude Code, Zhipu GLM for OpenCode), so Copilot can review their stages. Add it to the `copilot` entry in `agents/registry.yaml` (`model: <id>`) in a reviewed PR.
+5. **Choose the model.** On your machine, signed in to Copilot CLI, run `copilot` and type `/model` to see the ids your plan offers. Prefer a model whose vendor differs from the other agents' (OpenAI for Codex, Anthropic for Claude Code, Zhipu GLM for OpenCode), so Copilot can review their stages. Add it to the `copilot` entry in `agents/registry.yaml` in a reviewed PR, with `model: <id>` and `family: <vendor of that model>` (for example `openai`, `anthropic` or `google`) set together. Leave `status: pending` for now: with no family the orchestrator cannot compare it with the leader, and a pending agent is neither recommended nor accepted as a reviewer.
 6. **Install the proposals before merging this integration PR.** On its branch, copy `agent-run.yml`, `agent-runner-image.yml`, `agent-sandbox-smoke.yml` and `copilot-smoke.yml` from `docs/agents/workflows/` to `.github/workflows/`, commit and push, as for OpenCode ([`opencode.md`](opencode.md), step 0).
 7. **After merging: publish and select the runner image**, as for OpenCode ([`opencode.md`](opencode.md), step 4), and set `AGENT_RUNNER_IMAGE` to the new digest.
 8. **Run the smoke**, once the model is set:
@@ -47,6 +47,7 @@ These steps apply the controls of the approved token exception in `docs/DELIVERY
    ```
 
    A missing token, model or image, an authentication error, an unexpected file or an incomplete task fails the workflow. Inspect a failure with `gh run view RUN_ID -R HugoVP/artemis-ii --log-failed`, and report only the failed step and its sanitized message.
+9. **Activate it** after a passing smoke: set `status: active` in the registry in a reviewed PR. The orchestrator then recommends it as a leader or reviewer.
 
 ## To verify on the first real run
 

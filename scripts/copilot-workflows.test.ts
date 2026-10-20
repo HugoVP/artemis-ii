@@ -66,3 +66,10 @@ test('CPL-03: the Copilot smoke proposal uses the action pins installed on main'
   const proposed = [...(await read('docs/agents/workflows/copilot-smoke.yml')).matchAll(/uses: (\S+)/g)].map(match => match[1]);
   assert.deepEqual(proposed, installed);
 });
+
+test('CPL-02: the setup guide sets the model with its family and activates the agent only after a passing smoke', async () => {
+  const guide = await read('docs/agents/copilot.md');
+  assert.match(guide, /`model: <id>` and `family: <vendor of that model>`/);
+  assert.match(guide, /Leave `status: pending`/);
+  assert.match(guide, /\*\*Activate it\*\* after a passing smoke: set `status: active`/);
+});

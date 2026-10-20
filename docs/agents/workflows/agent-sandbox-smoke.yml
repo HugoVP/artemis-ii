@@ -90,6 +90,17 @@ jobs:
               && test ! -w /opt/agy/antigravity && agy --version | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+$" \
               && ! node /opt/artemis/antigravity-runner.ts validate auto'
 
+      # No key: the model in the registry must be in the pinned CLI's catalog. `agy models` lists the catalog whatever the
+      # key, so a typo or a retired slug fails here, in the PR, and not in the paid smoke.
+      - name: Check that the registry's Antigravity model is in the pinned CLI's catalog
+        run: |
+          set -euo pipefail
+          MODEL=$(awk '/^- id: antigravity/{f=1;next} /^- id:/{f=0} f&&/^  model:/{print $2; exit}' agents/registry.yaml)
+          [ -n "$MODEL" ] || { echo "The antigravity agent has no model in the registry."; exit 1; }
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent -e CI=true \
+            artemis-ii-sandbox-smoke node /opt/artemis/antigravity-runner.ts check-model "$MODEL"
+
       # A dummy key, not a credential: the launcher's Gemini API settings must make the CLI call the API and fail fast
       # with an API error, never start a browser sign-in and wait.
       - name: Check that Antigravity uses the API key path and never waits for a sign-in

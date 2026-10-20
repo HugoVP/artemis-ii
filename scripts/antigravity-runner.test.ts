@@ -98,3 +98,58 @@ test('AGY-02/03: refuse a missing key, a Figma stage or the wrong CLI version be
     await assert.rejects(runAntigravity('Prompt', local.env, local.binary), /must contain Antigravity CLI/);
   } finally { await rm(local.root, { recursive: true, force: true }); }
 });
+
+test('AGY-05: a structured error is redacted before it is cut, like an Error line', async () => {
+  const local = await fixture(`console.error('AGY_ERROR: {"status": "RESOURCE_EXHAUSTED fixture-only", "error_code": "x-fixture-only-y"}'); process.exit(3);`);
+  try {
+    await assert.rejects(runAntigravity('Prompt', local.env, local.binary), error => error instanceof Error && /AGY_ERROR RESOURCE_EXHAUSTED \[redacted\] x-\[redacted\]-y/.test(error.message) && !error.message.includes('fixture-only'));
+  } finally { await rm(local.root, { recursive: true, force: true }); }
+});
+
+for (const mode of ['build', 'review'] as const) {
+  test(`AGY-05: a sign-in prompt without a newline stops the CLI at once in ${mode} mode`, async () => {
+    const local = await fixture(`process.stdout.write('Authentication required. Please visit the URL to log in:'); setTimeout(() => {}, 120000);`);
+    const started = Date.now();
+    try {
+      await assert.rejects(runAntigravity('Prompt', local.env, local.binary, mode, join(local.root, 'work', '.agent', 'review.md')), /interactive sign-in/);
+      assert.ok(Date.now() - started < 20_000, 'the launcher waited for the CLI instead of stopping it');
+    } finally { await rm(local.root, { recursive: true, force: true }); }
+  });
+}
+
+test('AGY-06: a review that quotes an error or a stack trace is still a review', async () => {
+  const local = await fixture(`
+    console.log('Finding 1: the script fails with:');
+    console.log('Error: ENOENT: no such file or directory, open x');
+    console.log('AGY_ERROR: {"status": "QUOTED", "error_code": 500}');
+    console.log('Authentication required, says the log the PR adds.');
+    console.log('<!-- agent-review: {"verdict": "blocking", "findings": 1} -->');
+  `);
+  const file = join(local.root, 'work', '.agent', 'review.md');
+  try {
+    await runAntigravity('Review', local.env, local.binary, 'review', file);
+    assert.match(await readFile(file, 'utf8'), /Error: ENOENT[\s\S]*"verdict": "blocking"/);
+  } finally { await rm(local.root, { recursive: true, force: true }); }
+  // The same lines in build mode, where stdout is a diagnostic channel, are a failure.
+  const build = await fixture(`console.log('Error: ENOENT: no such file or directory'); process.exit(0);`);
+  try { await assert.rejects(runAntigravity('Prompt', build.env, build.binary), /did not complete/); }
+  finally { await rm(build.root, { recursive: true, force: true }); }
+});
+
+test('AGY-02: the registry model must be in the pinned CLI catalog, which needs no real key', async () => {
+  const { checkModel, catalogSlugs } = await import('./antigravity-runner.ts');
+  assert.deepEqual(catalogSlugs('Fetching available models...\ngemini-a-high\tGemini A (High)\n\ngemini-b-low\tGemini B (Low)\n'), ['gemini-a-high', 'gemini-b-low']);
+  const local = await fixture(`
+    const env = process.env;
+    if (env.GEMINI_API_KEY !== 'catalog-only' || env.AGENT_MODEL_KEY || process.argv[2] !== 'models') process.exit(3);
+    console.log('Fetching available models...');
+    console.log('gemini-a-high\tGemini A (High)');
+  `);
+  const originalLog = console.log;
+  console.log = () => {};
+  try {
+    await checkModel('gemini-a-high', local.env, local.binary);
+    await assert.rejects(checkModel('gemini-z-high', local.env, local.binary), /not in the model catalog/);
+    await assert.rejects(checkModel('auto', local.env, local.binary), /explicit Antigravity model/);
+  } finally { console.log = originalLog; await rm(local.root, { recursive: true, force: true }); }
+});

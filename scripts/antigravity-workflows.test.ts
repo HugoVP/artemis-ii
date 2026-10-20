@@ -80,3 +80,13 @@ test('AGY-04: Antigravity smoke uses the agents environment on trusted main only
   const installed = [...(await read('.github/workflows/opencode-smoke.yml')).matchAll(/uses: (\S+)/g)].map(match => match[1]);
   assert.deepEqual([...source.matchAll(/uses: (\S+)/g)].map(match => match[1]), installed);
 });
+
+test('AGY-02: the PR sandbox smoke checks the registry model against the CLI catalog with no key, and no guide exports the key locally', async () => {
+  const sandbox = await read('docs/agents/workflows/agent-sandbox-smoke.yml');
+  const step = sandbox.slice(sandbox.indexOf("Check that the registry's Antigravity model"));
+  assert.match(step, /check-model "\$MODEL"/);
+  assert.doesNotMatch(step.split('\n      # ')[0], /GEMINI_API_KEY|AGENT_KEY|secrets\./);
+  const guide = await read('docs/agents/antigravity.md');
+  assert.doesNotMatch(guide, /read -rsp .*GEMINI_API_KEY|export GEMINI_API_KEY/);
+  assert.match(guide, /never present on a local machine/);
+});

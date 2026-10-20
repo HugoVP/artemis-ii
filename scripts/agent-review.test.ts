@@ -144,10 +144,21 @@ test("REV-03: the facts come from the registry and the plan, never from the PR t
   assert.equal(r.facts.head, HEAD);
   assert.equal(r.facts.spec, "docs/specs/stage-05-curation.md");
   assert.equal(r.facts.keySecret, "AGENT_KEY_CLAUDE");
+  assert.equal(r.facts.auth, "api-key");
+  assert.match(outputLines(r.facts), /\nauth=api-key\n/);
   assert.equal(reviewFacts({ agents, stages, pr: pr(), reviewerId: "codex", defaultBranch: "main" }).ok, false);
   assert.equal(reviewFacts({ agents, stages, pr: pr({ isCrossRepository: true }), reviewerId: "claude", defaultBranch: "main" }).ok, false);
   // Everything that reaches $GITHUB_OUTPUT is single-line and from a fixed character set.
   assert.match(outputLines(r.facts), /^pr=7\nhead=a{40}\n/);
+});
+
+test("WIF-07: a federation reviewer has no key secret, and its auth mode reaches the workflow", () => {
+  const fed = parseRegistry(REGISTRY.replace("  key_secret: AGENT_KEY_CLAUDE\n", "  auth: federation\n"));
+  const r = reviewFacts({ agents: fed, stages, pr: pr(), reviewerId: "claude", defaultBranch: "main" });
+  assert.ok(r.ok);
+  assert.equal(r.facts.auth, "federation");
+  assert.equal(r.facts.keySecret, "");
+  assert.match(outputLines(r.facts), /\nkey_secret=\nauth=federation\n/);
 });
 
 test("REV-04: a PR that touches agent tool configuration is not reviewed by an agent", () => {

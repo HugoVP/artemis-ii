@@ -116,6 +116,8 @@ export interface ReviewFacts {
   model: string;
   runner: string;
   keySecret: string;
+  // api-key or federation (docs/specs/claude-wif.md): a federation reviewer has no key_secret.
+  auth: string;
 }
 
 export function reviewFacts({ agents, stages, pr, reviewerId, defaultBranch }: {
@@ -139,7 +141,7 @@ export function reviewFacts({ agents, stages, pr, reviewerId, defaultBranch }: {
       leader: r.leader.id, leaderFamily: scalar(r.leader, "family"),
       reviewer: r.reviewer.id, name: scalar(r.reviewer, "name") || r.reviewer.id, family: scalar(r.reviewer, "family"),
       provider: scalar(r.reviewer, "provider"), model: scalar(r.reviewer, "model"),
-      runner: r.reviewer.runner, keySecret: r.reviewer.key_secret,
+      runner: r.reviewer.runner, keySecret: r.reviewer.key_secret, auth: r.reviewer.auth,
     },
   };
 }
@@ -268,7 +270,7 @@ export function buildCheckRun(facts: ReviewFacts, verdict: Verdict | null, comme
 export function outputLines(facts: ReviewFacts): string {
   const values: Record<string, string> = {
     pr: String(facts.pr), head: facts.head, branch: facts.branch, stage: facts.stage, spec: facts.spec,
-    leader: facts.leader, reviewer: facts.reviewer, runner: facts.runner, model: facts.model, key_secret: facts.keySecret,
+    leader: facts.leader, reviewer: facts.reviewer, runner: facts.runner, model: facts.model, key_secret: facts.keySecret, auth: facts.auth,
   };
   for (const [k, v] of Object.entries(values)) if (!/^[A-Za-z0-9._/-]*$/.test(v)) throw new Error(`Unsafe value for ${k}.`);
   return Object.entries(values).map(([k, v]) => `${k}=${v}`).join("\n") + "\n";

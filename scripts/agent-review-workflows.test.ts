@@ -45,7 +45,8 @@ test('REV-01: prepare and the checks always run from main', () => {
 
 test('REV-05: the review job reads the key in one step and has no write permission or App credential', () => {
   assert.equal(review.environment, 'agents');
-  assert.deepEqual(review.permissions, { contents: 'read', packages: 'read' });
+  // id-token writes nothing: it lets the refresher step ask GitHub for an OIDC token (docs/specs/claude-wif.md).
+  assert.deepEqual(review.permissions, { contents: 'read', packages: 'read', 'id-token': 'write' });
   const keySteps = review.steps.filter(step => JSON.stringify(step).includes('secrets['));
   assert.deepEqual(keySteps.map(step => step.name), ['Run the reviewer']);
   assert.doesNotMatch(JSON.stringify(review), /AGENT_APP_|create-github-app-token|checks|issues: write|pull-requests/);
@@ -73,7 +74,7 @@ test('REV-06: Codex and Claude Code are invoked inline and read-only', () => {
   assert.match(run, /CODEX_API_KEY="\$KEY" codex exec \\\n\s+--sandbox read-only/);
   assert.match(run, /--output-last-message \.agent\/review\.md/);
   assert.doesNotMatch(run, /workspace-write|danger-full-access|--dangerously|--yolo/);
-  assert.match(run, /ANTHROPIC_API_KEY="\$KEY" claude -p/);
+  assert.match(run, /export ANTHROPIC_API_KEY="\$KEY"\n\s+fi\n\s+claude -p/);
   assert.match(run, /--setting-sources user/);
   assert.match(run, /--permission-mode dontAsk/);
   assert.match(run, /ALLOWED=\(Read Glob Grep "Bash\(git status\*\)" "Bash\(git diff\*\)" "Bash\(git log\*\)" "Bash\(git show\*\)" "Bash\(git ls-files\*\)" "Write\(\/\/work\/\.agent\/review\.md\)"\)/);
@@ -82,6 +83,33 @@ test('REV-06: Codex and Claude Code are invoked inline and read-only', () => {
   assert.match(run, /opencode-runner\.ts review/);
   assert.match(run, /copilot-runner\.ts review/);
   assert.match(run, /FIGMA=none/);
+});
+
+test('WIF-07: a Claude reviewer uses federation like the builder: refresher on the runner, read-only token folder, no key, redacted output', () => {
+  const steps = review.steps.map(s => s.name);
+  const at = (n: string) => steps.indexOf(n);
+  assert.ok(at('Pull the runner image') < at('Start the Anthropic OIDC token refresher'));
+  assert.ok(at('Start the Anthropic OIDC token refresher') < at('Run the reviewer'));
+  assert.ok(at('Run the reviewer') < at('Stop the Anthropic OIDC token refresher'));
+  assert.ok(at('Stop the Anthropic OIDC token refresher') < at('Check and scan the review'));
+  const start = review.steps.find(s => s.name === 'Start the Anthropic OIDC token refresher')!;
+  assert.equal(start.if, "needs.prepare.outputs.auth == 'federation'");
+  assert.match(start.run!, /anthropic-oidc\.ts" validate\n[\s\S]*anthropic-oidc\.ts" start "\$OIDC_DIR"/);
+  for (const v of ['ANTHROPIC_FEDERATION_RULE_ID', 'ANTHROPIC_ORGANIZATION_ID', 'ANTHROPIC_SERVICE_ACCOUNT_ID', 'ANTHROPIC_WORKSPACE_ID']) {
+    assert.equal(start.env![v], `\${{ secrets.${v} }}`, v);
+    assert.doesNotMatch(source, new RegExp(`vars\\.${v}`), v);
+  }
+  const stop = review.steps.find(s => s.name === 'Stop the Anthropic OIDC token refresher')!;
+  assert.equal(stop.if, "always() && needs.prepare.outputs.auth == 'federation'");
+  assert.match(stop.run!, /rm -rf -- "\$RUNNER_TEMP\/anthropic-oidc"/);
+  const agent = review.steps.find(s => s.name === 'Run the reviewer')!;
+  assert.equal(agent.env!.AGENT_MODEL_KEY, "${{ needs.prepare.outputs.auth == 'api-key' && secrets[needs.prepare.outputs.key_secret] || '' }}");
+  assert.match(agent.run!, /-v "\$RUNNER_TEMP\/anthropic-oidc:\/run\/anthropic-oidc:ro"/);
+  assert.match(agent.run!, /unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN/);
+  assert.match(agent.run!, /< \/dev\/null 2>&1 \\\n\s+\| node "\$RUNNER_TEMP\/trusted\/scripts\/anthropic-oidc\.ts" redact/);
+  // The request variables, which can mint tokens, are never named, so they never reach the container.
+  assert.doesNotMatch(source.replace(/^\s*#.*$/gm, ''), /ACTIONS_ID_TOKEN_REQUEST/);
+  assert.equal(prepare.steps.length > 0 && JSON.stringify(workflow.jobs.prepare).includes('outputs.auth'), true);
 });
 
 test('REV-08: the review is copied once, scanned from the trusted copy and uploaded alone', () => {

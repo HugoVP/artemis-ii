@@ -99,14 +99,20 @@ test("WIF-04: untrusted output cannot run workflow commands, so it cannot switch
     assert.equal(looksLikeWorkflowCommand(line), true, `fixture ${line}`);
     assert.equal(looksLikeWorkflowCommand(neutralizeWorkflowCommands(line)), false, line);
   }
+  // Characters that .NET's TrimStart removes but JavaScript's trim() does not (U+0085), and other invisible prefixes.
+  for (const prefix of ["\u0085", "\u0085\u0085 ", "\u00a0", "\u2028", "\u200b", "\ufeff", "\u0001", "\u009f", "\u3000"]) {
+    const line = `${prefix}::stop-commands::marker`;
+    assert.equal(looksLikeWorkflowCommand(line), true, `fixture ${JSON.stringify(prefix)}`);
+    assert.match(neutralizeWorkflowCommands(line), /^\[agent output\] /, JSON.stringify(prefix));
+  }
   assert.equal(neutralizeWorkflowCommands("progress ##[stop-commands]marker"), "progress ## [stop-commands]marker");
   for (const line of ["plain", "a ::stop-commands::x in the middle", "# heading", ": :not a command", "## not legacy"]) assert.equal(neutralizeWorkflowCommands(line), line);
   const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
   const token = `${b64({ alg: "RS256" })}.${b64({ sub: "x" })}.${"s".repeat(30)}`;
   assert.equal(sanitizeLogLine(`::add-mask::${token}`), "[agent output] ::add-mask::[redacted token]");
   const script = fileURLToPath(new URL("./anthropic-oidc.ts", import.meta.url));
-  const out = execFileSync(process.execPath, [script, "redact"], { input: "::stop-commands::m\nok ##[stop-commands]m\n", encoding: "utf8" });
-  assert.equal(out, "[agent output] ::stop-commands::m\nok ## [stop-commands]m\n");
+  const out = execFileSync(process.execPath, [script, "redact"], { input: "::stop-commands::m\nok ##[stop-commands]m\n\u0085::stop-commands::m\n", encoding: "utf8" });
+  assert.equal(out, "[agent output] ::stop-commands::m\nok ## [stop-commands]m\n[agent output] \u0085::stop-commands::m\n");
   for (const l of out.split("\n")) assert.equal(looksLikeWorkflowCommand(l), false, l);
 });
 

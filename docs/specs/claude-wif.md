@@ -27,7 +27,7 @@
 
 ## Allowed protected changes
 
-Proposed `docs/agents/workflows/agent-run.yml`, new proposed `claude-wif-smoke.yml`, `docs/agents/**` and `docs/DELIVERY.md`. Hugo copies the proposals to `.github/workflows/`. No setting, secret or variable is changed by an agent.
+Proposed `docs/agents/workflows/agent-run.yml`, new proposed `claude-wif-smoke.yml`, `docs/agents/**` and `docs/DELIVERY.md`. Hugo installs the proposals: the installed `.github/workflows/agent-run.yml` and the new `.github/workflows/claude-wif-smoke.yml` are identical copies, committed by Hugo on this branch (`94574c1`), and are protected-path changes of this PR. Both grant `id-token: write` (to the `work` job of `agent-run.yml` and to the smoke job only), which lets the job's own steps ask GitHub for an OIDC token and writes nothing to the repository; neither workflow gets any other new permission. No setting, secret or variable is changed by an agent.
 
 ## Verification
 

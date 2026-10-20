@@ -21,7 +21,7 @@ Claude Code runs in `agent-run.yml` without a stored Anthropic API key. The `wor
    - Service account: create one and add it to a **dedicated workspace** with a **spend limit**, as with the old key.
 2. **Secrets of the environment `agents`** (Settings → Environments → agents → Environment secrets): `ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`, `ANTHROPIC_WORKSPACE_ID`. They are not credentials, but they are account identifiers, and GitHub prints a step's environment in public logs without masking variables; secrets are masked. Their values are shown in the Console after step 1.
 3. **Delete** the secret `AGENT_KEY_CLAUDE` from the environment `agents` if it exists, and revoke the API key behind it.
-4. **Copy the workflows** `agent-run.yml` and `claude-wif-smoke.yml` from `docs/agents/workflows/` to `.github/workflows/`.
+4. **Install the workflows:** `agent-run.yml` and `claude-wif-smoke.yml` from `docs/agents/workflows/` are copied to `.github/workflows/` (done on the PR branch; the two copies must stay identical). They take effect when the PR is merged.
 5. **Smoke:** run "Claude WIF smoke" by hand on `main`, first without `long`, then with `long`.
 
 To go back to a static key: put `key_secret: AGENT_KEY_CLAUDE` in place of `auth: federation` in `agents/registry.yaml` and create the secret. The `api-key` path of `agent-run.yml` is unchanged.

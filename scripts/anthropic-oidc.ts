@@ -2,7 +2,7 @@
 // (docs/specs/claude-wif.md). Runs on the runner, from the trusted copy of main's scripts, never in the agent's
 // container: only the file reaches the container, mounted read-only. No dependencies (Node 22).
 //   node scripts/anthropic-oidc.ts validate        checks the four federation ids in the environment
-//   node scripts/anthropic-oidc.ts start <dir>     writes <dir>/token now and every 120 seconds, until killed
+//   node scripts/anthropic-oidc.ts start <dir>     writes <dir>/token now and every 60 seconds, until killed
 //   ... | node scripts/anthropic-oidc.ts redact    copies stdin to stdout with every JWT replaced, line by line
 import { mkdir, rename, writeFile, rm } from "node:fs/promises";
 import { createInterface } from "node:readline";
@@ -11,7 +11,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const AUDIENCE = "https://api.anthropic.com";
-export const REFRESH_MS = 120_000;
+// Anthropic's SDKs re-exchange at expiry minus 120 s and must re-exchange by expiry minus 30 s, re-reading the token
+// file each time, and a token with a jti works once. Rotating every minute puts a new token in the file inside that
+// 90-second window, so even a retried exchange never presents a token that was already used.
+export const REFRESH_MS = 60_000;
 export const FEDERATION_VARIABLES = ["ANTHROPIC_FEDERATION_RULE_ID", "ANTHROPIC_ORGANIZATION_ID", "ANTHROPIC_SERVICE_ACCOUNT_ID", "ANTHROPIC_WORKSPACE_ID"];
 
 // The ids come from secrets of the environment "agents" (masked in logs); they are still data: short opaque ids only, never a path or a shell fragment.

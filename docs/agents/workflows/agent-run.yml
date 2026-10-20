@@ -255,8 +255,8 @@ jobs:
           exit 1
 
       # Anthropic workload identity federation for Claude Code (docs/specs/claude-wif.md). A trusted script from main
-      # keeps a fresh GitHub OIDC token in a file of the runner, replaced every two minutes (GitHub's tokens last about
-      # five minutes and work once). Only that file reaches the agent's container, read-only: ACTIONS_ID_TOKEN_REQUEST_URL
+      # keeps a fresh GitHub OIDC token in a file of the runner, replaced every minute (GitHub's tokens last about five
+      # minutes and work once; Claude Code re-reads the file at each refresh). Only that file reaches the agent's container, read-only: ACTIONS_ID_TOKEN_REQUEST_URL
       # and ACTIONS_ID_TOKEN_REQUEST_TOKEN, which can mint tokens, never do.
       # The federation ids are secrets of the environment "agents", so GitHub masks them wherever a step prints them.
       - name: Start the Anthropic OIDC token refresher

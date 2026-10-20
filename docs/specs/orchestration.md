@@ -20,6 +20,7 @@ Phase 3 lets the pipeline merge stages into `iteration/N` and start the next sta
 4. `ORC-04`: the previous leader comes from the merge commits of `main` (`Merge pull request #N from owner/agent/stage-NN-<agent>`). Branches not named after a registry agent are ignored. If the history cannot be read, the recommendation says so and applies no rotation.
 5. `ORC-05`: `scripts/next-stage-issue.ts` appends the recommendation to every new work order, with each agent's score parts and the reason each excluded agent is not eligible. When nobody can lead, it adds the label `needs-hugo`. It never starts a run and never adds an `agent:<id>` label: Hugo does.
 6. `ORC-06`: `node scripts/orchestrate.ts <stage>` prints the same recommendation locally, from `git log`, for a work order opened before this change.
+7. `ORC-07`: participation. Among the agents eligible to lead, one that has never led a stage (no merged `agent/stage-NN-<id>` branch) is recommended before any agent that has, whatever their scores, so that every registered agent leads at least once before another leads twice. The recommendation marks such agents with "has not led a stage yet". Reviewers are ranked by score only. `lead-small` agents keep their limit: they are listed first among the alternatives, never recommended as leader.
 
 ## Out of scope
 

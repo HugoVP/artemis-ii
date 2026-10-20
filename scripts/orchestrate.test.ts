@@ -111,3 +111,14 @@ test("the real registry and plan give a recommendation for every pending stage",
     if (r.leader) assert.ok(agents.find(a => a.id === r.leader!.id)!.status === "active");
   }
 });
+
+test("ORC-07: an eligible agent that has never led comes before one that has, whatever the score", () => {
+  // beta led Stage 02 and scores higher (subscription); gamma never led, so gamma is recommended.
+  const r = recommend({ stages, stageNumber: "06", agents: team, leaders: new Map([["02", "beta"], ["04", "alpha"]]) });
+  assert.equal(r.leader?.id, "gamma");
+  assert.ok(r.leader!.score < r.alternatives.find(c => c.id === "beta")!.score);
+  assert.match(formatRecommendation(r), /`gamma` \([^)]*has not led a stage yet\)/);
+  // Once everyone eligible has led, the score decides again.
+  const later = recommend({ stages, stageNumber: "06", agents: team, leaders: new Map([["02", "beta"], ["03", "gamma"], ["04", "alpha"]]) });
+  assert.equal(later.leader?.id, "beta");
+});

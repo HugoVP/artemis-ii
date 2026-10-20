@@ -20,6 +20,19 @@ export const BUILD_ALLOW = [
   'command(git status)', 'command(git diff)', 'command(git log)', 'command(git show)', 'command(git ls-files)',
   'command(ls)', 'command(mkdir)',
 ];
+// Web pages the build may read (`read_url(<domain>)` rules): the npm registry and the NASA domains of docs/SETUP.md, as
+// for the other agents. Without them the `web` capability would be denied in print mode.
+export const ALLOWED_URLS = [
+  'registry.npmjs.org', 'eol.jsc.nasa.gov', 'pds-imaging.jpl.nasa.gov', 'www.nasa.gov',
+  'images.nasa.gov', 'images-api.nasa.gov', 'images-assets.nasa.gov',
+];
+// Figma read access (figma-read stages), only through the pipeline's gateway, with the read tools of agent-run.yml.
+export const FIGMA_GATEWAY = 'http://figma-gateway:8787/mcp';
+export const FIGMA_READ_TOOLS = ['get_metadata', 'get_screenshot', 'get_variable_defs', 'get_design_context'];
+// Format written by `agy mcp add figma <url>` in ~/.gemini/config/mcp_config.json.
+export function figmaMcpConfig() {
+  return { mcpServers: { figma: { disabled: false, serverUrl: FIGMA_GATEWAY } } };
+}
 // Review mode runs in `--mode plan` and may only read; the launcher, not the agent, writes the review file.
 export const REVIEW_ALLOW = ['command(git status)', 'command(git diff)', 'command(git log)', 'command(git show)', 'command(git ls-files)'];
 
@@ -32,8 +45,14 @@ export function validateAntigravityModel(value: unknown): string {
 }
 
 // The CLI reads GEMINI_API_KEY only when settings.json selects the Gemini API; without it, it starts a browser sign-in.
-export function antigravitySettings(mode: Mode) {
-  return { modelProvider: 'gemini', permission: { allow: mode === 'review' ? REVIEW_ALLOW : BUILD_ALLOW } };
+export function antigravitySettings(mode: Mode, figma = false) {
+  if (mode === 'review' && figma) throw new Error('A review has no Figma access.');
+  const allow = mode === 'review' ? REVIEW_ALLOW : [
+    ...BUILD_ALLOW,
+    ...ALLOWED_URLS.map(domain => `read_url(${domain})`),
+    ...(figma ? FIGMA_READ_TOOLS.map(tool => `mcp(figma/${tool})`) : []),
+  ];
+  return { modelProvider: 'gemini', permission: { allow } };
 }
 
 export function antigravityArgs(model: string, prompt: string, mode: Mode, logFile: string): string[] {
@@ -55,14 +74,21 @@ export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = pr
   const model = validateAntigravityModel(env.ANTIGRAVITY_MODEL);
   const key = env.GEMINI_API_KEY;
   if (!key) throw new Error('AGENT_KEY_ANTIGRAVITY is missing from the agents environment.');
-  if (env.FIGMA !== 'none') throw new Error('Antigravity is not qualified for Figma stages.');
+  // figma-read stages only: the registry gives Antigravity no figma-write, and a review never gets Figma.
+  if (env.FIGMA !== 'none' && !(env.FIGMA === 'read' && mode === 'build')) throw new Error('Antigravity is qualified only for Figma read stages, and reviews get no Figma.');
+  const figma = env.FIGMA === 'read';
   if (!env.HOME) throw new Error('The isolated agent HOME is required.');
   // A home of its own for the CLI: settings, conversations, logs and any updater state disappear after the run.
   const home = await mkdtemp(join(env.HOME, 'agy-home-'));
   try {
     const settingsDir = join(home, '.gemini', 'antigravity-cli');
     await mkdir(settingsDir, { recursive: true, mode: 0o700 });
-    await writeFile(join(settingsDir, 'settings.json'), JSON.stringify(antigravitySettings(mode)), { mode: 0o600 });
+    await writeFile(join(settingsDir, 'settings.json'), JSON.stringify(antigravitySettings(mode, figma)), { mode: 0o600 });
+    if (figma) {
+      const configDir = join(home, '.gemini', 'config');
+      await mkdir(configDir, { recursive: true, mode: 0o700 });
+      await writeFile(join(configDir, 'mcp_config.json'), JSON.stringify(figmaMcpConfig()), { mode: 0o600 });
+    }
     // A clean environment: no other credential, and no ADC or custom endpoint settings from outside.
     const childEnv: NodeJS.ProcessEnv = {
       PATH: env.PATH, HOME: home, CI: 'true', GIT_OPTIONAL_LOCKS: '0', NO_COLOR: '1', TERM: 'dumb',

@@ -24,7 +24,8 @@ test('AGY-01: Antigravity is registered without Figma, as the google family, and
   assert.equal(agent.family, 'google');
   assert.equal(agent.status, 'pending');
   assert.deepEqual(missingCapabilities(['git', 'node', 'browser', 'web'], agent.capabilities), []);
-  assert.deepEqual(missingCapabilities(['figma-read'], agent.capabilities), ['figma-read']);
+  assert.deepEqual(missingCapabilities(['figma-read'], agent.capabilities), []);
+  assert.deepEqual(missingCapabilities(['figma-write'], agent.capabilities), ['figma-write']);
   const dockerfile = await read('Dockerfile');
   assert.ok(dockerfile.includes(`ARG AGY_VERSION=${AGY_VERSION}`));
   assert.match(dockerfile, new RegExp(`ARG AGY_URL=https://storage\\.googleapis\\.com/antigravity-public/antigravity-cli/${AGY_VERSION.replaceAll('.', '\\.')}-\\d+/linux-x64/cli_linux_x64\\.tar\\.gz`));

@@ -97,8 +97,11 @@ function score(agent: Agent, kind: StageKind, previous: string | null, leaders: 
 }
 
 // Higher score first; ties go to the agent that led less recently, then to registry order.
-function rank(candidates: Candidate[], registryOrder: string[]): Candidate[] {
-  return [...candidates].sort((a, b) => b.score - a.score || a.lastLed - b.lastLed || registryOrder.indexOf(a.id) - registryOrder.indexOf(b.id));
+// Participation (ORC-07): when choosing a leader, an eligible agent that has never led a stage comes before every agent
+// that has, so each registered agent leads at least once before anyone leads twice. Reviewers are ranked by score only.
+function rank(candidates: Candidate[], registryOrder: string[], participation = false): Candidate[] {
+  const neverLed = (c: Candidate) => (participation && c.lastLed === -1 ? 1 : 0);
+  return [...candidates].sort((a, b) => neverLed(b) - neverLed(a) || b.score - a.score || a.lastLed - b.lastLed || registryOrder.indexOf(a.id) - registryOrder.indexOf(b.id));
 }
 
 export function recommend({ stages, stageNumber, agents, leaders, history = {} }: {
@@ -135,8 +138,9 @@ export function recommend({ stages, stageNumber, agents, leaders, history = {} }
     else leads.push({ agent, small: !roles.includes("lead") });
   }
   const scored = (items: Agent[]) => rank(items.map(a => score(a, kind, previousLeader, leaders, order, history)), registryOrder);
-  const full = scored(leads.filter(l => !l.small).map(l => l.agent));
-  const small = scored(leads.filter(l => l.small).map(l => l.agent));
+  const leading = (items: Agent[]) => rank(items.map(a => score(a, kind, previousLeader, leaders, order, history)), registryOrder, true);
+  const full = leading(leads.filter(l => !l.small).map(l => l.agent));
+  const small = leading(leads.filter(l => l.small).map(l => l.agent));
   const leader = full[0] ?? null;
   const alternatives = [...full.slice(1), ...small];
 
@@ -161,7 +165,7 @@ export function recommend({ stages, stageNumber, agents, leaders, history = {} }
 }
 
 export function formatRecommendation(r: Recommendation): string {
-  const who = (c: Candidate) => `\`${c.id}\` (score ${c.score}: history ${c.parts.history}, cost ${c.parts.cost}, rotation ${c.parts.rotation}, fit ${c.parts.fit})`;
+  const who = (c: Candidate) => `\`${c.id}\` (score ${c.score}: history ${c.parts.history}, cost ${c.parts.cost}, rotation ${c.parts.rotation}, fit ${c.parts.fit}${c.lastLed === -1 ? "; has not led a stage yet" : ""})`;
   const lines = [
     "## Recommended agents",
     "",

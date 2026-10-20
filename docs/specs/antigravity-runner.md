@@ -17,6 +17,7 @@ Antigravity's IDE is interactive and runs on Hugo's machine, so it cannot run in
 5. `AGY-05`: suppress the transcript. Fail on a nonzero exit, a structured `AGY_ERROR` line (only its status and code are shown), an `Error:` line (redacted), or an interactive sign-in request, which also stops the CLI at once.
 6. `AGY-06`: as a reviewer (`agent-review.yml`), run in `--mode plan` with only read-only `git` approved; the launcher, not the agent, writes the printed answer to `.agent/review.md`, redacted and size-limited. A PR that touches `.gemini/`, `.agents/` or `GEMINI.md` is treated like other agent configuration by the reviewer checks.
 7. `AGY-07`: document the owner setup in `docs/agents/antigravity.md`: key, spend cap, secret, label, model choice, image publication and smoke.
+8. `AGY-08` (added 2026-10-20): `figma-read` stages and web reads. The launcher writes `~/.gemini/config/mcp_config.json` (the format of `agy mcp add`) pointing through the pipeline's Figma gateway (`http://figma-gateway:8787/mcp`), which holds the token and enforces the stage's tools on the design file, with only the read tools of `agent-run.yml` (`get_metadata`, `get_screenshot`, `get_variable_defs`, `get_design_context`) approved as `mcp(figma/<tool>)` rules. Reviews never get Figma, and `figma-write` stays with Codex and Claude Code. To verify on the agent's first `figma-read` stage. Build mode also approves `read_url(<domain>)` for the npm registry and the NASA domains of `docs/SETUP.md`, so the `web` capability is not denied in print mode; the rule forms `mcp(<server>/<tool>)` and `read_url(<domain>)` come from the guidance bundled in the 1.4.3 binary.
 
 ## Allowed protected changes
 
@@ -40,4 +41,4 @@ The proposed `agent-run.yml`, `agent-review.yml`, `agent-runner-image.yml` and `
 
 ## Out of scope
 
-Antigravity's IDE and remote control, Jules, Vertex AI or service-account authentication, Figma access, and changes to approval or deployment policy.
+Antigravity's IDE and remote control, Jules, Vertex AI or service-account authentication, Figma write access, and changes to approval or deployment policy.

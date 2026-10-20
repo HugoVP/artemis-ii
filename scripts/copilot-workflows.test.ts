@@ -21,7 +21,8 @@ test('CPL-01: Copilot is registered without Figma and the image pins its CLI and
   assert.equal(agent.runner, 'copilot-cli');
   assert.equal(agent.key_secret, 'AGENT_KEY_COPILOT');
   assert.deepEqual(missingCapabilities(['git', 'node', 'browser', 'web'], agent.capabilities), []);
-  assert.deepEqual(missingCapabilities(['figma-read'], agent.capabilities), ['figma-read']);
+  assert.deepEqual(missingCapabilities(['figma-read'], agent.capabilities), []);
+  assert.deepEqual(missingCapabilities(['figma-write'], agent.capabilities), ['figma-write']);
   const dockerfile = await read('Dockerfile');
   assert.ok(dockerfile.includes(`ARG COPILOT_VERSION=${COPILOT_VERSION}`));
   assert.ok(dockerfile.includes('@github/copilot@${COPILOT_VERSION}'));

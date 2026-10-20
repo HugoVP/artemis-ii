@@ -1,6 +1,6 @@
 # GitHub Copilot CLI in the remote agent pipeline
 
-GitHub Copilot CLI is a selectable Phase 2 builder. It runs inside the same unprivileged container as Codex, Claude Code and OpenCode, so its result goes through the same scan, protected-path check and trusted publisher. This integration registers `git`, `node`, `browser` and `web`, with no Figma capabilities. Contract: [`docs/specs/copilot-runner.md`](../specs/copilot-runner.md).
+GitHub Copilot CLI is a selectable Phase 2 builder. It runs inside the same unprivileged container as Codex, Claude Code and OpenCode, so its result goes through the same scan, protected-path check and trusted publisher. This integration registers `git`, `node`, `browser`, `web` and `figma-read`: on Figma read stages the launcher connects Copilot to the pipeline's Figma gateway with only the read tools ([`copilot-runner.md`](../specs/copilot-runner.md), `CPL-07`). It has no `figma-write`. Contract: [`docs/specs/copilot-runner.md`](../specs/copilot-runner.md).
 
 Copilot's cloud coding agent (assigning an issue to Copilot) is not used: it pushes `copilot/…` branches and opens PRs with its own identity, outside the pipeline's checks.
 

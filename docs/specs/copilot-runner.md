@@ -16,6 +16,7 @@ Copilot's cloud coding agent pushes its own `copilot/…` branches and opens PRs
 4. `CPL-04`: a separate manual smoke workflow (`copilot-smoke.yml`) exercises the fixed fixture of the OpenCode smoke without opening a PR, modifying the repository or starting a site stage. It accepts only Hugo on `main`, uses the digest-pinned runner image, and validates the resulting files outside the container. The PR sandbox smoke checks, without any credential, that the image holds the CLI and a launcher the agent cannot change.
 5. `CPL-05`: suppress the CLI transcript in workflow logs. Report failure on a nonzero exit or an `Error:` line, showing at most that line, with the token redacted.
 6. `CPL-06`: document the exact owner setup in `docs/agents/copilot.md`: token creation, secret, label, model choice, image publication, smoke and stage commands. Live Copilot access, the model's quality and AI-credit spending remain unverified until Hugo configures the token and runs the smoke.
+7. `CPL-07` (added with Phase 3a participation, 2026-10-20): `figma-read` stages. The launcher writes a user MCP configuration in `COPILOT_HOME` (the format of `copilot mcp add --transport http --tools`) pointing through the pipeline's Figma gateway (`http://figma-gateway:8787/mcp`), which holds the token and enforces the stage's tools on the design file, with only the read tools of `agent-run.yml` (`get_metadata`, `get_screenshot`, `get_variable_defs`, `get_design_context`) in its tool filter and approved with `--allow-tool=figma(<tool>)`. Reviews never get Figma, and `figma-write` stays with Codex and Claude Code. To verify on the agent's first `figma-read` stage.
 
 ## Allowed protected changes
 
@@ -31,4 +32,4 @@ The integration changes only the proposed `agent-run.yml`, `agent-runner-image.y
 
 ## Out of scope
 
-Automatic selection and review (`docs/specs/orchestration.md`, a separate change), continuation of existing PRs, concurrent site stages, Figma access, Copilot's cloud coding agent, and changes to approval or deployment policy.
+Automatic selection and review (`docs/specs/orchestration.md`, a separate change), continuation of existing PRs, concurrent site stages, Figma write access, Copilot's cloud coding agent, and changes to approval or deployment policy.

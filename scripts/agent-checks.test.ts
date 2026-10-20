@@ -75,6 +75,9 @@ test("the secret scan finds model keys, tokens, private keys and session links, 
   assert.deepEqual(findSecrets(`token ${key}`), ["OpenAI-style API key"]);
   assert.deepEqual(findSecrets("sk-ant-" + "b".repeat(30)), ["Anthropic API key"]);
   assert.deepEqual(findSecrets("ghp_" + "c".repeat(36)), ["GitHub token"]);
+  // Built at run time, so the source itself holds no token-shaped text.
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  assert.deepEqual(findSecrets(`${b64({ alg: "RS256" })}.${b64({ sub: "repo:x" })}.${"s".repeat(20)}`), ["JSON Web Token"]);
   assert.deepEqual(findSecrets("-----BEGIN " + "RSA PRIVATE KEY-----"), ["private key"]);
   assert.deepEqual(findSecrets("see https://claude.ai/code/" + "session_" + "A1b2C3d4E5f6G7h8"), ["session link"]);
   assert.deepEqual(findSecrets("plain text, a sk-ip, and AGENT_KEY_CODEX as a name"), []);
@@ -155,6 +158,22 @@ test("a registry entry cannot point the work job at a secret that is not a model
   assert.throws(() => parseRegistry(bad("AGENT_APP_PRIVATE_KEY")), /AGENT_KEY_/);
   assert.throws(() => parseRegistry(bad("GITHUB_TOKEN")), /AGENT_KEY_/);
   assert.equal(parseRegistry(bad("AGENT_KEY_OTHER"))[0].key_secret, "AGENT_KEY_OTHER");
+});
+
+test("WIF-01: auth: federation is only for claude-print, never with a key_secret, and other agents keep AGENT_KEY_", async () => {
+  const entry = (...lines: string[]) => lines.map((l) => `${l}\n`).join("");
+  const fed = (extra: string[], runner = "claude-print") => entry("- id: x", "  auth: federation", `  runner: ${runner}`, "  capabilities: [git]", ...extra);
+  const a = parseRegistry(fed([]))[0];
+  assert.equal(a.auth, "federation");
+  assert.equal(a.key_secret, "");
+  assert.throws(() => parseRegistry(fed(["  key_secret: AGENT_KEY_X"])), /must not have a key_secret/);
+  assert.throws(() => parseRegistry(fed([], "codex-exec")), /only the runner claude-print/);
+  assert.throws(() => parseRegistry(entry("- id: x", "  auth: magic", "  runner: claude-print", "  capabilities: [git]")), /unknown auth/);
+  assert.throws(() => parseRegistry(entry("- id: x", "  auth: api-key", "  runner: codex-exec", "  capabilities: [git]")), /key_secret/);
+  assert.equal(parseRegistry(entry("- id: x", "  key_secret: AGENT_KEY_X", "  runner: codex-exec", "  capabilities: [git]"))[0].auth, "api-key");
+  const real = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
+  assert.equal(real.find((r) => r.id === "claude")!.auth, "federation");
+  for (const r of real.filter((r) => r.id !== "claude")) assert.match(r.key_secret, /^AGENT_KEY_/);
 });
 
 test("linkPlan adds the PR link to the stage row and its log line, and nothing else", () => {

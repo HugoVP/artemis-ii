@@ -1,0 +1,116 @@
+name: Claude WIF smoke
+
+# Trusted fixture only: no stage, repository edits, PR publication or deployment. Checks that Claude Code signs in with
+# Anthropic workload identity federation (docs/specs/claude-wif.md, WIF-05). With `long`, one `claude -p` process stays
+# alive for about 23 minutes, longer than two Anthropic token lifetimes, so the run shows that the CLI re-reads the
+# token file that the refresher replaces; a long run shorter than 15 minutes fails. The federation ids are secrets of
+# the environment "agents", so GitHub masks them in the log.
+on:
+  workflow_dispatch:
+    inputs:
+      long:
+        description: Keep one claude process alive for about 23 minutes (tests the token refresh)
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: claude-wif-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: github.ref == 'refs/heads/main' && github.actor == vars.AGENT_TRUSTED_LOGIN && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    environment: agents
+    # id-token: write only lets this job's refresher ask GitHub for an OIDC token; nothing is written to the repository.
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    env:
+      IMAGE: ${{ vars.AGENT_RUNNER_IMAGE }}
+      LONG: ${{ inputs.long }}
+      ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Validate the federation variables
+        run: node scripts/anthropic-oidc.ts validate
+
+      - name: Pull the digest-pinned runner image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]] || { echo "AGENT_RUNNER_IMAGE must be pinned by digest."; exit 1; }
+          export DOCKER_CONFIG="$RUNNER_TEMP/wif-login"
+          mkdir -p "$DOCKER_CONFIG"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
+          docker pull -q "$IMAGE"
+          docker logout ghcr.io >/dev/null
+          rm -r -- "$DOCKER_CONFIG"
+          docker run --rm --network none --entrypoint cat "$IMAGE" /etc/passwd > "$RUNNER_TEMP/wif-passwd"
+          printf 'agent:x:%s:%s::/home/agent:/bin/bash\n' "$(id -u)" "$(id -g)" >> "$RUNNER_TEMP/wif-passwd"
+
+      - name: Start the Anthropic OIDC token refresher
+        run: |
+          set -euo pipefail
+          OIDC_DIR="$RUNNER_TEMP/anthropic-oidc"
+          nohup node scripts/anthropic-oidc.ts start "$OIDC_DIR" > "$RUNNER_TEMP/anthropic-oidc.log" 2>&1 &
+          echo "OIDC_REFRESHER_PID=$!" >> "$GITHUB_ENV"
+          for _ in $(seq 1 30); do
+            if [ -s "$OIDC_DIR/token" ]; then echo "OIDC token refresher ready."; exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/anthropic-oidc.log"
+          echo "The OIDC token refresher did not write a token."
+          exit 1
+
+      # No model key and no GitHub token reach the container: only the folder with the token file (read-only) and the ids.
+      - name: Run Claude Code on a fixed prompt
+        run: |
+          set -euo pipefail
+          IFS= read -r -d '' IN_CONTAINER <<'IN_CONTAINER' || true
+          set -euo pipefail
+          unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
+          if [ "$LONG" = true ]; then
+            PROMPT='Run the shell command `sleep 280` five times, one after the other, each with a timeout of 600000 milliseconds. Then reply with exactly: wif-ok'
+            ARGS=(--allowedTools "Bash(sleep *)")
+          else
+            PROMPT='Reply with exactly: wif-ok'
+            ARGS=()
+          fi
+          START=$(date +%s)
+          claude -p "$PROMPT" --permission-mode dontAsk --no-session-persistence "${ARGS[@]}" | tee /tmp/answer.txt
+          ELAPSED=$(( $(date +%s) - START ))
+          grep -q 'wif-ok' /tmp/answer.txt
+          # The long run proves the token refresh only if this one process outlived the token: at least 15 minutes.
+          if [ "$LONG" = true ] && [ "$ELAPSED" -lt 900 ]; then echo "The long run ended after ${ELAPSED}s, before 15 minutes."; exit 1; fi
+          echo "Claude Code answered after ${ELAPSED}s."
+          IN_CONTAINER
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            -v "$RUNNER_TEMP/wif-passwd:/etc/passwd:ro" --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
+            -v "$RUNNER_TEMP/anthropic-oidc:/run/anthropic-oidc:ro" -e ANTHROPIC_IDENTITY_TOKEN_FILE=/run/anthropic-oidc/token \
+            -e ANTHROPIC_FEDERATION_RULE_ID -e ANTHROPIC_ORGANIZATION_ID -e ANTHROPIC_SERVICE_ACCOUNT_ID -e ANTHROPIC_WORKSPACE_ID -e LONG \
+            "$IMAGE" bash -c "$IN_CONTAINER" < /dev/null 2>&1 | node scripts/anthropic-oidc.ts redact
+
+      - name: Stop the Anthropic OIDC token refresher
+        if: always()
+        run: |
+          if [ -n "${OIDC_REFRESHER_PID:-}" ]; then kill "$OIDC_REFRESHER_PID" 2>/dev/null || true; fi
+          cat "$RUNNER_TEMP/anthropic-oidc.log" 2>/dev/null || true
+          rm -rf -- "$RUNNER_TEMP/anthropic-oidc"

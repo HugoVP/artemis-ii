@@ -6,7 +6,8 @@ How the `agent-run` workflow runs an agent on a stage, how Hugo sets it up, and 
 
 | File | What it is |
 | --- | --- |
-| `agents/registry.yaml` | The agents the pipeline can run: id, model key secret, how it starts, capabilities |
+| `agents/registry.yaml` | The agents the pipeline can run: id, model key secret (or `auth: federation`), how it starts, capabilities |
+| `scripts/anthropic-oidc.ts`, `docs/agents/workflows/claude-wif-smoke.yml` | Keeps a fresh GitHub OIDC token in a file for Claude Code's workload identity federation; the manual smoke that tests it ([`claude-code-wif.md`](claude-code-wif.md)) |
 | `docs/agents/workflows/agent-run.yml` | Proposed workflow. Hugo copies it to `.github/workflows/agent-run.yml` |
 | `docs/agents/workflows/agent-review.yml`, `scripts/agent-review.ts` | Proposed reviewer workflow and its checks (see "Reviews") |
 | `docs/agents/workflows/agent-runner-image.yml` | Proposed workflow that builds and publishes the runner image. Hugo copies it too |
@@ -22,7 +23,7 @@ For agent connections without workflow-write access, the proposed workflows live
 ## Setup (Hugo)
 
 1. **GitHub App**, only for his account, installed only on this repository, no webhook. Permissions: Contents, Pull requests and Issues (read and write) and Metadata (read). Nothing else; in particular no Checks, which belongs to phase 3.
-2. **Environment `agents`**, restricted to `main`, with the variable `AGENT_APP_ID` and the secrets `AGENT_APP_PRIVATE_KEY` and `AGENT_KEY_<ID>` (one per agent: `AGENT_KEY_CODEX` for Codex, `AGENT_KEY_CLAUDE` for Claude Code, `AGENT_KEY_OPENCODE` for OpenCode, `AGENT_KEY_COPILOT` for Copilot CLI, which is a fine-grained GitHub token limited to "Copilot Requests"). Each model key is a dedicated key with a spending limit set in the provider's console (OpenAI: a project with a budget; Anthropic: a workspace with a spend limit in the Claude Console). For stages that use Figma, the three `FIGMA_MCP_*` secrets ("Figma in the pipeline").
+2. **Environment `agents`**, restricted to `main`, with the variable `AGENT_APP_ID` and the secrets `AGENT_APP_PRIVATE_KEY` and `AGENT_KEY_<ID>` (one per agent that uses a static key: `AGENT_KEY_CODEX` for Codex, `AGENT_KEY_OPENCODE` for OpenCode, `AGENT_KEY_COPILOT` for Copilot CLI, which is a fine-grained GitHub token limited to "Copilot Requests", allowed only under the approved exception and its controls in `docs/DELIVERY.md`). Claude Code has no key: it signs in with workload identity federation, with four id secrets in the same environment ([`claude-code-wif.md`](claude-code-wif.md)). Each model key is a dedicated key with a spending limit set in the provider's console (OpenAI: a project with a budget; Anthropic: a workspace with a spend limit in the Claude Console). For stages that use Figma, the three `FIGMA_MCP_*` secrets ("Figma in the pipeline").
 3. **Repository variable `AGENT_TRUSTED_LOGIN`** with Hugo's GitHub login. Only this login can start a run. For stages that use Figma, also the repository variable `FIGMA_FILE_URL`, with the same link as in the Claude Code environment: the Figma gateway takes the design file's key from it and refuses every other file.
 4. **Labels** `agent-task` (already used by work orders), `agent-authored` and `needs-hugo`. Create one `agent:<id>` label per agent: `agent:codex`, `agent:claude`, `agent:opencode` and `agent:copilot`.
 5. **Copy the workflows** from `docs/agents/workflows/` to `.github/workflows/` and merge that change. This includes `agent-sandbox-smoke.yml`, which tests the nested sandbox on pipeline changes without credentials. The Actions policy of the repository allows only GitHub-created actions pinned by SHA, which these files respect.
@@ -40,7 +41,7 @@ A result that touches `.github/workflows/**` or contains secret-like text is rej
 
 ## Adding an agent
 
-1. Add an entry to `agents/registry.yaml`. `key_secret` must look like `AGENT_KEY_<ID>`: the checks refuse any other secret name.
+1. Add an entry to `agents/registry.yaml`. `key_secret` must look like `AGENT_KEY_<ID>`: the checks refuse any other secret name. The only exception is `auth: federation` (no `key_secret`), which only the runner `claude-print` supports.
 2. Add its CLI to the `agent-runner` target of the `Dockerfile`, with a pinned version.
 3. Add a branch for its `runner` value to the script that "Run the agent" in `agent-run.yml` passes to the container. It must be headless, take its key from the variable that step passes, and write nothing to GitHub. For Figma, point its MCP client at the gateway (`http://figma-gateway:8787/mcp`) with no credentials.
 4. Document in `docs/agents/other-agents.md` how the headless mode and its authentication were verified, and update the "Known agents" table in `README.md`.
@@ -61,6 +62,8 @@ Checked on 2026-10-17 with `@openai/codex` 0.163.0 installed from npm (`codex ex
 **Remaining owner checks:** Stage 04's visual acceptance against Figma, review of PR #31, and whether duration and usage are acceptable for future stages. The successful run demonstrates project command execution and PR publication; it does not establish compliance for every future task.
 
 ## Verified for Claude Code
+
+Authentication in the pipeline is workload identity federation, not an API key: see [`claude-code-wif.md`](claude-code-wif.md). The `ANTHROPIC_API_KEY` bullet below describes the static-key mode that the registry can still select.
 
 Checked on 2026-10-17 against Claude Code's documentation (code.claude.com: headless mode, MCP, permissions, permission modes, sandboxing) and the CLI help of version 2.1.302, not with a real run:
 

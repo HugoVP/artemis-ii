@@ -60,6 +60,6 @@ None: no visible change. The original-download label (including external NASA li
 - `.github/**` and `docs/DELIVERY.md` are protected paths. Pipeline changes that stage needs (for example running ingestion in the build job) belong in `pipeline/github/` for Hugo to copy, as in Stage 03, and are listed under "Security-relevant changes".
 - A NASA original can change or disappear; drift fails the build instead of changing approved media. Hugo decides whether to re-approve.
 - `sharp` is a native dependency: pin it, check `npm audit`, and confirm it installs in the pipeline's no-secrets build.
-- Three Stage 05 candidates have an empty photographer field in their NASA record (`art002e009007`, `art002e016299`, `art002e014251`); Hugo may drop them at the Stage 05 review, and ingestion follows the merged list.
+- Three Stage 05 candidates have an empty photographer field in their library record (`art002e009007`, `art002e016299`, `art002e014251`); `CURATION.md` supplies additional NASA credit evidence. Preserve that provenance without inventing a photographer. Where record/index dates conflict, retain the conflict and source evidence rather than silently assigning an exact capture date.
 - Changing the manifest shape (`nasaId` plus a path key) touches Stage 03 code and its tests; keep the change minimal and backward compatible for IDs that are already safe, where the key equals the ID.
 - Compression quality is a visual decision; the PR asks Hugo to approve it in the preview.

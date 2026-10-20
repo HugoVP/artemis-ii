@@ -135,3 +135,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 
 - 2026-10-19 — Stage 04 — PR #31 — Added accessible theme, language, density and gallery-view preferences, storage-safe persistence and pre-paint restoration; wrote the Stage 05 curation spec. <!-- notion -->
 - 2026-10-19 — Stage 04 approved (PR #31 merged); Stage 05 — PR #34 — Curation document with 26 mission and 7 launch candidates (verified NASA IDs, original URLs, sizes and rights notes) and a validation test; Stage 06 spec written.
+- 2026-10-20 — Stage 05 — PR #34 — Editorial review retained all 33 candidates, reconciled preliminary and later science, documented date conflicts and supplemental credits, and aligned the exact-ID/media-path handoff contract.

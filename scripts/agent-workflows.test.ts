@@ -419,6 +419,10 @@ test("WIF-03: the refresher starts after the install and before the agent, and s
   assert.match(stop, /if: always\(\) && needs\.prepare\.outputs\.auth == 'federation'/);
   assert.match(stop, /kill "\$OIDC_REFRESHER_PID"/);
   assert.match(stop, /rm -rf -- "\$RUNNER_TEMP\/anthropic-oidc"/);
+  // Every token of the run is masked before the commit step reads the workspace.
+  assert.match(step(work, "Start the Anthropic OIDC token refresher"), /start "\$OIDC_DIR" "\$RUNNER_TEMP\/anthropic-oidc-issued"/);
+  assert.match(stop, /echo "::add-mask::\$t"; fi; done < "\$RUNNER_TEMP\/anthropic-oidc-issued"/);
+  assert.doesNotMatch(run, /anthropic-oidc-issued:/, "the list is never mounted");
 });
 
 test("WIF-02: prepare passes the auth mode on, and the work job validates the masked federation ids before the agent starts", () => {

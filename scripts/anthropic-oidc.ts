@@ -2,9 +2,10 @@
 // (docs/specs/claude-wif.md). Runs on the runner, from the trusted copy of main's scripts, never in the agent's
 // container: only the file reaches the container, mounted read-only. No dependencies (Node 22).
 //   node scripts/anthropic-oidc.ts validate        checks the four federation ids in the environment
-//   node scripts/anthropic-oidc.ts start <dir>     writes <dir>/token now and every 60 seconds, until killed
+//   node scripts/anthropic-oidc.ts start <dir> [issued]   writes <dir>/token now and every 60 seconds, until killed;
+//                                                  appends each token to [issued] (outside <dir>) for the log masker
 //   ... | node scripts/anthropic-oidc.ts redact    copies stdin to stdout with every JWT replaced, line by line
-import { mkdir, rename, writeFile, rm } from "node:fs/promises";
+import { appendFile, mkdir, rename, writeFile, rm } from "node:fs/promises";
 import { createInterface } from "node:readline";
 import { once } from "node:events";
 import { join } from "node:path";
@@ -77,6 +78,8 @@ export interface RefreshOptions {
   intervalMs?: number;
   doFetch?: typeof fetch;
   log?: (line: string) => void;
+  // A runner file, never mounted into the container, listing every token written, so a later step can mask them all.
+  issuedFile?: string;
 }
 
 // Writes the first token (throws if that fails), then keeps refreshing; a failed refresh is logged and retried
@@ -86,6 +89,7 @@ export async function startRefresher(opts: RefreshOptions): Promise<() => void> 
   await mkdir(opts.dir, { recursive: true, mode: 0o700 });
   const once = async () => {
     const token = await fetchOidcToken(opts.requestUrl, opts.requestToken, opts.doFetch);
+    if (opts.issuedFile) await appendFile(opts.issuedFile, `${token}\n`, { mode: 0o600 });
     await writeTokenAtomic(opts.dir, token);
     const exp = jwtExpiry(token);
     log(`${new Date().toISOString()} wrote a fresh OIDC token${exp ? `, expires ${new Date(exp * 1000).toISOString()}` : ""}.`);
@@ -101,7 +105,7 @@ export async function startRefresher(opts: RefreshOptions): Promise<() => void> 
 }
 
 async function main(argv: string[]): Promise<number> {
-  const [cmd, dir] = argv;
+  const [cmd, dir, issuedFile] = argv;
   if (cmd === "validate") {
     const bad = badFederationVariables(process.env);
     if (bad.length) { console.error(`Missing or malformed secrets of the environment "agents": ${bad.join(", ")}.`); return 1; }
@@ -112,7 +116,7 @@ async function main(argv: string[]): Promise<number> {
     const requestUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
     const requestToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
     if (!requestUrl || !requestToken) { console.error("No OIDC request token: the job needs permissions: id-token: write."); return 1; }
-    const stop = await startRefresher({ dir, requestUrl, requestToken });
+    const stop = await startRefresher({ dir, requestUrl, requestToken, issuedFile });
     // On SIGTERM the folder goes with the process.
     const end = async () => { stop(); await rm(dir, { recursive: true, force: true }); process.exit(0); };
     process.on("SIGTERM", end);

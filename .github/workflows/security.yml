@@ -42,6 +42,15 @@ jobs:
           grep "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" checksums.txt | sha256sum -c -
           tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
           ./gitleaks detect --source . --redact --no-banner
+      # The scanner's own regression test: the NASA path-key exception must suppress verified IDs and still report
+      # credential-shaped values. It fails if the pinned binary is missing, so it can never be skipped silently.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: gitleaks allowlist regression test
+        env:
+          GITLEAKS_BIN: ${{ github.workspace }}/gitleaks
+        run: npm run test:gitleaks
 
   dependency-review:
     if: github.event_name == 'pull_request'

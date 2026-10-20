@@ -74,17 +74,19 @@ export function redactJwts(text: string): string {
 
 // Untrusted output must not run GitHub Actions workflow commands: "::stop-commands::<marker>" would switch off command
 // processing, so the trusted "::add-mask::" of the cleanup step would print the tokens instead of masking them. The
-// runner reads two forms (actions/runner, ActionCommand.cs): a line that starts with "::" after trimming, and the
-// legacy "##[" anywhere in a line. Every "##[" gets a space ("## ["), which the legacy parser does not match, and a
+// runner reads two forms (actions/runner, ActionCommand.cs): a line that starts with "::" after .NET's TrimStart, and
+// the legacy "##[" anywhere in a line. .NET trims more than JavaScript's \s does (it includes U+0085), so the leading
+// characters skipped here are all controls (C0 and C1), spaces and invisible format characters, a superset of both. Every "##[" gets a space ("## ["), which the legacy parser does not match, and a
 // line starting with "::" gets a marker in front.
+const COMMAND_START = /^[\s\u0000-\u0020\u007f-\u00a0\u1680\u180e\u2000-\u200f\u2028-\u202f\u205f-\u2064\u3000\ufeff]*::/;
 export function neutralizeWorkflowCommands(line: string): string {
   const legacySafe = line.replaceAll("##[", "## [");
-  return /^\s*::/.test(legacySafe) ? `[agent output] ${legacySafe}` : legacySafe;
+  return COMMAND_START.test(legacySafe) ? `[agent output] ${legacySafe}` : legacySafe;
 }
 
 // What the runner would treat as a workflow command in a line; used by the tests to check rejection, not formatting.
 export function looksLikeWorkflowCommand(line: string): boolean {
-  return line.trim().startsWith("::") || line.includes("##[");
+  return COMMAND_START.test(line) || line.includes("##[");
 }
 
 // What the redact command does to each line of the container's output.

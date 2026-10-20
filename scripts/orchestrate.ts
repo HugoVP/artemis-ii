@@ -5,7 +5,7 @@
 import { readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { parseStages, type Stage } from "./next-stage-issue.ts";
+import { parseStages, type Stage } from "./plan.ts";
 import { parseRegistry, missingCapabilities, type Agent } from "./agent-checks.ts";
 
 export type StageKind = "build" | "content-review" | "design";
@@ -51,14 +51,20 @@ function scalar(agent: Agent, field: string): string | undefined {
 // The orchestrator's registry fields, checked so a typo cannot silently make an agent eligible.
 export function validateOrchestration(agents: Agent[]): void {
   for (const agent of agents) {
-    const status = scalar(agent, "status") ?? "pending";
-    if (!STATUSES.includes(status)) throw new Error(`Agent ${agent.id} has the unknown status "${status}".`);
+    // A value that is present must be one non-empty word of the right set; only an absent status defaults (to pending).
+    // Lists and empty values are rejected here instead of being read as "absent" by scalar(), which would hide a typo
+    // such as `status: [activ]` or `cost: [free]`.
+    const single = (field: string, allowed: string[] | RegExp) => {
+      const value = agent[field];
+      if (value === undefined) return;
+      const ok = typeof value === "string" && value !== "" && (Array.isArray(allowed) ? allowed.includes(value) : allowed.test(value));
+      if (!ok) throw new Error(`Agent ${agent.id} has an invalid ${field} "${Array.isArray(value) ? `[${value.join(", ")}]` : value}".`);
+    };
+    single("status", STATUSES);
+    single("cost", COSTS);
+    single("family", /^[a-z0-9-]{2,30}$/);
     for (const role of list(agent, "roles")) if (!ROLES.includes(role)) throw new Error(`Agent ${agent.id} has the unknown role "${role}".`);
-    const cost = scalar(agent, "cost");
-    if (cost && !COSTS.includes(cost)) throw new Error(`Agent ${agent.id} has the unknown cost "${cost}".`);
     for (const kind of list(agent, "avoid")) if (!["build", "content-review", "design"].includes(kind)) throw new Error(`Agent ${agent.id} avoids the unknown stage kind "${kind}".`);
-    const family = scalar(agent, "family");
-    if (family && !/^[a-z0-9-]{2,30}$/.test(family)) throw new Error(`Agent ${agent.id} has an invalid model family "${family}".`);
   }
 }
 
@@ -183,13 +189,27 @@ export function formatRecommendation(r: Recommendation): string {
   return lines.join("\n");
 }
 
+// Subjects of the first-parent commits of this repository's `main` (the merges of approved PRs), read from the repository
+// that holds this script, not from the caller's working directory or checked-out branch, so a stale feature branch cannot
+// recommend a leader again. `origin/main` is preferred over a local `main` that may lag. null when neither can be read.
+export function readLocalHistory(repoDir: string, run: typeof execFileSync = execFileSync): string[] | null {
+  for (const ref of ["refs/remotes/origin/main", "refs/heads/main"]) {
+    try {
+      return run("git", ["-C", repoDir, "log", "--first-parent", "--format=%s", "-n", "1000", ref], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).split("\n");
+    } catch { /* try the next ref */ }
+  }
+  return null;
+}
+
+export const HISTORY_UNAVAILABLE = "\n- The merge history could not be read, so rotation was not applied.";
+
 // Local CLI: the recommendation for a stage already in progress, without GitHub.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const stageNumber = process.argv[2] ?? "";
   if (!/^\d\d$/.test(stageNumber)) throw new Error("Usage: node scripts/orchestrate.ts <two-digit stage>");
   const markdown = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
   const agents = parseRegistry(await readFile(new URL("../agents/registry.yaml", import.meta.url), "utf8"));
-  const subjects = execFileSync("git", ["log", "--merges", "--format=%s", "-n", "500", "HEAD"], { encoding: "utf8" }).split("\n");
-  const r = recommend({ stages: parseStages(markdown), stageNumber, agents, leaders: leadersFromMerges(subjects, agents.map(a => a.id)) });
-  console.log(formatRecommendation(r));
+  const subjects = readLocalHistory(fileURLToPath(new URL("..", import.meta.url)));
+  const r = recommend({ stages: parseStages(markdown), stageNumber, agents, leaders: leadersFromMerges(subjects ?? [], agents.map(a => a.id)) });
+  console.log(formatRecommendation(r) + (subjects ? "" : HISTORY_UNAVAILABLE));
 }

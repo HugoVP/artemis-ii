@@ -3,7 +3,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { readFile } from "node:fs/promises";
-import { buildIssue, parseStages, pickNext, run } from "./next-stage-issue.ts";
+import { buildIssue, parseStages, pickNext, run, readMergeSubjects, HISTORY_PAGE } from "./next-stage-issue.ts";
+import { spawnSync } from "node:child_process";
 import type { AddressInfo } from "node:net";
 
 const plan = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
@@ -147,4 +148,76 @@ test("run does nothing when no stage is pending", async () => {
   const done = sample.replaceAll("pending", "approved");
   const r = await run({ token: "t", repo: "o/r", prNumber: 4, markdown: done, base: "http://127.0.0.1:1" });
   assert.equal(r.action, "none");
+});
+
+test("ORC-05: the work-order CLI runs as a process with the recommendation (no import cycle with its top-level await)", () => {
+  const out = spawnSync(process.execPath, ["scripts/next-stage-issue.ts"], {
+    cwd: new URL("..", import.meta.url), encoding: "utf8", timeout: 60_000,
+    env: { PATH: process.env.PATH, PR_NUMBER: "1", GITHUB_REPOSITORY: "o/r", DRY_RUN: "1" },
+  });
+  assert.equal(out.status, 0, out.stderr);
+  assert.doesNotMatch(out.stderr, /unsettled top-level await/i);
+  const issue = JSON.parse(out.stdout) as { title: string; body: string };
+  assert.match(issue.title, /^Run Stage \d\d:/);
+  assert.match(issue.body, /## Recommended agents/);
+});
+
+function mockHistory(handler: (page: number, res: http.ServerResponse) => void) {
+  const server = http.createServer((req, res) => {
+    const page = Number(new URL(req.url!, "http://x").searchParams.get("page") ?? "1");
+    handler(page, res);
+  }).listen(0);
+  return { server, base: `http://127.0.0.1:${(server.address() as AddressInfo).port}` };
+}
+const commit = (message: string) => ({ commit: { message } });
+
+test("ORC-04: a rejected request or a body that is not JSON means unavailable history, not a crash", async () => {
+  const dropped = mockHistory((_page, res) => res.destroy());
+  const garbled = mockHistory((_page, res) => { res.setHeader("content-type", "text/html"); res.end("<html>Bad gateway</html>"); });
+  try {
+    assert.equal(await readMergeSubjects(dropped.base, "t", "o/r"), null);
+    assert.equal(await readMergeSubjects(garbled.base, "t", "o/r"), null);
+    assert.equal(await readMergeSubjects("http://127.0.0.1:1", "t", "o/r"), null);
+  } finally { dropped.server.close(); garbled.server.close(); }
+});
+
+test("ORC-04: the work order is still created, with the no-rotation notice, when the history request fails", async () => {
+  const posted: string[] = [];
+  const server = http.createServer((req, res) => {
+    let data = "";
+    req.on("data", (c) => (data += c));
+    req.on("end", () => {
+      const path = req.url!.split("?")[0];
+      if (path.endsWith("/commits")) return res.destroy();
+      res.setHeader("content-type", "application/json");
+      if (req.method === "GET") return res.end("[]");
+      if (path.endsWith("/labels")) { res.statusCode = 422; return res.end("{}"); }
+      posted.push(data);
+      res.statusCode = 201;
+      res.end(JSON.stringify({ number: 7 }));
+    });
+  }).listen(0);
+  try {
+    const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const r = await run({ token: "t", repo: "o/r", prNumber: 4, markdown: sample, registry, base });
+    assert.deepEqual(r, { action: "created", number: 7 });
+    assert.match(JSON.parse(posted[0]).body, /merge history could not be read/);
+  } finally { server.close(); }
+});
+
+test("ORC-04: the history is read page by page, so older stage merges beyond the first 100 commits still count", async () => {
+  const pages: number[] = [];
+  const m = mockHistory((page, res) => {
+    pages.push(page);
+    res.setHeader("content-type", "application/json");
+    const batch = page === 1 ? Array.from({ length: HISTORY_PAGE }, (_, i) => commit(`Fix ${i}`))
+      : page === 2 ? [commit("Merge pull request #8 from o/agent/stage-01-alpha"), commit("Initial commit")] : [];
+    res.end(JSON.stringify(batch));
+  });
+  try {
+    const subjects = await readMergeSubjects(m.base, "t", "o/r");
+    assert.deepEqual(pages, [1, 2]);
+    assert.ok(subjects!.includes("Merge pull request #8 from o/agent/stage-01-alpha"));
+    assert.equal(subjects!.length, HISTORY_PAGE + 2);
+  } finally { m.server.close(); }
 });

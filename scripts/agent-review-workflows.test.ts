@@ -193,3 +193,31 @@ test('REV-06: Copilot review mode approves one write and read-only git, and allo
   assert.ok(copilotArgs('example-model', 'Prompt').includes('--allow-tool=write'));
   assert.ok(copilotArgs('example-model', 'Prompt').includes('--allow-url=registry.npmjs.org'));
 });
+
+test('REV-01: a manual request and a label for the same PR and reviewer share one concurrency key', () => {
+  const group = workflow.concurrency.group;
+  // The reviewer part of the key is the label name `review:<id>` on the label path, and is formatted the same way from the
+  // input on the manual path, so both give `agent-review-<pr>-review:<id>`.
+  assert.match(group, /github\.event_name == 'workflow_dispatch' && format\('review:\{0\}', inputs\.reviewer\) \|\| github\.event\.label\.name/);
+  const key = (manual: boolean, pr: number, reviewer: string) => manual ? `agent-review-${pr}-review:${reviewer}` : `agent-review-${pr}-${`review:${reviewer}`}`;
+  assert.equal(key(true, 7, 'codex'), key(false, 7, 'codex'));
+});
+
+test('REV-10: posted is set only after the comment and its check run are both published', () => {
+  const step = publish.steps.find(s => s.name?.startsWith('Post the comment'))!;
+  const run = step.run!;
+  const comment = run.indexOf('issues/$PR/comments');
+  const checkRun = run.indexOf('repos/$REPO/check-runs');
+  const posted = run.indexOf('posted=true');
+  assert.ok(comment >= 0 && checkRun > comment && posted > checkRun);
+  assert.equal(run.match(/posted=true/g)!.length, 1);
+});
+
+test('REV-03: every job after prepare reads main at the revision prepare recorded, not at the moving default branch', () => {
+  assert.ok(prepare.steps.some(s => s.run?.includes('git rev-parse HEAD') && (s as { id?: string }).id === 'trusted'));
+  const refs = (job: Job) => job.steps.filter(s => s.uses?.startsWith('actions/checkout')).map(s => JSON.stringify((s as { with?: unknown }).with));
+  for (const job of [review, publish]) {
+    assert.ok(refs(job).some(w => w.includes('needs.prepare.outputs.trusted')));
+    assert.ok(!refs(job).some(w => w.includes('default_branch')));
+  }
+});

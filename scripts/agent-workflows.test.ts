@@ -234,6 +234,8 @@ test("the agent runs in a docker run container without the Docker socket, as the
   // Project code runs only in the container: npm on the runner would run install scripts next to the trusted steps.
   assert.equal([...run.matchAll(/npm ci/g)].length, 1);
   assert.match(step(work, "Install the project dependencies"), /"\$IMAGE" npm ci/);
+  // Install scripts are project code: their output cannot run workflow commands either.
+  assert.match(step(work, "Install the project dependencies"), /npm ci --no-audit --no-fund < \/dev\/null 2>&1 \\\n\s+\| node "\$RUNNER_TEMP\/trusted\/scripts\/anthropic-oidc\.ts" redact/);
   assert.match(step(work, "Pull the runner image"), /@sha256:\[0-9a-f\]\{64\}\$/);
   assert.match(step(work, "Pull the runner image"), /docker logout ghcr\.io/);
 });

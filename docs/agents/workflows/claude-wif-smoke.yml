@@ -70,7 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           OIDC_DIR="$RUNNER_TEMP/anthropic-oidc"
-          nohup node scripts/anthropic-oidc.ts start "$OIDC_DIR" > "$RUNNER_TEMP/anthropic-oidc.log" 2>&1 &
+          nohup node scripts/anthropic-oidc.ts start "$OIDC_DIR" "$RUNNER_TEMP/anthropic-oidc-issued" > "$RUNNER_TEMP/anthropic-oidc.log" 2>&1 &
           echo "OIDC_REFRESHER_PID=$!" >> "$GITHUB_ENV"
           for _ in $(seq 1 30); do
             if [ -s "$OIDC_DIR/token" ]; then echo "OIDC token refresher ready."; exit 0; fi
@@ -114,3 +114,9 @@ jobs:
           if [ -n "${OIDC_REFRESHER_PID:-}" ]; then kill "$OIDC_REFRESHER_PID" 2>/dev/null || true; fi
           cat "$RUNNER_TEMP/anthropic-oidc.log" 2>/dev/null || true
           rm -rf -- "$RUNNER_TEMP/anthropic-oidc"
+          # Every token of the run is registered with GitHub's log masker before any later step reads the workspace the
+          # agent wrote (a git diagnostic could otherwise print a token copied into a file). The list never left the runner.
+          if [ -f "$RUNNER_TEMP/anthropic-oidc-issued" ]; then
+            while IFS= read -r t; do if [ -n "$t" ]; then echo "::add-mask::$t"; fi; done < "$RUNNER_TEMP/anthropic-oidc-issued"
+            rm -f -- "$RUNNER_TEMP/anthropic-oidc-issued"
+          fi

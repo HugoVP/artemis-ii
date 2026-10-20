@@ -47,7 +47,7 @@ test("WIF-03: the refresher writes the token atomically, refreshes, survives a f
   // Stopped in finally too, so a failed assertion cannot leave the interval writing into a removed folder.
   let stop = () => {};
   try {
-    stop = await startRefresher({ dir, requestUrl: "https://example.invalid/t", requestToken: "req-secret", intervalMs: 20, doFetch, log: (l) => logs.push(l) });
+    stop = await startRefresher({ dir, requestUrl: "https://example.invalid/t", requestToken: "req-secret", intervalMs: 20, doFetch, log: (l) => logs.push(l), issuedFile: join(dir, "..", `${dir.split(/[\\/]/).pop()}.issued`) });
     assert.equal(await readFile(join(dir, "token"), "utf8"), jwt(100));
     if (process.platform !== "win32") assert.equal((await stat(join(dir, "token"))).mode & 0o777, 0o600);
     for (let i = 0; i < 100 && (await readFile(join(dir, "token"), "utf8")) !== jwt(200); i++) await new Promise((r) => setTimeout(r, 20));
@@ -56,9 +56,13 @@ test("WIF-03: the refresher writes the token atomically, refreshes, survives a f
     assert.ok(logs.some((l) => l.includes("refresh failed")));
     for (const l of logs) assert.ok(!l.includes("sig") && !l.includes("req-secret"), l);
     assert.deepEqual(await readdir(dir), ["token"], "no temporary file is left behind");
+    // Every token written is listed, outside the mounted folder, for the log masker.
+    const issued = (await readFile(join(dir, "..", `${dir.split(/[\\/]/).pop()}.issued`), "utf8")).trim().split("\n");
+    assert.deepEqual([issued[0], issued.at(-1)], [jwt(100), jwt(200)]);
   } finally {
     stop();
     await rm(dir, { recursive: true, force: true });
+    await rm(join(dir, "..", `${dir.split(/[\\/]/).pop()}.issued`), { force: true });
   }
 });
 

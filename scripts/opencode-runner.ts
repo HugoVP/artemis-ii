@@ -14,6 +14,24 @@ export function validateOpenCodeModel(value: unknown): string {
   return value;
 }
 
+// build: the stage run of agent-run.yml. review: the read-only reviewer of agent-review.yml (docs/specs/agent-review.md,
+// REV-06), which may write only .agent/review.md and run only read-only git.
+export type Mode = 'build' | 'review';
+
+const READ_ONLY_GIT = {
+  'git status*': 'allow', 'git diff*': 'allow', 'git log*': 'allow', 'git show*': 'allow', 'git ls-files*': 'allow',
+} as const;
+
+export function reviewPermission() {
+  return {
+    '*': 'deny', read: 'allow', glob: 'allow', grep: 'allow', list: 'allow',
+    // Later rules win: every edit is denied, then the one review file is allowed.
+    edit: { '*': 'deny', '.agent/review.md': 'allow', '/work/.agent/review.md': 'allow' },
+    bash: { '*': 'deny', ...READ_ONLY_GIT, 'git push*': 'deny' },
+    webfetch: 'deny', websearch: 'deny', external_directory: 'deny', question: 'deny', task: 'deny', skill: 'deny',
+  };
+}
+
 export function openCodeConfig(model: string) {
   return {
     $schema: 'https://opencode.ai/config.json',
@@ -30,8 +48,7 @@ export function openCodeConfig(model: string) {
       edit: { '*': 'allow', '.git': 'deny', '.git/**': 'deny', '/work/.git': 'deny', '/work/.git/**': 'deny' },
       bash: {
         '*': 'deny', 'npm *': 'allow', 'npx *': 'allow', 'node *': 'allow',
-        'git status*': 'allow', 'git diff*': 'allow', 'git log*': 'allow', 'git show*': 'allow',
-        'git ls-files*': 'allow', 'ls*': 'allow', 'mkdir *': 'allow',
+        ...READ_ONLY_GIT, 'ls*': 'allow', 'mkdir *': 'allow',
         'git push*': 'deny', 'rm *': 'deny',
       },
       // websearch is built in and sends queries (and to Parallel, the session ID and model name) to Exa or Parallel,
@@ -41,7 +58,16 @@ export function openCodeConfig(model: string) {
   };
 }
 
-export async function runOpenCode(prompt: string, env: NodeJS.ProcessEnv = process.env, binary = 'opencode'): Promise<void> {
+// The same isolation as a build run, with the reviewer's agent and permissions.
+export function openCodeReviewConfig(model: string) {
+  return {
+    ...openCodeConfig(model),
+    agent: { pipeline: { mode: 'primary', steps: 60, description: 'Review this stage PR read-only, following REVIEW.md.' } },
+    permission: reviewPermission(),
+  };
+}
+
+export async function runOpenCode(prompt: string, env: NodeJS.ProcessEnv = process.env, binary = 'opencode', mode: Mode = 'build'): Promise<void> {
   const model = validateOpenCodeModel(env.OPENCODE_MODEL);
   if (!env.OPENCODE_API_KEY) throw new Error('AGENT_KEY_OPENCODE is missing from the agents environment.');
   if (env.FIGMA !== 'none') throw new Error('OpenCode is not qualified for Figma stages.');
@@ -50,7 +76,7 @@ export async function runOpenCode(prompt: string, env: NodeJS.ProcessEnv = proce
   try {
   const configPath = join(runtime, 'opencode.json');
   // Only the environment placeholder is written; the key never enters this file.
-  await writeFile(configPath, JSON.stringify(openCodeConfig(model)), { mode: 0o600 });
+  await writeFile(configPath, JSON.stringify(mode === 'review' ? openCodeReviewConfig(model) : openCodeConfig(model)), { mode: 0o600 });
   const childEnv: NodeJS.ProcessEnv = {
     PATH: env.PATH, HOME: env.HOME, CI: 'true', GIT_OPTIONAL_LOCKS: '0',
     MEDIA_BASE_URL: '/media', CONTACT_URL: env.CONTACT_URL ?? '',
@@ -103,7 +129,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     if (process.argv[2] === 'validate') validateOpenCodeModel(process.argv[3]);
     else if (process.argv[2] === 'run' && process.argv[3]) await runOpenCode(process.argv[3]);
-    else throw new Error('Usage: opencode-runner.ts validate <model> | run <prompt>');
+    else if (process.argv[2] === 'review' && process.argv[3]) await runOpenCode(process.argv[3], process.env, 'opencode', 'review');
+    else throw new Error('Usage: opencode-runner.ts validate <model> | run <prompt> | review <prompt>');
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'OpenCode launcher failed.');
     process.exitCode = 1;

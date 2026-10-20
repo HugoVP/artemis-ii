@@ -9,6 +9,7 @@ How the `agent-run` workflow runs an agent on a stage, how Hugo sets it up, and 
 | `agents/registry.yaml` | The agents the pipeline can run: id, model key secret (or `auth: federation`), how it starts, capabilities |
 | `scripts/anthropic-oidc.ts`, `docs/agents/workflows/claude-wif-smoke.yml` | Keeps a fresh GitHub OIDC token in a file for Claude Code's workload identity federation; the manual smoke that tests it ([`claude-code-wif.md`](claude-code-wif.md)) |
 | `docs/agents/workflows/agent-run.yml` | Proposed workflow. Hugo copies it to `.github/workflows/agent-run.yml` |
+| `docs/agents/workflows/agent-review.yml`, `scripts/agent-review.ts` | Proposed reviewer workflow and its checks (see "Reviews") |
 | `docs/agents/workflows/agent-runner-image.yml` | Proposed workflow that builds and publishes the runner image. Hugo copies it too |
 | `Dockerfile`, target `agent-runner` | The CI toolchain plus pinned Codex, Claude Code, OpenCode and Copilot CLIs, Claude Code's shell sandbox, and the root-owned OpenCode and Copilot launchers |
 | `scripts/opencode-runner.ts`, `scripts/opencode-smoke-fixture.ts` | OpenCode headless launch with private output handling, and the fixed manual smoke fixture (also used by the Copilot smoke) |
@@ -127,7 +128,18 @@ To revoke the grant: Figma → **Settings** → **Security** → connected apps,
 
 **To verify on the first run that needs Figma:** where Codex stores its MCP credentials with `mcp_oauth_credentials_store=file` (the helper searches the file by field name); that refresh tokens of MCP grants can be reused, as Figma documents for OAuth apps (if a run prints "Figma returned a new refresh token", the stored one must be updated after every run, which this setup cannot do); the lifetime of the access token; that the agent's container reaches the gateway through `host-gateway` (the run stops with "cannot reach the Figma MCP gateway" if not); that Figma's server accepts the gateway's requests and that its tool and argument names still match the gateway's lists (the gateway's log shows each decision); that Codex accepts the tool list in `enabled_tools`; and that both clients connect to the gateway over plain HTTP.
 
+## Reviews
+
+The `agent-review` workflow runs a reviewer from another model family on a stage PR and posts its verdict. Contract: [`docs/specs/agent-review.md`](../specs/agent-review.md). It merges, approves and pushes nothing; Hugo still decides and merges.
+
+1. **Files:** `docs/agents/workflows/agent-review.yml` (Hugo copies it to `.github/workflows/`), `scripts/agent-review.ts` (checks and publisher logic), and the `review` mode of `scripts/opencode-runner.ts` and `scripts/copilot-runner.ts`. Rebuild the runner image and update `AGENT_RUNNER_IMAGE` so those two launchers are in it.
+2. **Start:** add the label `review:<id>` (create `review:codex`, `review:claude` and `review:copilot`) to a same-repository PR whose branch is `agent/stage-NN-<leader>`, or run "Agent review" by hand with the PR number and the reviewer. Only `AGENT_TRUSTED_LOGIN` can start it. The work order recommends the reviewers (`docs/specs/orchestration.md`), but any active agent with the `review` role and a family other than the leader's is accepted.
+3. **Jobs:** `prepare` (no secrets) records the head SHA and checks the reviewer against `agents/registry.yaml` on `main`; `review` (environment `agents`, `contents: read`) runs the CLI read-only on that exact SHA, with the checkout mounted read-only and only `.agent/` writable, and uploads `review.md` alone after a secret scan; `publish` (`pull-requests: write` and `checks: write`, no project code) validates the review, posts the comment with the reviewer, family, provider and SHA taken from its own facts, and creates a check run `agent-review / <id>` that records the comment id; `report` comments on failure and removes the label.
+4. **Read-only modes:** Codex `--sandbox read-only`; Claude Code with only `Read`, `Glob`, `Grep`, read-only `git` and `Write` of `.agent/review.md`; OpenCode and Copilot through their launchers' `review` command. The mount is the boundary; the CLI permissions are a second layer.
+5. **Review format:** Markdown ending with `<!-- agent-review: {"verdict": "pass" | "blocking", "findings": N} -->`. An invalid review is not published; a fixed notice is posted instead.
+6. **Adding a reviewer:** give its registry entry `status: active`, the role `review`, a `family` and, for OpenCode and Copilot, a `model`; add a branch for its `runner` to the "Run the reviewer" step; create the label `review:<id>`.
+
 ## Not in this phase
 
 - **Follow-up runs on an existing PR** (continuation mode, with `.agent/review.md`): a separate change, because it runs project code next to the model key and needs its own review.
-- Reviewer agents, the orchestrator and iteration branches (phase 3).
+- Iteration branches and a gate that merges on reviewer verdicts (full phase 3). Reviews run only when Hugo asks for them (see "Reviews").

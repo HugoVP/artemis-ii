@@ -23,7 +23,7 @@ Phase 3 lets the pipeline merge stages into `iteration/N` and start the next sta
 
 ## Out of scope
 
-- Running the reviewers in the pipeline: a separate change (Phase 3a, part 2), with read-only reviewer jobs and a trusted publisher, as designed in `docs/MULTI-AGENT-PHASES.md`. Until then Hugo starts each recommended reviewer by hand, and GitHub Copilot code review keeps reviewing PRs as today.
+- Running the reviewers in the pipeline: a separate change (Phase 3a, part 2), specified in [`agent-review.md`](agent-review.md), with read-only reviewer jobs and a trusted publisher, as designed in `docs/MULTI-AGENT-PHASES.md`. Hugo starts each recommended reviewer with the label `review:<id>`, and GitHub Copilot code review keeps reviewing PRs as today.
 - Recording past results (green CI on the first push, blocking findings) for the history score.
 - Iteration branches, pipeline merges, automatic starts and any change to `AGENTS.md`, `docs/DELIVERY.md`, approvals or workflows.
 

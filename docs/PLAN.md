@@ -23,6 +23,12 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | | |
 | 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser`, `figma-read` | written in 09 | pending | | |
 | 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web`, `figma-read` | written in 10 | pending | | |
+| 12 | 🎨 Design for iteration 2: gallery search and filters, glossary and fact cards, interactive mission timeline | `figma-write` | written in 11 | pending | | |
+| 13 | Gallery search and filters: client-side index built at build time, chapter and tag filters, shareable URLs | `node`, `browser`, `figma-read` | written in 12 | pending | | |
+| 14 | 🔍 Glossary and fact cards: mission terms, crew and spacecraft facts, in both languages, with sources | `web` | written in 13 | pending | | |
+| 15 | Glossary page, fact cards and interactive mission timeline, with the approved texts | `node`, `browser`, `figma-read` | written in 14 | pending | | |
+| 16 | Monitoring: scheduled link checks and visual regression of key pages, with a report issue | `node`, `browser` | written in 15 | pending | | |
+| 17 | Iteration 2 review: accessibility, performance, security, links and traceability of the new requirements | `node`, `browser`, `web`, `figma-read` | written in 16 | pending | | |
 
 ## Releases
 
@@ -33,6 +39,8 @@ Production changes only when Hugo publishes a GitHub Release (see `DELIVERY.md`)
 | `v0.1.0` | 04 | The site shell: design, navigation, both languages, preferences |
 | `v0.5.0` | 07 | The photo gallery |
 | `v1.0.0` | 11 | The complete site |
+| `v1.1.0` | 15 | Gallery search and filters, glossary, fact cards and the interactive timeline |
+| `v1.2.0` | 17 | Iteration 2 reviewed, with link and visual monitoring |
 
 ## Decisions
 
@@ -50,6 +58,7 @@ Entries that end with `<!-- notion -->` are published to the Notion page by `not
 - Until Stage 03 is merged, Cloudflare Pages' Git integration keeps deploying every merge to `main` straight to production (Hugo's decision, 2026-10-15); the production URL is not announced.
 - Cloudflare: one account, two Pages projects; no R2 activation. HTML and media share each deployment, including rollback (Hugo, 2026-10-18; supersedes the bucket design).
 - The default-branch approval workflow reports `approval` through a dedicated status-only GitHub App; the ruleset must require that App as the expected source (Hugo's decision, 2026-10-18). This replaces the earlier workflow-write-denial assumption; setup and verification are in `DELIVERY.md` and `SETUP.md`.
+- Iteration 2 (stages 12–17) extends the site after `v1.0.0` and gives every registered pipeline agent a stage it can lead. It follows the same rules: one stage per PR, specs one stage ahead, Hugo's review of the design (12) and the content (14), and releases only by Hugo. It starts with a 🎨 design stage because the new pages and controls need an approved design before they are built (Hugo, 2026-10-20). <!-- notion -->
 
 ## Detail by stage
 
@@ -103,6 +112,31 @@ The scope, acceptance criteria and tasks of each stage live in its spec. These s
 ### 11 Final review
 - Accessibility, mobile performance, security (dynamic scan findings, headers), broken links, build in both languages with the 3 densities and 3 views, visual check against Figma, the traceability column in `product.md`, and quality checks switched to blocking.
 
+## Iteration 2
+
+Stages 12 to 17 extend the site after `v1.0.0`. Their requirements are in `specs/product.md` (`FIND`, `GLOSS`, `TIME` and `QA-07`). Each spec is still written one stage ahead, so these summaries are starting points, not contracts.
+
+### 12 🎨 Design for iteration 2
+- Figma frames (mobile and desktop, both themes and densities) for the search box and filters in the gallery, the glossary page and fact cards, and the interactive timeline of The mission, with new components and variables only where existing ones cannot serve. `design.md` updated. Placeholders, no NASA images in Figma.
+- Decides the glossary's URL in both languages and updates `SITEMAP.md`.
+
+### 13 Gallery search and filters
+- A React island on the gallery pages: text search over titles, stories and captions in the page's language, plus chapter and tag filters that combine. The index is built at build time from the content collections; no server and no third-party search service.
+- The state is in the URL, so a filtered view can be shared; results and their count are announced to screen readers. Works with the three gallery views and densities.
+
+### 14 🔍 Glossary and fact cards
+- ES/EN drafts in `docs/content-review/` of the glossary (mission terms such as SLS, Orion, translunar injection, free-return trajectory, far side, splashdown) and fact cards for the crew and the spacecraft, each fact with its source. Not integrated.
+
+### 15 Glossary, fact cards and interactive timeline
+- The approved texts go into the content collections, with their sources. The glossary page and fact cards per Figma; terms on other pages link to their glossary entry.
+- The timeline of The mission becomes interactive: each milestone expands to its details and photos, keyboard and screen-reader accessible, and the page still shows the full timeline without JavaScript.
+
+### 16 Monitoring
+- A scheduled workflow (proposed in `docs/` for Hugo to install) checks internal and external links and compares screenshots of key pages with approved baselines, and opens or updates one report issue. It holds no deployment credentials and runs against staging.
+
+### 17 Iteration 2 review
+- Accessibility, mobile performance, security, links and the traceability column for every iteration 2 requirement, as in Stage 11.
+
 ## Log
 
 Each stage adds a line here before opening its PR (date, stage and one sentence on what it did) and fills in the PR link in a follow-up commit right after opening it.
@@ -134,3 +168,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-18 — Stage 03 — PR #14 — Hugo replaced R2 with static Pages media, approved external NASA downloads for originals above 25 MiB, and required complete-artifact limits and rollback of HTML/media together. Evaluation is illustrative, not final curation or visual approval.
 
 - 2026-10-19 — Stage 04 — PR #31 — Added accessible theme, language, density and gallery-view preferences, storage-safe persistence and pre-paint restoration; wrote the Stage 05 curation spec. <!-- notion -->
+- 2026-10-20 — Process (requested by Hugo) — Added iteration 2 (stages 12–17: design, gallery search and filters, glossary and fact cards, interactive timeline, monitoring, review), its requirements in `product.md` and the releases `v1.1.0` and `v1.2.0`. <!-- notion -->

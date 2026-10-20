@@ -96,6 +96,32 @@ Stage 07 delivers the layout and the story and caption slots, filled with placeh
 | TECH-03 | React is used only for interactive islands (such as the preference controls); everything else renders without React. | 02, 04 | review |
 | TECH-04 | Deploy HTML and media together on Cloudflare Pages, without R2, Functions, Workers or billed image transformations for media serving. | 03 | manual |
 
+## Search and discovery (FIND)
+
+Iteration 2. The design comes from Stage 12.
+
+| ID | Requirement | Stage | Check |
+| --- | --- | --- | --- |
+| FIND-01 | The gallery pages have a text search over photo titles, stories and captions in the page's language. Its index is generated at build time from the content collections, with no server and no third-party search service. | 13 | auto |
+| FIND-02 | Chapter and tag filters combine with the search; the current search and filters are in the URL, so the filtered view can be shared and restored. | 13 | auto |
+| FIND-03 | Search and filters are keyboard and screen-reader accessible, and the number of results is announced when it changes. They work with the three gallery views and the three densities. | 13 | auto |
+
+## Glossary and fact cards (GLOSS)
+
+| ID | Requirement | Stage | Check |
+| --- | --- | --- | --- |
+| GLOSS-01 | A glossary page in both languages explains the mission's terms (for example SLS, Orion, translunar injection, free-return trajectory, far side, splashdown), each entry with its source link. | 14, 15 | review + auto (schema) |
+| GLOSS-02 | Fact cards for the crew and the spacecraft, in both languages, where every fact has its source link (`CONT-02`). | 14, 15 | review + auto (schema) |
+| GLOSS-03 | Terms on the section pages link to their glossary entry. | 15 | auto |
+
+## Interactive timeline (TIME)
+
+| ID | Requirement | Stage | Check |
+| --- | --- | --- | --- |
+| TIME-01 | The timeline of The mission (`NAV-05`) lets each milestone expand to its details and related photos, with keyboard and screen-reader support. | 15 | auto |
+| TIME-02 | Without JavaScript the page still shows the complete timeline with every milestone's details. | 15 | auto |
+| TIME-03 | Timeline milestones come from a content collection, each fact with its source link. | 15 | auto (schema) |
+
 ## Quality (QA)
 
 | ID | Requirement | Stage | Check |
@@ -106,6 +132,7 @@ Stage 07 delivers the layout and the story and caption slots, filled with placeh
 | QA-04 | No broken internal or external links. | 03 (report), 11 (blocking) | auto |
 | QA-05 | The build works in both languages with the three densities and the three gallery views. | 11 | auto |
 | QA-06 | Heavy binaries stay out of Git; generate and package them in the pipeline, with full-artifact Pages file size/count validation before deployment. | all | auto (CI) + review |
+| QA-07 | A scheduled check of internal and external links and a visual comparison of key pages with approved baselines run against staging, and report findings in one issue; the job holds no deployment credentials. | 16 | auto |
 
 ## Delivery and operations (OPS)
 
@@ -135,4 +162,4 @@ Stage 07 delivers the layout and the story and caption slots, filled with placeh
 
 ## Traceability
 
-Stage 11 adds a final column to each table with the test file, pipeline check or PR where each requirement was verified.
+Stage 11 adds a final column to each table, and Stage 17 fills it for the iteration 2 requirements, with the test file, pipeline check or PR where each requirement was verified.

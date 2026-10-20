@@ -7,6 +7,9 @@ import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const AGY_VERSION = '1.4.3';
+// The root-owned binary of the image. An absolute path, so a newer build that the CLI's background updater might leave in
+// the agent's home or on its PATH is never the one launched.
+export const AGY_BINARY = '/opt/agy/antigravity';
 export type Mode = 'build' | 'review';
 
 // Shell commands approved in build mode, in the `permission.allow` form of settings.json (`command(<words>)`); file
@@ -39,14 +42,16 @@ export function antigravityArgs(model: string, prompt: string, mode: Mode, logFi
     '--model', validateAntigravityModel(model),
     '--mode', mode === 'review' ? 'plan' : 'accept-edits',
     '--output-format', 'text',
-    '--disable-slash-commands',
+    // In 1.4.3, disabling slash commands also disables plan mode ("--mode plan has no effect while slash command expansion
+    // is disabled"), so only build mode, whose accept-edits mode is unaffected, turns them off.
+    ...(mode === 'review' ? [] : ['--disable-slash-commands']),
     '--log-file', logFile,
   ];
 }
 
 const MAX_REVIEW = 262_144;
 
-export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = process.env, binary = 'agy', mode: Mode = 'build', reviewFile = '.agent/review.md'): Promise<void> {
+export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = process.env, binary = AGY_BINARY, mode: Mode = 'build', reviewFile = '.agent/review.md'): Promise<void> {
   const model = validateAntigravityModel(env.ANTIGRAVITY_MODEL);
   const key = env.GEMINI_API_KEY;
   if (!key) throw new Error('AGENT_KEY_ANTIGRAVITY is missing from the agents environment.');
@@ -83,11 +88,16 @@ export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = pr
       if (structured) {
         try {
           const error = JSON.parse(structured[1]) as Record<string, unknown>;
-          const parts = ['status', 'code', 'canonical_status', 'http_status'].map(name => error[name]).filter(value => typeof value === 'string' || typeof value === 'number');
+          // Fields of 1.4.3: status, error_code, code_kind, retryable, error_id; the free-text short_error is never shown.
+          const parts = ['status', 'error_code'].map(name => error[name]).filter(value => typeof value === 'string' || typeof value === 'number');
           problem = `AGY_ERROR ${parts.join(' ')}`.trim();
         } catch { problem = 'AGY_ERROR'; }
       } else if (/^Error:/.test(text)) problem = redact(text).slice(0, 200);
-      else if (/^Authentication required/.test(text)) problem = 'interactive sign-in requested: the Gemini API key was not used';
+      else if (/^Authentication required/.test(text)) {
+        problem = 'interactive sign-in requested: the Gemini API key was not used';
+        // Without the key path the CLI waits for a browser sign-in; stop at once instead of waiting for its timeout.
+        child.kill();
+      }
     };
     const watch = (stream: NodeJS.ReadableStream, keep: boolean) => {
       let pending = '';
@@ -127,7 +137,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     if (process.argv[2] === 'validate') validateAntigravityModel(process.argv[3]);
     else if (process.argv[2] === 'run' && process.argv[3]) await runAntigravity(process.argv[3]);
-    else if (process.argv[2] === 'review' && process.argv[3]) await runAntigravity(process.argv[3], process.env, 'agy', 'review');
+    else if (process.argv[2] === 'review' && process.argv[3]) await runAntigravity(process.argv[3], process.env, AGY_BINARY, 'review');
     else throw new Error('Usage: antigravity-runner.ts validate <model> | run <prompt> | review <prompt>');
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Antigravity launcher failed.');

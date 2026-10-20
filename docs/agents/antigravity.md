@@ -50,9 +50,12 @@ Hugo performs these steps. Agents do not create keys, secrets, labels or variabl
 
 8. **Activate it** after a passing smoke: set `status: active` in the registry in a reviewed PR. The orchestrator then recommends it as a leader or reviewer.
 
-## To verify on the first real run
+## Verified, and still to verify
+
+Verified on 2026-10-20 with the real binary and a dummy key: the launcher's settings make the CLI use the Gemini API key and fail fast on a bad key, never waiting for a browser sign-in; the PR sandbox smoke checks this on every change. The risks of a same-day build and of the background updater, and how they are handled, are in the contract ("Risks and how they are handled").
+
+Still to verify on the first real run:
 
 - `command(npm)` in `permission.allow` approves `npm` with any arguments, so the fixture's `npm test` runs.
-- The CLI's background updater neither replaces nor bypasses the pinned binary inside the container.
 - The model slug is accepted, the run completes without asking anything, and the review mode prints a complete review.
 - Duration and cost per run.

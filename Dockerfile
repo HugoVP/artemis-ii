@@ -62,15 +62,19 @@ RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION} @anthropi
 # Root-owned launchers from the reviewed image; the agent cannot edit them or see runner folders.
 COPY scripts/opencode-runner.ts /opt/artemis/opencode-runner.ts
 COPY scripts/copilot-runner.ts /opt/artemis/copilot-runner.ts
-# Node downloads (the slim base has no curl), sha512sum checks, and the root-owned binary is exposed as `agy`. The version
-# check runs in a throwaway home, so no CLI state is left in the image.
+# Node downloads (the slim base has no curl), sha512sum checks, and the root-owned binary is exposed as `agy`. The hash of
+# the extracted binary is recorded so the next step can prove it was not replaced.
 RUN node -e 'fetch(process.argv[1]).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); }).then(b => require("fs").writeFileSync("/tmp/agy.tar.gz", Buffer.from(b)))' "$AGY_URL" \
  && echo "$AGY_SHA512  /tmp/agy.tar.gz" | sha512sum -c - \
  && mkdir -p /opt/agy && tar --no-same-owner -xzf /tmp/agy.tar.gz -C /opt/agy && rm /tmp/agy.tar.gz \
  && chmod 0755 /opt/agy/antigravity \
  && test "$(stat -c %U /opt/agy/antigravity)" = root \
  && ln -s /opt/agy/antigravity /usr/local/bin/agy \
- && test "$(HOME=$(mktemp -d) CI=true agy --version)" = "${AGY_VERSION}"
+ && sha512sum /opt/agy/antigravity > /opt/agy/antigravity.sha512
+# The CLI starts a background updater that cannot be turned off (checked on 1.4.3). Without network it cannot fetch a
+# newer build while the image is built; the version check runs in a throwaway home and the binary hash is checked again.
+RUN --network=none test "$(HOME=$(mktemp -d) CI=true agy --version)" = "${AGY_VERSION}" \
+ && sha512sum -c /opt/agy/antigravity.sha512
 COPY scripts/antigravity-runner.ts /opt/artemis/antigravity-runner.ts
 
 # Static build. MEDIA_BASE_URL defaults to the preview layout (media served from /media).

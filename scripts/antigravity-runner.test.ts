@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm, readdir, readFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { validateAntigravityModel, antigravityArgs, antigravitySettings, runAntigravity, AGY_VERSION, BUILD_ALLOW, REVIEW_ALLOW } from './antigravity-runner.ts';
+import { validateAntigravityModel, antigravityArgs, antigravitySettings, runAntigravity, AGY_VERSION, AGY_BINARY, BUILD_ALLOW, REVIEW_ALLOW } from './antigravity-runner.ts';
 
 test('AGY-02: require an explicit model slug and reject auto or shell syntax', () => {
   assert.equal(validateAntigravityModel('example-model-4'), 'example-model-4');
@@ -16,7 +16,11 @@ test('AGY-03: build and review arguments and settings use the Gemini API key and
   const build = antigravityArgs('example-model', 'Prompt', 'build', '/tmp/log');
   assert.deepEqual(build.slice(0, 6), ['--print', 'Prompt', '--model', 'example-model', '--mode', 'accept-edits']);
   assert.ok(build.includes('--disable-slash-commands'));
-  assert.deepEqual(antigravityArgs('example-model', 'Prompt', 'review', '/tmp/log').slice(4, 6), ['--mode', 'plan']);
+  const review = antigravityArgs('example-model', 'Prompt', 'review', '/tmp/log');
+  assert.deepEqual(review.slice(4, 6), ['--mode', 'plan']);
+  // 1.4.3 ignores --mode plan when slash commands are disabled.
+  assert.ok(!review.includes('--disable-slash-commands'));
+  assert.equal(AGY_BINARY, '/opt/agy/antigravity');
   for (const args of [build, antigravityArgs('example-model', 'Prompt', 'review', '/tmp/log')]) {
     assert.ok(!args.some(arg => /dangerously|--sandbox|--remote-control|--continue|--conversation|--project|--new-project|--mode=auto|^auto$/.test(arg)));
   }
@@ -72,7 +76,7 @@ test('AGY-06: review mode runs in plan mode and the launcher writes the printed 
 
 for (const [name, body, expected] of [
   ['a nonzero exit', `console.log('PRIVATE TRANSCRIPT'); process.exit(1);`, /exit 1/],
-  ['a structured AGY_ERROR line with a zero exit', `console.error('AGY_ERROR: {"status": "RESOURCE_EXHAUSTED", "code": 429, "message": "PRIVATE fixture-only"}'); process.exit(0);`, /AGY_ERROR RESOURCE_EXHAUSTED 429/],
+  ['a structured AGY_ERROR line with a zero exit', `console.error('AGY_ERROR: {"short_error": "PRIVATE fixture-only", "status": "RESOURCE_EXHAUSTED", "error_code": 429, "code_kind": "http", "retryable": false, "error_id": "x"}'); process.exit(0);`, /AGY_ERROR RESOURCE_EXHAUSTED 429/],
   ['an interactive sign-in prompt', `console.log('Authentication required. Please visit the URL to log in:'); process.exit(1);`, /interactive sign-in/],
   ['an Error line', `console.error('Error: quota exceeded for fixture-only'); process.exit(0);`, /quota exceeded for \[redacted\]/],
 ] as const) {

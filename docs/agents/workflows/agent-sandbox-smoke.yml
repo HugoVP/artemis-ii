@@ -89,3 +89,16 @@ jobs:
             artemis-ii-sandbox-smoke bash -c 'test -r /opt/artemis/antigravity-runner.ts && test ! -w /opt/artemis/antigravity-runner.ts \
               && test ! -w /opt/agy/antigravity && agy --version | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+$" \
               && ! node /opt/artemis/antigravity-runner.ts validate auto'
+
+      # A dummy key, not a credential: the launcher's Gemini API settings must make the CLI call the API and fail fast
+      # with an API error, never start a browser sign-in and wait.
+      - name: Check that Antigravity uses the API key path and never waits for a sign-in
+        run: |
+          set -euo pipefail
+          OUT=$(docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent -w /home/agent \
+            -e FIGMA=none -e ANTIGRAVITY_MODEL=gemini-3.8-flash -e GEMINI_API_KEY=not-a-real-key \
+            artemis-ii-sandbox-smoke timeout 120 node /opt/artemis/antigravity-runner.ts run 'Say hello.' 2>&1 < /dev/null) && { echo "A dummy key must not succeed."; exit 1; }
+          echo "$OUT"
+          echo "$OUT" | grep -q 'AGY_ERROR INVALID_ARGUMENT 400' || { echo "Expected an API error for the dummy key."; exit 1; }
+          if echo "$OUT" | grep -q 'interactive sign-in'; then echo "The CLI asked for a browser sign-in."; exit 1; fi

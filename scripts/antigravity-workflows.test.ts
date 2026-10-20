@@ -31,11 +31,16 @@ test('AGY-01: Antigravity is registered without Figma, as the google family, and
   assert.match(dockerfile, /ARG AGY_SHA512=[0-9a-f]{128}\n/);
   assert.match(dockerfile, /sha512sum -c -/);
   assert.match(dockerfile, /tar --no-same-owner/);
-  assert.match(dockerfile, /test "\$\(HOME=\$\(mktemp -d\) CI=true agy --version\)" = "\$\{AGY_VERSION\}"/);
   assert.doesNotMatch(dockerfile, /antigravity\.google\/cli\/install\.sh|manifests\//);
+  // The background updater cannot be turned off: the version check runs without network and the binary hash is re-checked.
+  assert.match(dockerfile, /sha512sum \/opt\/agy\/antigravity > \/opt\/agy\/antigravity\.sha512/);
+  assert.match(dockerfile, /RUN --network=none test "\$\(HOME=\$\(mktemp -d\) CI=true agy --version\)" = "\$\{AGY_VERSION\}" \\\n && sha512sum -c \/opt\/agy\/antigravity\.sha512/);
   assert.match(dockerfile, /COPY scripts\/antigravity-runner\.ts \/opt\/artemis\/antigravity-runner\.ts/);
   assert.match(await read('docs/agents/workflows/agent-runner-image.yml'), /paths:[\s\S]*scripts\/antigravity-runner\.ts/);
-  assert.match(await read('docs/agents/workflows/agent-sandbox-smoke.yml'), /paths:[\s\S]*scripts\/antigravity-runner\.ts[\s\S]*test ! -w \/opt\/artemis\/antigravity-runner\.ts/);
+  const sandbox = await read('docs/agents/workflows/agent-sandbox-smoke.yml');
+  assert.match(sandbox, /paths:[\s\S]*scripts\/antigravity-runner\.ts[\s\S]*test ! -w \/opt\/artemis\/antigravity-runner\.ts/);
+  // A dummy key must end in an API error, never in a browser sign-in.
+  assert.match(sandbox, /GEMINI_API_KEY=not-a-real-key[\s\S]*grep -q 'AGY_ERROR INVALID_ARGUMENT 400'[\s\S]*interactive sign-in/);
 });
 
 test('AGY-02/03: the proposed agent-run validates the model before the key and keeps Antigravity inside the boundary', async () => {

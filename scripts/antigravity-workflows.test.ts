@@ -90,3 +90,8 @@ test('AGY-02: the PR sandbox smoke checks the registry model against the CLI cat
   assert.doesNotMatch(guide, /read -rsp .*GEMINI_API_KEY|export GEMINI_API_KEY/);
   assert.match(guide, /never present on a local machine/);
 });
+
+test('AGY-02: a change to the registry runs the PR sandbox smoke, because the catalog check reads the model from it', async () => {
+  const smoke = parse(await read('docs/agents/workflows/agent-sandbox-smoke.yml')) as { on: { pull_request: { paths: string[] } } };
+  assert.ok(smoke.on.pull_request.paths.includes('agents/registry.yaml'));
+});

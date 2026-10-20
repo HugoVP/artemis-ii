@@ -1,9 +1,10 @@
 {
-  "transform": "v1+sharp0.35.5+vips8.18.7",
+  "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
   "photos": {
     "AFRC2026-0068-03": {
       "pathKey": "AFRC2026-0068-03",
       "hash": "9f79895a7a989138",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/AFRC2026-0068-03/AFRC2026-0068-03~orig.jpg",
       "sourceBytes": 18222662,
       "sourceSha256": "2bcd613c193350f90d0f35829a88cc99bb962268cabc77e7398abe0cdf4dd484",
@@ -37,6 +38,7 @@
     "art002e000192": {
       "pathKey": "art002e000192",
       "hash": "358af10e8db3c2da",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e000192/art002e000192~orig.jpg",
       "sourceBytes": 6174505,
       "sourceSha256": "64b9cd68cdc3b373f42ea6be8a94b8bea3f2485896efb44be4d11b183a2b9005",
@@ -70,6 +72,7 @@
     "art002e004437": {
       "pathKey": "art002e004437",
       "hash": "ed30e7a95ca90b33",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e004437/art002e004437~orig.jpg",
       "sourceBytes": 315877,
       "sourceSha256": "4043a979737b7a114d8b8441cfb759fb9ee5f54982e1fe4efe3e1173f376600f",
@@ -103,6 +106,7 @@
     "art002e009007": {
       "pathKey": "art002e009007",
       "hash": "1bf6f3e3a085068c",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e009007/art002e009007~orig.jpg",
       "sourceBytes": 543434,
       "sourceSha256": "4bb6ccaee2aaf6111f63c86a43bdf5f4c7d28853f7bbfee50248ff8ff210b069",
@@ -136,6 +140,7 @@
     "art002e009212": {
       "pathKey": "art002e009212",
       "hash": "da5311086bd729de",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e009212/art002e009212~orig.jpg",
       "sourceBytes": 2025705,
       "sourceSha256": "d360b3f6e373b0f92ea4255862efe90bb0849f034119b464f3d2af8f07d5a4dc",
@@ -169,6 +174,7 @@
     "art002e009279": {
       "pathKey": "art002e009279",
       "hash": "070b50b13b7b1f0d",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e009279/art002e009279~orig.jpg",
       "sourceBytes": 2171892,
       "sourceSha256": "1a94ac6e3c43a11bbe55cfcb3e6adb2eb1de534c4781cff5617924c0784f9c27",
@@ -202,6 +208,7 @@
     "art002e009284": {
       "pathKey": "art002e009284",
       "hash": "7fcdc38a83ba343f",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e009284/art002e009284~orig.jpg",
       "sourceBytes": 514748,
       "sourceSha256": "d3842b823a45a55d342519c9f359978ca411d9730ca0a6d27acfc00b26696ce0",
@@ -235,6 +242,7 @@
     "art002e009296": {
       "pathKey": "art002e009296",
       "hash": "c88e8456ff066bfd",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e009296/art002e009296~orig.jpg",
       "sourceBytes": 824690,
       "sourceSha256": "ebc0b0daba8b880bdb2dd1c775963cee9012b09833222fb127f7711e310927c0",
@@ -268,6 +276,7 @@
     "art002e009301": {
       "pathKey": "art002e009301",
       "hash": "e5d11b72c18a3af2",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e009301/art002e009301~orig.jpg",
       "sourceBytes": 3488932,
       "sourceSha256": "4073cbcd74cf27eef45e9d5ba4c2a114e1d11f0e086691b1ce65f5f0561e8697",
@@ -301,6 +310,7 @@
     "art002e009575": {
       "pathKey": "art002e009575",
       "hash": "bf83cdd800f1d119",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e009575/art002e009575~orig.jpg",
       "sourceBytes": 649223,
       "sourceSha256": "b8d319cb5de178d46c903545843762f10c1305ebdeff126d06672e1dda6637c8",
@@ -334,6 +344,7 @@
     "art002e010208": {
       "pathKey": "art002e010208",
       "hash": "b7a4f7de2df0ea41",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e010208/art002e010208~orig.jpg",
       "sourceBytes": 1808236,
       "sourceSha256": "345e8fae1e29b05fb8e17243fedd4dde259f6bc9ed1710aecb25394884e3d2ab",
@@ -367,6 +378,7 @@
     "art002e010782": {
       "pathKey": "art002e010782",
       "hash": "1c4dd87bf52b4663",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e010782/art002e010782~orig.jpg",
       "sourceBytes": 1670682,
       "sourceSha256": "a4dc7bcdefe47912e1fa0fc14fd31f79dde3d18cf65e19c867cfc9ff6c30cf4d",
@@ -400,6 +412,7 @@
     "art002e012090": {
       "pathKey": "art002e012090",
       "hash": "eba1ab660d35b95e",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e012090/art002e012090~orig.jpg",
       "sourceBytes": 1999394,
       "sourceSha256": "f79240c4784c76cdad421216f3f7f3d660eb41b7795da5093db26e0271bb7f0c",
@@ -433,6 +446,7 @@
     "art002e012153": {
       "pathKey": "art002e012153",
       "hash": "ab07bd93d1ec9f03",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e012153/art002e012153~orig.jpg",
       "sourceBytes": 1815464,
       "sourceSha256": "5d4fdeec82860412e7e44194402570ec39b36c0246a2a9b54d3eb47f119adcad",
@@ -466,6 +480,7 @@
     "art002e012273": {
       "pathKey": "art002e012273",
       "hash": "236c310a06d91a30",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e012273/art002e012273~orig.jpg",
       "sourceBytes": 2083222,
       "sourceSha256": "7ffaa48be9601b0c8bff793c46061f5134dec252a3e27823c785699c88943d32",
@@ -499,6 +514,7 @@
     "art002e012588": {
       "pathKey": "art002e012588",
       "hash": "2b6de0a351ec52c6",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e012588/art002e012588~orig.jpg",
       "sourceBytes": 14199547,
       "sourceSha256": "69c891ebba4ab5e74287a05ba28673e0ff0ecee67b27789e8a9253904819ac10",
@@ -532,6 +548,7 @@
     "art002e014251": {
       "pathKey": "art002e014251",
       "hash": "556d5a7a1ab8d20b",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e014251/art002e014251~orig.jpg",
       "sourceBytes": 1347873,
       "sourceSha256": "72d8c2673aee7351b6edf130f56cf8c61398ae10c05933eaa432d60fd8fea0bc",
@@ -565,6 +582,7 @@
     "art002e016299": {
       "pathKey": "art002e016299",
       "hash": "e58dc84da5740e10",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e016299/art002e016299~orig.jpg",
       "sourceBytes": 470911,
       "sourceSha256": "930a8bfd058b8f98e43808be8f506a394572e2d02277c6ea7c02a19da791396d",
@@ -598,6 +616,7 @@
     "art002e016324": {
       "pathKey": "art002e016324",
       "hash": "9674f9e26142c9b8",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e016324/art002e016324~orig.jpg",
       "sourceBytes": 657266,
       "sourceSha256": "691e4000a27519a1f98daa90f2ceb06e7d14f245938cec281dfcf3451998cf55",
@@ -631,6 +650,7 @@
     "art002e021278": {
       "pathKey": "art002e021278",
       "hash": "b38e232074b00a7f",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e021278/art002e021278~orig.jpg",
       "sourceBytes": 1009521,
       "sourceSha256": "22687d173e1fcd9a334f93a3074de1470365c314e2d25e9fbcb229f4f5fb507d",
@@ -664,6 +684,7 @@
     "art002e023575": {
       "pathKey": "art002e023575",
       "hash": "04b748cd89bb1c4f",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e023575/art002e023575~orig.jpg",
       "sourceBytes": 1236664,
       "sourceSha256": "1bf492ea7f00b512774400c8051d2d653e834cd3bbcf300d1529c4a2c934d2ad",
@@ -697,6 +718,7 @@
     "art002e024097": {
       "pathKey": "art002e024097",
       "hash": "0972da2113a6cfab",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e024097/art002e024097~orig.jpg",
       "sourceBytes": 824774,
       "sourceSha256": "7297d7164282e73df07feb4a6a05e49c46fcfcd10dc00a7e463b4a61226b1cc0",
@@ -730,6 +752,7 @@
     "art002e025219": {
       "pathKey": "art002e025219",
       "hash": "faf1179fb080e590",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e025219/art002e025219~orig.jpg",
       "sourceBytes": 1029941,
       "sourceSha256": "6e3e19f9ce10ade9a50635ed513348e208ee4e93901a7797246789320ead538d",
@@ -763,6 +786,7 @@
     "art002e041711": {
       "pathKey": "art002e041711",
       "hash": "23917a87c9b2a46d",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/art002e041711/art002e041711~orig.jpg",
       "sourceBytes": 612322,
       "sourceSha256": "a42625aa26e7282c19f21b331b06612479c0efaae6430be7d40bb50282c98053",
@@ -796,6 +820,7 @@
     "Artemis II at the pad Moon 01292026_4": {
       "pathKey": "Artemis_II_at_the_pad_Moon_01292026_4",
       "hash": "8e283c91eff702a8",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4~orig.jpg",
       "sourceBytes": 7512329,
       "sourceSha256": "8cc3632f39493d5d6cf5310edf990b705c66d8846efe9abffa141aae7a063d2a",
@@ -829,6 +854,7 @@
     "KSC-04012026-Artemis II_Launch-1": {
       "pathKey": "KSC-04012026-Artemis_II_Launch-1",
       "hash": "4a759c74a2a59f73",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/KSC-04012026-Artemis%20II_Launch-1/KSC-04012026-Artemis%20II_Launch-1~orig.jpg",
       "sourceBytes": 19430441,
       "sourceSha256": "360d92ef704d2983aa3a8443ab08fd3330aef12c6134bdd3857f465d17a48d7c",
@@ -862,6 +888,7 @@
     "KSC-20260210-PH-JBS01-0035": {
       "pathKey": "KSC-20260210-PH-JBS01-0035",
       "hash": "bcfc099cfc34beb2",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/KSC-20260210-PH-JBS01-0035/KSC-20260210-PH-JBS01-0035~orig.JPG",
       "sourceBytes": 5317226,
       "sourceSha256": "a3b0293b1c3909a900e3f68654644199a995d3805e4ba12a5f42518efd415c09",
@@ -895,6 +922,7 @@
     "KSC-20260401-PH-KLS01_0051": {
       "pathKey": "KSC-20260401-PH-KLS01_0051",
       "hash": "10e45ea9020e6f70",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/KSC-20260401-PH-KLS01_0051/KSC-20260401-PH-KLS01_0051~orig.jpg",
       "sourceBytes": 22575474,
       "sourceSha256": "c55cae1c9b716232a2d5fc934d63edac58875f5d1fa7d0ad5a8039ecb70acf1e",
@@ -928,6 +956,7 @@
     "KSC-20260410-PH-JNV01_0001": {
       "pathKey": "KSC-20260410-PH-JNV01_0001",
       "hash": "907bcc2e9ae007e2",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/KSC-20260410-PH-JNV01_0001/KSC-20260410-PH-JNV01_0001~orig.jpg",
       "sourceBytes": 15048599,
       "sourceSha256": "73a98d56ddddab16554f09acaa5c3426e094e495043930df431a12393c1d3253",
@@ -961,6 +990,7 @@
     "KSC-20260411-KED01-0332": {
       "pathKey": "KSC-20260411-KED01-0332",
       "hash": "7639a5479bc285b8",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/KSC-20260411-KED01-0332/KSC-20260411-KED01-0332~orig.jpg",
       "sourceBytes": 1802990,
       "sourceSha256": "4c2973b5de684b2482d750a9c58cfb4852668e759bf60960d6ebf3d9571830ac",
@@ -994,6 +1024,7 @@
     "NHQ202604010227": {
       "pathKey": "NHQ202604010227",
       "hash": "66960a46098d7848",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/NHQ202604010227/NHQ202604010227~orig.jpg",
       "sourceBytes": 2516572,
       "sourceSha256": "cd0dfe1aa54e7e7646cc394b0b7b8e3354c8f304433706b3735a1e736bd85787",
@@ -1027,6 +1058,7 @@
     "NHQ202604100056": {
       "pathKey": "NHQ202604100056",
       "hash": "4e518805eca90a0a",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/NHQ202604100056/NHQ202604100056~orig.jpg",
       "sourceBytes": 24184912,
       "sourceSha256": "2f1ed9c0d88d070c8de595fa5b7b96909eaca725facae64a18a3acdaf8504601",
@@ -1060,6 +1092,7 @@
     "SLS_MAF_20260401_ArtemisIILaunch_05": {
       "pathKey": "SLS_MAF_20260401_ArtemisIILaunch_05",
       "hash": "5e35f22f2017779d",
+      "transform": "v1+sharp0.35.5+vips8.18.7+d0f24554ca40b3d4",
       "sourceUrl": "https://images-assets.nasa.gov/image/SLS_MAF_20260401_ArtemisIILaunch_05/SLS_MAF_20260401_ArtemisIILaunch_05~orig.JPG",
       "sourceBytes": 10417692,
       "sourceSha256": "7df2c478fd4d5db9610d9666d593194d97a2f14aa2c3d4c1c6f27547952da3dd",

@@ -151,6 +151,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
+      # Stage 06: the media smoke check decodes images with sharp (prebuilt binaries, no install scripts).
+      - run: npm ci --ignore-scripts
       - run: node scripts/smoke.ts "${SITE_URL}"
         env:
           SITE_URL: ${{ vars.SITE_URL_PRODUCTION }}

@@ -7,9 +7,10 @@ import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
-import { ingest, originalUrlFor, download, NASA_ORIGIN } from './ingest.ts';
+import { ingest, originalUrlFor, download, NASA_ORIGIN, TRANSFORM } from './ingest.ts';
 import { parseCuration, type Candidate } from './curation.ts';
 import { MAX_FILE_BYTES, readManifest } from './pages-media.ts';
+import { writePhotoContent, sourceIdFor, creditSourceIdFor } from './photo-content.ts';
 
 const SPACED = 'KSC-04012026-Artemis II_Launch-1';
 const SAFE = 'art002e000192';
@@ -23,21 +24,41 @@ const candidate = (nasaId: string, bytes: number): Candidate => ({
   nasaId, chapter: 'launch', record: 'https://images.nasa.gov/details/x', original: originalUrlFor(nasaId), bytes, why: 'fixture',
 });
 
-interface Fixture { origin: string; files: Map<string, Buffer>; requests: string[]; close: () => Promise<void>; server: Server }
+interface Fixture { origin: string; files: Map<string, Buffer>; requests: string[]; streamChunksSent: number; close: () => Promise<void>; server: Server }
 async function fixture(): Promise<Fixture> {
   const files = new Map<string, Buffer>(); const requests: string[] = [];
+  const state = { streamChunksSent: 0 };
   const server = createServer((req, res) => {
     const url = req.url ?? '';
     requests.push(url);
     if (url.startsWith('/redirect-out/')) { res.writeHead(302, { location: `http://localhost:${(server.address() as { port: number }).port}/elsewhere` }); res.end(); return; }
     if (url.startsWith('/redirect-in/')) { res.writeHead(302, { location: url.replace('/redirect-in/', '/image/') }); res.end(); return; }
+    if (url === '/stream-oversized') {
+      res.writeHead(200, { 'content-type': 'image/jpeg' });
+      const chunk = Buffer.alloc(512, 0x41);
+      const send = () => {
+        if (res.destroyed || state.streamChunksSent >= 20) { res.end(); return; }
+        state.streamChunksSent++;
+        res.write(chunk, () => setTimeout(send, 5));
+      };
+      send();
+      return;
+    }
     const body = files.get(url);
     if (!body) { res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'content-type': 'image/jpeg', 'content-length': body.length }); res.end(body);
   }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-  return { origin, files, requests, server, close: async () => { server.closeAllConnections(); await new Promise<void>((r) => server.close(() => r())); } };
+  return {
+    origin,
+    files,
+    requests,
+    get streamChunksSent() { return state.streamChunksSent; },
+    set streamChunksSent(v: number) { state.streamChunksSent = v; },
+    server,
+    close: async () => { server.closeAllConnections(); await new Promise<void>((r) => server.close(() => r())); },
+  };
 }
 const urlPath = (id: string) => `/image/${encodeURIComponent(id)}/${encodeURIComponent(id)}~orig.jpg`;
 const sha = (b: Uint8Array) => createHash('sha256').update(b).digest('hex');
@@ -65,7 +86,7 @@ test('MEDIA-02 SEC-08 AC-1: ingest generates AVIF/WebP widths, thumbnail, 1200x6
   });
 });
 
-test('SEC-08 AC-1: downloads outside the allowed origin are refused, including after a redirect', async () => {
+test('SEC-08 AC-1: downloads outside the allowed origin are refused, including after a redirect, and streaming size bounds cancel early', async () => {
   await withFixture(async (f) => {
     await assert.rejects(download('https://example.com/a.jpg', f.origin), /Refusing to download/);
     await assert.rejects(download(`${f.origin}/redirect-out/x`, f.origin), /Refusing to download/);
@@ -74,10 +95,13 @@ test('SEC-08 AC-1: downloads outside the allowed origin are refused, including a
     assert.equal(NASA_ORIGIN, 'https://images-assets.nasa.gov');
     await assert.rejects(download('http://images-assets.nasa.gov/image/a/a~orig.jpg', NASA_ORIGIN), /Refusing to download/);
     await assert.rejects(download('https://images-assets.nasa.gov.evil.test/a', NASA_ORIGIN), /Refusing to download/);
+    // Streaming response without Content-Length is cancelled as soon as cumulative bytes exceed maxBytes.
+    await assert.rejects(download(`${f.origin}/stream-oversized`, f.origin, 1024), /Download too large/);
+    assert.ok(f.streamChunksSent < 20, 'stream cancelled before consuming the full body');
   });
 });
 
-test('MEDIA-03 AC-2: second run downloads nothing; changed source or tool output fails without overwriting', async () => {
+test('MEDIA-03 AC-2: second run downloads nothing; changed source, settings, interrupted update or tool output fails without overwriting', async () => {
   await withFixture(async (f, dir) => {
     const source = await jpeg(2); f.files.set(urlPath(SAFE), source);
     const options = { candidates: [candidate(SAFE, source.length)], outDir: join(dir, 'out'), lockPath: join(dir, 'lock.json'), sourceOrigin: f.origin };
@@ -87,6 +111,31 @@ test('MEDIA-03 AC-2: second run downloads nothing; changed source or tool output
     const second = await ingest({ ...options, build: true });
     assert.equal(f.requests.length, downloads, 'no new download');
     assert.deepEqual(second, first);
+
+    // Changing compression settings without bumping TRANSFORM.version is detected even when cached outputs exist on disk.
+    const tweakedSettings = { ...TRANSFORM, avif: { ...TRANSFORM.avif, quality: 50 } };
+    await assert.rejects(ingest({ ...options, build: true, settings: tweakedSettings }), /Toolchain drift/);
+
+    // If an interrupted --update leaves an entry with an older per-entry transform fingerprint, subsequent runs reject it.
+    const lockBefore = JSON.parse(await readFile(options.lockPath, 'utf8'));
+    const savedTransform = lockBefore.photos[SAFE].transform;
+    lockBefore.photos[SAFE].transform = 'v0+sharp0.0.0+vips0.0.0+0000000000000000';
+    await writeFile(options.lockPath, JSON.stringify(lockBefore));
+    await assert.rejects(ingest({ ...options, build: true }), /Toolchain drift/);
+    lockBefore.photos[SAFE].transform = savedTransform;
+    await writeFile(options.lockPath, JSON.stringify(lockBefore));
+
+    // Even with --update, changed encoder output under the same hash is rejected before saving the lock or overwriting files.
+    await assert.rejects(
+      ingest({
+        ...options,
+        build: false,
+        update: true,
+        generateVariants: async () => new Map([['og.jpg', Buffer.from('different-bytes')]]),
+      }),
+      /bump TRANSFORM\.version/,
+    );
+
     // A changed source (same length, different bytes) is drift, never a silent new identity.
     const changed = Buffer.from(source); changed[changed.length - 20] ^= 0xff; f.files.set(urlPath(SAFE), changed);
     await rm(join(dir, 'out'), { recursive: true });
@@ -148,4 +197,44 @@ test('MEDIA-03 AC-3b: every URL recorded in CURATION.md equals the URL built fro
   const rows = [...mission.rows, ...launch.rows];
   assert.equal(rows.length, 33);
   for (const row of rows) assert.equal(row.original, originalUrlFor(row.nasaId, NASA_ORIGIN, row.original.endsWith('.JPG') ? 'JPG' : 'jpg'), row.nasaId);
+});
+
+test('CONT-02 AC-5: photo-content preserves supplemental NASA credit provenance and existing editorial fields on rerun', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'photo-content-'));
+  try {
+    const photosDir = join(dir, 'photos');
+    const sourcesDir = join(dir, 'sources');
+    await writePhotoContent({ curationPath: 'CURATION.md', lockPath: 'media-lock.json', photosDir, sourcesDir });
+    // Supplemental credit provenance for art002e009007 and art002e014251 is recorded in sources and referenced by the photos.
+    for (const id of ['art002e009007', 'art002e014251']) {
+      const photo = JSON.parse(await readFile(join(photosDir, `${id}.json`), 'utf8'));
+      const creditId = creditSourceIdFor(id);
+      assert.ok(photo.sourceIds.includes(sourceIdFor(id)));
+      assert.ok(photo.sourceIds.includes(creditId), `${id} references ${creditId}`);
+      const creditSource = JSON.parse(await readFile(join(sourcesDir, `${creditId}.json`), 'utf8'));
+      assert.match(creditSource.url, /^https:\/\/(www|science)\.nasa\.gov\//);
+    }
+    // Edited editorial fields and extra sourceIds survive a rerun after ingest --update.
+    const editedPath = join(photosDir, 'art002e000192.json');
+    const before = JSON.parse(await readFile(editedPath, 'utf8'));
+    await writeFile(editedPath, JSON.stringify({
+      ...before,
+      title: { es: 'Tierra iluminada por la Luna', en: 'Moonlit Earth' },
+      alt: { es: 'Disco terrestre nocturno.', en: 'Night Earth disk.' },
+      caption: { es: 'Pie editorial.', en: 'Editorial caption.' },
+      date: '2026-04-02',
+      camera: 'Nikon Z9',
+      sourceIds: [...before.sourceIds, 'extra-editorial-source'],
+    }, null, 2));
+    await writePhotoContent({ curationPath: 'CURATION.md', lockPath: 'media-lock.json', photosDir, sourcesDir });
+    const after = JSON.parse(await readFile(editedPath, 'utf8'));
+    assert.deepEqual(after.title, { es: 'Tierra iluminada por la Luna', en: 'Moonlit Earth' });
+    assert.deepEqual(after.alt, { es: 'Disco terrestre nocturno.', en: 'Night Earth disk.' });
+    assert.deepEqual(after.caption, { es: 'Pie editorial.', en: 'Editorial caption.' });
+    assert.equal(after.date, '2026-04-02');
+    assert.equal(after.camera, 'Nikon Z9');
+    assert.deepEqual(after.sourceIds, [sourceIdFor('art002e000192'), 'extra-editorial-source']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });

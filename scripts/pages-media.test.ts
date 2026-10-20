@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, truncate, symlink, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, truncate, symlink, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -86,22 +86,53 @@ test('TECH-04 QA-06 AC-8: complete artifact accepts exactly 25 MiB and 20000 fil
     await assert.rejects(validateStaticTree(dir), /Non-regular/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
-test('MEDIA-04: package requires referenced files and original size; packages HTML and media together', async () => {
+test('MEDIA-04 MEDIA-05 AC-3b: package requires referenced files and original size; packages both spaced IDs and oversized NASA records without a local oversized original', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'pages-package-'));
   try {
     const media = join(dir, 'generated'); const site = join(dir, 'dist');
-    await mkdir(join(media, prefix), { recursive: true }); await mkdir(site);
+    const id1 = 'Artemis II at the pad Moon 01292026_4';
+    const key1 = pathKeyFor(id1);
+    const prefix1 = `photos/${key1}/123456789abc/`;
+    const url1 = 'https://images-assets.nasa.gov/image/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4~orig.jpg';
+    const id2 = 'KSC-04012026-Artemis II_Launch-1';
+    const key2 = pathKeyFor(id2);
+    const prefix2 = `photos/${key2}/abcdef012345/`;
+    const url2 = 'https://images-assets.nasa.gov/image/KSC-04012026-Artemis%20II_Launch-1/KSC-04012026-Artemis%20II_Launch-1~orig.jpg';
+
+    await mkdir(join(media, prefix1), { recursive: true });
+    await mkdir(join(media, prefix2), { recursive: true });
+    await mkdir(site);
     await writeFile(join(site, 'index.html'), '<html></html>');
-    const photo = { nasaId: 'example', pathKey: 'example', hash: '123456789abc', variants: [prefix + '480.webp'],
-      original: selectOriginal(nasa, 3, prefix + 'original.jpg', createHash('sha256').update('jpg').digest('hex')) };
-    await writeFile(join(media, 'manifest.json'), JSON.stringify({ photos: [photo] }));
+    const photo1 = {
+      nasaId: id1,
+      pathKey: key1,
+      hash: '123456789abc',
+      variants: [prefix1 + 'w480.webp'],
+      original: selectOriginal(url1, 3, prefix1 + 'original.jpg', createHash('sha256').update('jpg').digest('hex')),
+    };
+    const photo2 = {
+      nasaId: id2,
+      pathKey: key2,
+      hash: 'abcdef012345',
+      variants: [prefix2 + 'w480.avif'],
+      original: selectOriginal(url2, MAX_FILE_BYTES + 1, ''),
+    };
+    await writeFile(join(media, 'manifest.json'), JSON.stringify({ photos: [photo1, photo2] }));
     await assert.rejects(packageMedia(media, site));
-    await writeFile(join(media, prefix, '480.webp'), 'image');
-    await writeFile(join(media, prefix, 'original.jpg'), 'wrong size');
+    await writeFile(join(media, prefix1, 'w480.webp'), 'image-1');
+    await writeFile(join(media, prefix2, 'w480.avif'), 'image-2');
+    await writeFile(join(media, prefix1, 'original.jpg'), 'wrong size');
     await assert.rejects(packageMedia(media, site), /size mismatch/);
-    await writeFile(join(media, prefix, 'original.jpg'), 'jpg');
+    await writeFile(join(media, prefix1, 'original.jpg'), 'jpg');
     await packageMedia(media, site);
-    assert.equal(await readFile(join(site, 'media', prefix, 'original.jpg'), 'utf8'), 'jpg');
+    assert.equal(await readFile(join(site, 'media', prefix1, 'original.jpg'), 'utf8'), 'jpg');
+    assert.equal(await readFile(join(site, 'media', prefix1, 'w480.webp'), 'utf8'), 'image-1');
+    assert.equal(await readFile(join(site, 'media', prefix2, 'w480.avif'), 'utf8'), 'image-2');
+    await assert.rejects(stat(join(site, 'media', prefix2, 'original.jpg')));
+    const packagedManifest = parseManifest(JSON.parse(await readFile(join(site, 'media', 'manifest.json'), 'utf8')));
+    assert.deepEqual(packagedManifest.photos.map((p) => p.nasaId), [id1, id2]);
+    assert.deepEqual(packagedManifest.photos.map((p) => p.pathKey), [key1, key2]);
+    assert.deepEqual(packagedManifest.photos[1]!.original, { kind: 'nasa', sourceUrl: url2, sizeBytes: MAX_FILE_BYTES + 1 });
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 for (const folder of ['.github/workflows', 'pipeline/github/workflows']) {
@@ -111,8 +142,12 @@ for (const folder of ['.github/workflows', 'pipeline/github/workflows']) {
       assert.doesNotMatch(text, /R2_|s3 sync|s3 cp|cloudflarestorage|secrets: inherit/);
       if (['preview-build', 'deploy-staging', 'deploy-production'].includes(name)) {
         assert.match(text, /MEDIA_BASE_URL: \/media/);
-        assert.match(text, /node scripts\/package-media.ts media-out dist/);
+        assert.match(text, /node scripts\/package-media\.ts media-out dist/);
         assert.ok(text.indexOf('package-media.ts') < text.indexOf('actions/upload-artifact'));
+      }
+      if (['deploy-staging', 'deploy-production'].includes(name)) {
+        assert.match(text, /npm ci --ignore-scripts/);
+        assert.ok(text.indexOf('npm ci --ignore-scripts') < text.indexOf('node scripts/smoke.ts'));
       }
       if (name.startsWith('deploy-')) {
         const validation = extractRunScripts(text).find(s => s.includes('Pages file exceeds 25 MiB'));

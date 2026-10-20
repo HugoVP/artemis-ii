@@ -27,10 +27,12 @@ on:
 
 permissions: {}
 
-# One run per PR and reviewer, never cancelling a run in progress. Events that prepare would ignore or refuse get a group
+# One run per PR and reviewer, never cancelling a run in progress. Both start paths build the reviewer part the same way
+# (the label name `review:<id>`; the manual path formats it from its input), so a manual request and a label cannot run
+# together for the same PR and reviewer. Events that prepare would ignore or refuse get a group
 # of their own, so they cannot displace a waiting run.
 concurrency:
-  group: ${{ (github.actor == vars.AGENT_TRUSTED_LOGIN && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && (github.event_name == 'workflow_dispatch' || startsWith(github.event.label.name, 'review:'))) && format('agent-review-{0}-{1}', github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number, github.event_name == 'workflow_dispatch' && inputs.reviewer || github.event.label.name) || format('agent-review-ignored-{0}', github.run_id) }}
+  group: ${{ (github.actor == vars.AGENT_TRUSTED_LOGIN && github.triggering_actor == vars.AGENT_TRUSTED_LOGIN && (github.event_name == 'workflow_dispatch' || startsWith(github.event.label.name, 'review:'))) && format('agent-review-{0}-{1}', github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number, github.event_name == 'workflow_dispatch' && format('review:{0}', inputs.reviewer) || github.event.label.name) || format('agent-review-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -61,12 +63,20 @@ jobs:
       model: ${{ steps.facts.outputs.model }}
       key_secret: ${{ steps.facts.outputs.key_secret }}
       auth: ${{ steps.facts.outputs.auth }}
+      trusted: ${{ steps.trusted.outputs.trusted }}
     steps:
       # Always main: the checks and the registry come from main, and a PR cannot change them.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
+
+      # REV-03: the revision of main that this run trusts. The registry, the plan and the scripts of every later job are read
+      # at this exact commit, so a model, family or script that changes on main during the review cannot change who the
+      # comment and the check run say produced it. A retry of publication reads the same revision.
+      - name: Record the trusted revision of main
+        id: trusted
+        run: echo "trusted=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -152,7 +162,7 @@ jobs:
       # Trusted copy of main, never mounted into the reviewer's container.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ needs.prepare.outputs.trusted }}
           path: main
           persist-credentials: false
 
@@ -391,10 +401,10 @@ jobs:
       REVIEWER: ${{ needs.prepare.outputs.reviewer }}
       REPO: ${{ github.repository }}
     steps:
-      # Main only, and no npm: this job never runs project code. Node runs scripts from main.
+      # The revision of main that prepare recorded, and no npm: this job never runs project code. Node runs scripts from it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ needs.prepare.outputs.trusted }}
           persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -435,12 +445,14 @@ jobs:
         run: |
           set -euo pipefail
           gh api --method POST "repos/$REPO/issues/$PR/comments" --input "$RUNNER_TEMP/comment.json" > "$RUNNER_TEMP/posted.json"
-          echo "posted=true" >> "$GITHUB_OUTPUT"
           ID=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).id" "$RUNNER_TEMP/posted.json")
           URL=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).html_url" "$RUNNER_TEMP/posted.json")
           [[ "$ID" =~ ^[0-9]+$ ]] || { echo "Unexpected comment id."; exit 1; }
           node scripts/agent-review.ts check-run "$RUNNER_TEMP/facts.json" "$RUNNER_TEMP/verdict.json" "$ID" "$URL" "$RUNNER_TEMP/check.json"
           gh api --method POST "repos/$REPO/check-runs" --input "$RUNNER_TEMP/check.json" > /dev/null
+          # Set only now, when the comment and its check run are both posted. If either step above fails, `report` sees no
+          # output and says so on the PR (REV-10), instead of leaving a comment without its check record unexplained.
+          echo "posted=true" >> "$GITHUB_OUTPUT"
           echo "Posted comment $ID and its check run on $HEAD_SHA."
           [ "$VALID" = true ] || { echo "The review was not valid; a notice was posted instead."; exit 1; }
 

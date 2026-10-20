@@ -120,6 +120,15 @@ export interface ReviewFacts {
   auth: string;
 }
 
+// docs/PLAN.md links specs relative to docs/ (`specs/stage-05-curation.md`), which parseStages keeps as written; the reviewer
+// is given the repository path. Anything that is not a stage spec in docs/specs/ gives no path (the reviewer is then
+// pointed at the folder).
+export function stageSpecPath(planLink: string | null | undefined): string {
+  const link = String(planLink ?? "").replace(/^\.?\//, "");
+  const path = link.startsWith("specs/") ? `docs/${link}` : link;
+  return /^docs\/specs\/stage-[0-9]{2}-[a-z0-9-]+\.md$/.test(path) ? path : "";
+}
+
 export function reviewFacts({ agents, stages, pr, reviewerId, defaultBranch }: {
   agents: Agent[];
   stages: Stage[];
@@ -132,8 +141,7 @@ export function reviewFacts({ agents, stages, pr, reviewerId, defaultBranch }: {
   const { stage, leader: leaderId } = leaderFromBranch(pr.headRefName)!;
   const r = checkReviewer(agents, reviewerId, leaderId);
   if (!r.ok) return { ok: false, reasons: [r.reason] };
-  const specPath = stages.find((s) => s.number === stage)?.specPath ?? "";
-  const spec = /^docs\/specs\/stage-[0-9]{2}-[a-z0-9-]+\.md$/.test(specPath) ? specPath : "";
+  const spec = stageSpecPath(stages.find((s) => s.number === stage)?.specPath);
   return {
     ok: true,
     facts: {
@@ -151,6 +159,10 @@ export const AGENT_CONFIG_PATHS = [
   ".agent", ".agent/**",
   ".claude", ".claude/**", ".codex", ".codex/**", ".opencode", ".opencode/**", ".copilot", ".copilot/**",
   "opencode.json", "opencode.jsonc", ".mcp.json", ".github/hooks/**",
+  // The directories themselves, as exact paths: a symlink at `.github/hooks` (or at `.github`) to a directory the PR
+  // controls is listed as that one path, which `.github/hooks/**` does not match, and the checkout would then hold hook
+  // configuration beside the reviewer's credential.
+  ".github/hooks", ".github",
 ];
 
 export function agentConfigTouched(files: string[]): string[] {

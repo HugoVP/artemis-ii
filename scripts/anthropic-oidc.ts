@@ -4,7 +4,8 @@
 //   node scripts/anthropic-oidc.ts validate        checks the four federation ids in the environment
 //   node scripts/anthropic-oidc.ts start <dir> [issued]   writes <dir>/token now and every 60 seconds, until killed;
 //                                                  appends each token to [issued] (outside <dir>) for the log masker
-//   ... | node scripts/anthropic-oidc.ts redact    copies stdin to stdout with every JWT replaced, line by line
+//   ... | node scripts/anthropic-oidc.ts redact    copies stdin to stdout line by line, JWTs replaced and workflow
+//                                                  commands neutralized
 import { appendFile, mkdir, rename, writeFile, rm } from "node:fs/promises";
 import { createInterface } from "node:readline";
 import { once } from "node:events";
@@ -71,6 +72,19 @@ export function redactJwts(text: string): string {
   return text.replace(JWT_PATTERN, "[redacted token]");
 }
 
+// Untrusted output must not run GitHub Actions workflow commands: a line starting with "::" (or the older "##[") is
+// read by the runner as a command, and "::stop-commands::<marker>" would switch off command processing, so the
+// trusted "::add-mask::" of the cleanup step would print the tokens instead of masking them. Such lines are shown
+// with a marker in front, which the runner does not parse.
+export function neutralizeWorkflowCommands(line: string): string {
+  return /^\s*(?:::|##\[)/.test(line) ? `[agent output] ${line}` : line;
+}
+
+// What the redact command does to each line of the container's output.
+export function sanitizeLogLine(line: string): string {
+  return neutralizeWorkflowCommands(redactJwts(line));
+}
+
 export interface RefreshOptions {
   dir: string;
   requestUrl: string;
@@ -126,7 +140,7 @@ async function main(argv: string[]): Promise<number> {
   if (cmd === "redact") {
     // Waits for the log to drain when it falls behind, so a slow reader loses nothing.
     for await (const line of createInterface({ input: process.stdin, crlfDelay: Infinity })) {
-      if (!process.stdout.write(`${redactJwts(line)}\n`)) await once(process.stdout, "drain");
+      if (!process.stdout.write(`${sanitizeLogLine(line)}\n`)) await once(process.stdout, "drain");
     }
     return 0;
   }

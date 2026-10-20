@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { AUDIENCE, badFederationVariables, fetchOidcToken, isFederationId, jwtExpiry, redactJwts, startRefresher } from "./anthropic-oidc.ts";
+import { AUDIENCE, badFederationVariables, fetchOidcToken, isFederationId, jwtExpiry, neutralizeWorkflowCommands, redactJwts, sanitizeLogLine, startRefresher } from "./anthropic-oidc.ts";
 
 const jwt = (exp: number) => `${Buffer.from("{}").toString("base64url")}.${Buffer.from(JSON.stringify({ exp })).toString("base64url")}.sig`;
 const fake = (fn: (url: URL, init: RequestInit) => Promise<Response>) => fn as unknown as typeof fetch;
@@ -87,6 +87,19 @@ test("WIF-04: a token printed by the agent is redacted before it reaches the log
   const lines = Array.from({ length: 50_000 }, (_, i) => `line ${i} ${"x".repeat(60)}`);
   const big = execFileSync(process.execPath, [script, "redact"], { input: lines.join("\n"), encoding: "utf8", maxBuffer: 1 << 28 });
   assert.equal(big, `${lines.join("\n")}\n`);
+});
+
+test("WIF-04: untrusted output cannot run workflow commands, so it cannot switch off the masks of the cleanup step", () => {
+  for (const line of ["::stop-commands::marker", "  ::add-mask::x", "::set-output name=a::b", "##[set-output name=a;]b", "\t::warning::x"]) {
+    assert.match(neutralizeWorkflowCommands(line), /^\[agent output\] /, line);
+  }
+  for (const line of ["plain", "a ::stop-commands::x in the middle", "# heading", ": :not a command"]) assert.equal(neutralizeWorkflowCommands(line), line);
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const token = `${b64({ alg: "RS256" })}.${b64({ sub: "x" })}.${"s".repeat(30)}`;
+  assert.equal(sanitizeLogLine(`::add-mask::${token}`), "[agent output] ::add-mask::[redacted token]");
+  const script = fileURLToPath(new URL("./anthropic-oidc.ts", import.meta.url));
+  const out = execFileSync(process.execPath, [script, "redact"], { input: "::stop-commands::m\nok\n", encoding: "utf8" });
+  assert.equal(out, "[agent output] ::stop-commands::m\nok\n");
 });
 
 test("jwtExpiry reads exp and tolerates junk", () => {

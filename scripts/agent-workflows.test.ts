@@ -234,6 +234,8 @@ test("the agent runs in a docker run container without the Docker socket, as the
   // Project code runs only in the container: npm on the runner would run install scripts next to the trusted steps.
   assert.equal([...run.matchAll(/npm ci/g)].length, 1);
   assert.match(step(work, "Install the project dependencies"), /"\$IMAGE" npm ci/);
+  // Install scripts are project code: their output cannot run workflow commands either.
+  assert.match(step(work, "Install the project dependencies"), /npm ci --no-audit --no-fund < \/dev\/null 2>&1 \\\n\s+\| node "\$RUNNER_TEMP\/trusted\/scripts\/anthropic-oidc\.ts" redact/);
   assert.match(step(work, "Pull the runner image"), /@sha256:\[0-9a-f\]\{64\}\$/);
   assert.match(step(work, "Pull the runner image"), /docker logout ghcr\.io/);
 });
@@ -404,8 +406,8 @@ test("WIF-04: the agent's container gets the token folder read-only and the ids 
   assert.doesNotMatch(agent, /--bare/);
   // The agent can read the token file, so its output passes through the trusted JWT filter before the log.
   assert.match(agent, /< \/dev\/null 2>&1 \\\n\s+\| node "\$RUNNER_TEMP\/trusted\/scripts\/anthropic-oidc\.ts" redact/);
-  // The install container never gets any of it.
-  assert.doesNotMatch(step(work, "Install the project dependencies"), /ANTHROPIC|anthropic-oidc/);
+  // The install container never gets any of it (its output only passes through the trusted filter script).
+  assert.doesNotMatch(step(work, "Install the project dependencies"), /ANTHROPIC|anthropic-oidc[:"]|anthropic-oidc-issued/);
 });
 
 test("WIF-03: the refresher starts after the install and before the agent, and stops right after it, whatever happened", () => {

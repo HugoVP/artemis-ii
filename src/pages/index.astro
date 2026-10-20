@@ -1,5 +1,5 @@
 ---
-// `/` goes to the default language until Stage 04 adds language detection (docs/SITEMAP.md).
+// The head script chooses the language; the link remains usable without JavaScript.
 ---
 
 <!doctype html>
@@ -7,7 +7,8 @@
   <head>
     <meta charset="utf-8" />
     <title>Artemis II</title>
-    <meta http-equiv="refresh" content="0;url=/es/" />
+    <!-- External classic script chooses the language before the body is parsed. -->
+    <script is:inline src="/preferences.js"></script>
     <meta name="robots" content="noindex" />
     <link rel="canonical" href="/es/" />
   </head>

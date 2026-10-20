@@ -10,6 +10,14 @@
 - id: claude
   name: Claude Code
   provider: anthropic
-  key_secret: AGENT_KEY_CLAUDE     # secret of the GitHub environment "agents"; never written anywhere else
+  auth: federation                 # Anthropic workload identity federation with the job's GitHub OIDC token; no static key, see docs/specs/claude-wif.md
   runner: claude-print             # claude -p, see agent-run.yml
   capabilities: [git, node, browser, web, figma-read, figma-write]
+
+- id: opencode
+  name: OpenCode
+  provider: opencode-go
+  key_secret: AGENT_KEY_OPENCODE
+  runner: opencode-run
+  model: opencode-go/glm-5.3       # selected after local builder trials; remote Go smoke still required
+  capabilities: [git, node, browser, web]

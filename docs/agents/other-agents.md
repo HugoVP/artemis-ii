@@ -1,6 +1,6 @@
 # Other agents
 
-How to run a stage with an agent other than Claude Code. None of these has been tried on this project yet; update `README.md` when one is.
+How to run a stage with an agent other than Claude Code. The verification status of each environment is recorded in `README.md`; a successful CLI test does not certify every model or vendor environment.
 
 ## What any agent needs
 
@@ -23,7 +23,7 @@ Automatic chaining (start the next stage on merge) is set up per runner. For Cla
 
 ## OpenAI Codex
 
-Nothing here has been run on this project yet. "Confirmed" means found in OpenAI's documentation or third-party guides on 2026-10-12; "to verify" means it must be tested before relying on it.
+The CLI pipeline completed the Stage 04 builder run and opened PR #31 on 2026-10-19; the stage remains under review. The vendor-cloud setup below is a separate environment and remains unverified. Unless stated otherwise, "Confirmed" below means found in documentation or guides on 2026-10-12.
 
 **Confirmed**
 
@@ -54,6 +54,38 @@ Nothing here has been run on this project yet. "Confirmed" means found in OpenAI
 Its branches usually start with `codex/`; `AGENTS.md` rule 2 asks for an `agent/…` branch instead (`agent/stage-NN-short-name` for a stage), so name the branch that way when you start the task.
 
 ## Open-source agents and open-weight models
+
+### OpenCode
+
+The pipeline integration pins `opencode-ai` 1.19.3 and uses `opencode run --format json --model opencode-go/<model> --agent pipeline --pure`. Setup and exact owner commands are in [`opencode.md`](opencode.md).
+
+Verified on 2026-10-19 with the installed 1.19.3 CLI and a local scripted OpenAI-compatible endpoint, using a dummy credential and a fresh temporary home: headless read/bash tools, environment-based authentication through a provider `apiKey` substitution, rejection of project configuration, fixture edits and `npm test`. The test also verifies that the dummy key is not persisted in the CLI home. This is not a real Go API or model-quality test.
+
+The launcher sets `OPENCODE_DISABLE_PROJECT_CONFIG=true` and `OPENCODE_PURE=true`, writes a temporary `opencode.json` inside the container home and selects it through `OPENCODE_CONFIG`. It contains an environment placeholder, never a key, and is removed after execution. Sharing is disabled. The project-config flag is verified against the [pinned source](https://github.com/anomalyco/opencode/blob/v1.19.3/packages/opencode/src/config/paths.ts); do not assume future versions preserve it. Raw JSON events and stderr are consumed without being saved or printed. The launcher fails on provider error events, a nonzero exit or no final completion.
+
+The key reaches only the CLI process environment; the launcher does not call `auth login` or write the key to a file. The agent can run project commands with its capped model key, as allowed by the existing pipeline exception. Its permissions are not an OS sandbox: the unprivileged container, read-only `.git`, root-owned launcher in the digest-pinned image, and separate publisher are the security boundary. No Figma capability is registered, and no MCP connection is configured. The built-in `websearch` tool is not an MCP connection and works without one, sending queries to Exa or Parallel, so the launcher denies it explicitly; see [`opencode.md`](opencode.md).
+
+References: [CLI](https://opencode.ai/docs/cli/), [configuration](https://opencode.ai/docs/config/), [permissions](https://opencode.ai/docs/permissions/), [Go](https://opencode.ai/docs/go/). The introductory docs distinguish OpenCode 1 and 2, which share the command name; this integration qualifies only the pinned 1.x CLI.
+
+`opencode run --help` confirmed `--format json`, `--model`, `--agent` and `--pure` on 2026-10-19. `opencode models opencode-go`, run with an isolated home and a dummy credential, listed `opencode-go/glm-5.3`; the registry selects that model for both primary and auxiliary requests. Changing models requires a reviewed registry edit, not a workflow edit. No interactive `console login` or `auth login` is needed by this runner. Real Go authentication remains unverified.
+
+#### Phase 0 observations
+
+Hugo reported these local trials on 2026-10-18, using OpenCode 1.19.3 on Ubuntu 24.04 in WSL. Each result comes from one run per model, so it does not establish general capability. Test 1 summarized stage-PR rules; Test 2 reviewed the historical PR #19 diff containing a Docker-only `git ls-files` failure; Test 3 added exactly one documentation-table row.
+
+| Go model | Test 1 | Test 2 | Test 3 | Approximate observed cost |
+| --- | --- | --- | --- | --- |
+| GLM-5.3 | Passed; omitted TypeScript-only | Partial: identified the relevant line, but rated it Low | Passed; checks passed | USD 0.73 |
+| Kimi K3 | Passed; omitted TypeScript-only | Missed the target bug | Passed | USD 0.94 |
+| MiniMax-M3 | Passed with two omissions | Missed the target bug; noisy permission prompts | Passed; empty Setup cell | USD 0.35 |
+| GPT-6 Luna | Not run | Missed the target bug | Not run | USD 0.03 |
+| DeepSeek V4 Pro | Not run; workspace privacy choice required | Not run | Not run | Not measured |
+
+Start GLM-5.3 on small, clearly specified builder work with independent review. None of these trials qualifies OpenCode as a reviewer, for long specs or for Figma/design work. The registry enforces the absence of Figma capabilities; task size and quality remain Hugo's assignment decisions. The OpenCode kickoff repeats the TypeScript-only rule because every tested rules summary omitted it. `AGENTS.md` remains the source of truth.
+
+Go availability, privacy regions and model-specific limits must be checked in Hugo's console. Do not enable Global regions or select contributor/training models automatically. Subscription access is not evidence of suitability, and optional balance usage can exceed included allowances.
+
+### Other open-source agents
 
 Agents such as OpenHands, Aider, Goose or Cline can run with hosted or local models (for example through Ollama). Requirements are the same as above. In practice:
 

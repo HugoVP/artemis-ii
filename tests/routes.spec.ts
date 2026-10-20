@@ -16,7 +16,7 @@ const pages = [
   ['/es/acerca/', '/en/about/'],
 ];
 
-test.describe('AC-2 routes exist in es and en, / redirects to /es/ (NAV-01, I18N-01)', () => {
+test.describe('AC-2 routes exist in es and en, / detects language (NAV-01, I18N-01)', () => {
   for (const [es, en] of pages) {
     for (const [lang, path] of [['es', es], ['en', en]] as const) {
       test(`AC-2 ${path}`, async ({ page }) => {
@@ -35,9 +35,10 @@ test.describe('AC-2 routes exist in es and en, / redirects to /es/ (NAV-01, I18N
     });
   }
 
-  test('AC-2 / redirects to /es/', async ({ page }) => {
+  test('AC-2 / follows the browser language (Stage 04 I18N-02)', async ({ page }) => {
     await page.goto('/');
-    await page.waitForURL('**/es/');
-    expect(new URL(page.url()).pathname).toBe('/es/');
+    const lang = await page.evaluate(() => navigator.language.toLowerCase().startsWith('en') ? 'en' : 'es');
+    await page.waitForURL(`**/${lang}/`);
+    expect(new URL(page.url()).pathname).toBe(`/${lang}/`);
   });
 });

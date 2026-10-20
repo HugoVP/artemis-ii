@@ -5,6 +5,9 @@ on:
   pull_request:
     paths:
       - Dockerfile
+      - scripts/opencode-runner.ts
+      - scripts/verify-opencode-cli.ts
+      - scripts/opencode-smoke-fixture.ts
       - agents/agent-seccomp.json
       - agents/agent-apparmor.profile
       - .github/workflows/agent-run.yml
@@ -57,3 +60,11 @@ jobs:
       - name: Remove the nested sandbox AppArmor profile
         if: always()
         run: sudo apparmor_parser -R agents/agent-apparmor.profile || true
+
+      - name: Verify OpenCode with a local scripted model and no real credential
+        run: |
+          set -euo pipefail
+          docker run --rm --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            --tmpfs "/home/agent:uid=$(id -u),gid=$(id -g),mode=0700,exec" -e HOME=/home/agent \
+            -v "$GITHUB_WORKSPACE:/repo:ro" -w /repo \
+            artemis-ii-sandbox-smoke bash -c 'test -r /opt/artemis/opencode-runner.ts && test ! -w /opt/artemis/opencode-runner.ts && node scripts/verify-opencode-cli.ts'

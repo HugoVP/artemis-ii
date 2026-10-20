@@ -8,7 +8,7 @@ type Ui = {
   navLabel: string;
   settings: string;
   menu: string;
-  preferences: { title: string; theme: string; language: string; density: string; later: string; dark: string; light: string; compact: string; comfortable: string; spacious: string };
+  preferences: { title: string; theme: string; language: string; density: string; system: string; view: string; mosaic: string; gallery: string; immersive: string; dark: string; light: string; compact: string; comfortable: string; spacious: string };
   footer: { credit: string; creditLink: string; independence: string; ai: string; aiLink: string };
   pages: Record<Section, { title: string; intro: string }>;
   home: { heading: string; welcome: string; featured: string; galleryCta: string; missionCta: string; cardDesc: string };
@@ -31,7 +31,7 @@ export const ui: Record<Lang, Ui> = {
     navLabel: 'Principal',
     settings: 'Ajustes',
     menu: 'Menú',
-    preferences: { title: 'Preferencias', theme: 'Tema', language: 'Idioma', density: 'Densidad', later: 'Disponible en una etapa posterior.', dark: 'Oscuro', light: 'Claro', compact: 'Compacta', comfortable: 'Cómoda', spacious: 'Amplia' },
+    preferences: { title: 'Preferencias', theme: 'Tema', language: 'Idioma', density: 'Densidad', system: 'Sistema', view: 'Vista', mosaic: 'Mosaico', gallery: 'Galería', immersive: 'Inmersiva', dark: 'Oscuro', light: 'Claro', compact: 'Compacta', comfortable: 'Cómoda', spacious: 'Amplia' },
     footer: {
       credit: 'Crédito: NASA',
       creditLink: 'https://www.nasa.gov/',
@@ -113,7 +113,7 @@ export const ui: Record<Lang, Ui> = {
     navLabel: 'Main',
     settings: 'Settings',
     menu: 'Menu',
-    preferences: { title: 'Preferences', theme: 'Theme', language: 'Language', density: 'Density', later: 'Available in a later stage.', dark: 'Dark', light: 'Light', compact: 'Compact', comfortable: 'Comfortable', spacious: 'Spacious' },
+    preferences: { title: 'Preferences', theme: 'Theme', language: 'Language', density: 'Density', system: 'System', view: 'View', mosaic: 'Mosaic', gallery: 'Gallery', immersive: 'Immersive', dark: 'Dark', light: 'Light', compact: 'Compact', comfortable: 'Comfortable', spacious: 'Spacious' },
     footer: {
       credit: 'Credit: NASA',
       creditLink: 'https://www.nasa.gov/',

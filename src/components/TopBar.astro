@@ -1,5 +1,6 @@
 ---
 import { alternatePath, sectionPath, sections, type Lang } from '../i18n/routes';
+import Preferences from './Preferences';
 import { ui } from '../i18n/ui';
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
 }
 const { lang, path } = Astro.props;
 const t = ui[lang];
-const other: Lang = lang === 'es' ? 'en' : 'es';
+const gallery = path.startsWith(sectionPath(lang, 'gallery'));
 const current = (href: string) => (href === `/${lang}/` ? path === href : path.startsWith(href));
 ---
 
@@ -33,7 +34,7 @@ const current = (href: string) => (href === `/${lang}/` ? path === href : path.s
       </ul>
     </nav>
 
-    <!-- Settings (desktop) / Menu (mobile): a native popover, so no JavaScript is shipped. -->
+    <!-- Settings (desktop) / Menu (mobile): a native popover with a React preferences island. -->
     <button
       type="button"
       popovertarget="prefs"
@@ -44,7 +45,7 @@ const current = (href: string) => (href === `/${lang}/` ? path === href : path.s
     </button>
   </div>
 
-  <div id="prefs" popover class="m-0 right-3 top-12 w-[min(22rem,calc(100vw-2rem))] rounded-md border border-border bg-surface text-text p-4">
+  <div id="prefs" popover class="m-0 right-3 top-12 rounded-md border border-border bg-surface text-text p-4 preferences-popover">
     <nav aria-label={t.navLabel} class="md:hidden mb-4">
       <ul class="list-none m-0 p-0 grid gap-2">
         {
@@ -58,24 +59,7 @@ const current = (href: string) => (href === `/${lang}/` ? path === href : path.s
         }
       </ul>
     </nav>
-    <h2 class="text-h3 mb-3">{t.preferences.title}</h2>
-    <p class="text-caption text-muted mb-3">{t.preferences.later}</p>
-    <dl class="grid gap-3 text-label m-0">
-      <div>
-        <dt class="text-muted">{t.preferences.language}</dt>
-        <dd class="m-0 flex gap-2">
-          <a href={alternatePath(path)} hreflang={other} lang={other}>{other === 'es' ? 'Español' : 'English'}</a>
-        </dd>
-      </div>
-      <div>
-        <dt class="text-muted">{t.preferences.theme}</dt>
-        <dd class="m-0 text-muted">{t.preferences.dark} · {t.preferences.light}</dd>
-      </div>
-      <div>
-        <dt class="text-muted">{t.preferences.density}</dt>
-        <dd class="m-0 text-muted">{t.preferences.compact} · {t.preferences.comfortable} · {t.preferences.spacious}</dd>
-      </div>
-    </dl>
+    <Preferences client:load lang={lang} alternate={alternatePath(path)} labels={t.preferences} gallery={gallery} />
   </div>
 </header>
 

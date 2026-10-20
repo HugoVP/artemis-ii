@@ -19,5 +19,13 @@
   provider: opencode-go
   key_secret: AGENT_KEY_OPENCODE
   runner: opencode-run
-  model: opencode-go/glm-5.3       # selected after local builder trials; remote Go smoke still required
+  model: opencode-go/glm-5.3       # selected after local builder trials; remote Go smoke passed 2026-10-19
+  capabilities: [git, node, browser, web]
+
+- id: copilot
+  name: GitHub Copilot CLI
+  provider: github
+  key_secret: AGENT_KEY_COPILOT    # fine-grained PAT with only the "Copilot Requests" permission, see docs/agents/copilot.md
+  runner: copilot-cli
+  # model: <explicit id>           # Hugo picks it from `/model` in his own Copilot CLI; runs stop until it is set
   capabilities: [git, node, browser, web]

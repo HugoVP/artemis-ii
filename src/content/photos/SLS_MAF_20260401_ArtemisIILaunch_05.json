@@ -1,0 +1,22 @@
+{
+  "nasaId": "SLS_MAF_20260401_ArtemisIILaunch_05",
+  "pathKey": "SLS_MAF_20260401_ArtemisIILaunch_05",
+  "chapter": "launch",
+  "title": {
+    "es": "Foto 33 (título pendiente)",
+    "en": "Photo 33 (title pending)"
+  },
+  "alt": {
+    "es": "Marcador de posición: el texto alternativo llega en la etapa de contenido.",
+    "en": "Placeholder: alt text arrives in the content stage."
+  },
+  "caption": {
+    "es": "Pie de foto pendiente de redacción y revisión.",
+    "en": "Caption pending drafting and review."
+  },
+  "originalUrl": "https://images-assets.nasa.gov/image/SLS_MAF_20260401_ArtemisIILaunch_05/SLS_MAF_20260401_ArtemisIILaunch_05~orig.JPG",
+  "hash": "5e35f22f2017779d",
+  "sourceIds": [
+    "nasa-sls-maf-20260401-artemisiilaunch-05"
+  ]
+}

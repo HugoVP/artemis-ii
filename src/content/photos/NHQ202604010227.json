@@ -1,0 +1,22 @@
+{
+  "nasaId": "NHQ202604010227",
+  "pathKey": "NHQ202604010227",
+  "chapter": "launch",
+  "title": {
+    "es": "Foto 32 (título pendiente)",
+    "en": "Photo 32 (title pending)"
+  },
+  "alt": {
+    "es": "Marcador de posición: el texto alternativo llega en la etapa de contenido.",
+    "en": "Placeholder: alt text arrives in the content stage."
+  },
+  "caption": {
+    "es": "Pie de foto pendiente de redacción y revisión.",
+    "en": "Caption pending drafting and review."
+  },
+  "originalUrl": "https://images-assets.nasa.gov/image/NHQ202604010227/NHQ202604010227~orig.jpg",
+  "hash": "66960a46098d7848",
+  "sourceIds": [
+    "nasa-nhq202604010227"
+  ]
+}

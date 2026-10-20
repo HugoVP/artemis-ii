@@ -1,0 +1,22 @@
+{
+  "nasaId": "art002e024097",
+  "pathKey": "art002e024097",
+  "chapter": "outbound",
+  "title": {
+    "es": "Foto 5 (título pendiente)",
+    "en": "Photo 5 (title pending)"
+  },
+  "alt": {
+    "es": "Marcador de posición: el texto alternativo llega en la etapa de contenido.",
+    "en": "Placeholder: alt text arrives in the content stage."
+  },
+  "caption": {
+    "es": "Pie de foto pendiente de redacción y revisión.",
+    "en": "Caption pending drafting and review."
+  },
+  "originalUrl": "https://images-assets.nasa.gov/image/art002e024097/art002e024097~orig.jpg",
+  "hash": "0972da2113a6cfab",
+  "sourceIds": [
+    "nasa-art002e024097"
+  ]
+}

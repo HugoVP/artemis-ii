@@ -1,0 +1,22 @@
+{
+  "nasaId": "AFRC2026-0068-03",
+  "pathKey": "AFRC2026-0068-03",
+  "chapter": "launch",
+  "title": {
+    "es": "Foto 30 (título pendiente)",
+    "en": "Photo 30 (title pending)"
+  },
+  "alt": {
+    "es": "Marcador de posición: el texto alternativo llega en la etapa de contenido.",
+    "en": "Placeholder: alt text arrives in the content stage."
+  },
+  "caption": {
+    "es": "Pie de foto pendiente de redacción y revisión.",
+    "en": "Caption pending drafting and review."
+  },
+  "originalUrl": "https://images-assets.nasa.gov/image/AFRC2026-0068-03/AFRC2026-0068-03~orig.jpg",
+  "hash": "9f79895a7a989138",
+  "sourceIds": [
+    "nasa-afrc2026-0068-03"
+  ]
+}

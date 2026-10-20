@@ -1,0 +1,22 @@
+{
+  "nasaId": "KSC-04012026-Artemis II_Launch-1",
+  "pathKey": "KSC-04012026-Artemis_II_Launch-1",
+  "chapter": "launch",
+  "title": {
+    "es": "Foto 31 (título pendiente)",
+    "en": "Photo 31 (title pending)"
+  },
+  "alt": {
+    "es": "Marcador de posición: el texto alternativo llega en la etapa de contenido.",
+    "en": "Placeholder: alt text arrives in the content stage."
+  },
+  "caption": {
+    "es": "Pie de foto pendiente de redacción y revisión.",
+    "en": "Caption pending drafting and review."
+  },
+  "originalUrl": "https://images-assets.nasa.gov/image/KSC-04012026-Artemis%20II_Launch-1/KSC-04012026-Artemis%20II_Launch-1~orig.jpg",
+  "hash": "4a759c74a2a59f73",
+  "sourceIds": [
+    "nasa-ksc-04012026-artemis-ii-launch-1"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "nasaId": "KSC-20260210-PH-JBS01-0035",
+  "pathKey": "KSC-20260210-PH-JBS01-0035",
+  "chapter": "launch",
+  "title": {
+    "es": "Foto 28 (título pendiente)",
+    "en": "Photo 28 (title pending)"
+  },
+  "alt": {
+    "es": "Marcador de posición: el texto alternativo llega en la etapa de contenido.",
+    "en": "Placeholder: alt text arrives in the content stage."
+  },
+  "caption": {
+    "es": "Pie de foto pendiente de redacción y revisión.",
+    "en": "Caption pending drafting and review."
+  },
+  "originalUrl": "https://images-assets.nasa.gov/image/KSC-20260210-PH-JBS01-0035/KSC-20260210-PH-JBS01-0035~orig.JPG",
+  "hash": "bcfc099cfc34beb2",
+  "sourceIds": [
+    "nasa-ksc-20260210-ph-jbs01-0035"
+  ]
+}

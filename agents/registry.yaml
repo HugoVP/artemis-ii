@@ -1,11 +1,21 @@
 # Agents that the pipeline can run (docs/MULTI-AGENT-PHASES.md, Phase 2). Flat list: scalars and inline lists only.
 # Adding an agent: docs/agents/adding-an-agent.md. Capability ids: docs/agents/README.md.
+# Orchestrator fields (docs/specs/orchestration.md), read by scripts/orchestrate.ts to recommend a leader and reviewers:
+#   status   active: key set and a smoke or real run passed; pending: not eligible yet
+#   roles    lead (can be recommended as leader), lead-small (listed only as an alternative), review
+#   family   vendor of the model the agent runs; reviewers must come from a family other than the leader's
+#   cost     subscription (flat plan) or api (paid per token); cheaper agents score higher
+#   avoid    stage kinds it is not recommended for: build, content-review (🔍), design (🎨)
 - id: codex
   name: OpenAI Codex
   provider: openai
   key_secret: AGENT_KEY_CODEX      # secret of the GitHub environment "agents"; never written anywhere else
   runner: codex-exec               # how agent-run.yml starts it
   capabilities: [git, node, browser, web, figma-read, figma-write]   # Figma through its MCP server, see docs/agents/adding-an-agent.md
+  status: active                   # led Stage 04 through the pipeline (PR #31)
+  roles: [lead, review]
+  family: openai
+  cost: api
 
 - id: claude
   name: Claude Code
@@ -13,6 +23,10 @@
   auth: federation                 # Anthropic workload identity federation with the job's GitHub OIDC token; no static key, see docs/specs/claude-wif.md
   runner: claude-print             # claude -p, see agent-run.yml
   capabilities: [git, node, browser, web, figma-read, figma-write]
+  status: pending                  # becomes active after Hugo sets up federation (docs/agents/claude-code-wif.md) and a first run passes
+  roles: [lead, review]
+  family: anthropic
+  cost: api
 
 - id: opencode
   name: OpenCode
@@ -21,6 +35,11 @@
   runner: opencode-run
   model: opencode-go/glm-5.3       # selected after local builder trials; remote Go smoke passed 2026-10-19
   capabilities: [git, node, browser, web]
+  status: active
+  roles: [lead-small]              # small, well-specified stages only; partial result in the review trial
+  family: zhipu
+  cost: subscription
+  avoid: [content-review]          # its web search is denied and fact checking is untested
 
 - id: copilot
   name: GitHub Copilot CLI
@@ -28,4 +47,8 @@
   key_secret: AGENT_KEY_COPILOT    # fine-grained PAT with only the "Copilot Requests" permission, see docs/agents/copilot.md
   runner: copilot-cli
   # model: <explicit id>           # Hugo picks it from `/model` in his own Copilot CLI; runs stop until it is set
+  # family: <vendor of that model> # set together with the model
   capabilities: [git, node, browser, web]
+  status: pending                  # becomes active after the model is set and the Copilot smoke passes
+  roles: [lead, review]
+  cost: subscription

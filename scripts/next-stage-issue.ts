@@ -5,44 +5,19 @@
 // No dependencies (Node 22). `DRY_RUN=1` prints the issue instead of creating it.
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { parseStages, type Stage } from "./plan.ts";
+import { parseRegistry } from "./agent-checks.ts";
+import { recommend, formatRecommendation, leadersFromMerges, HISTORY_UNAVAILABLE } from "./orchestrate.ts";
+
+// Re-exported: other modules and tests read the stage table through this script too.
+export { parseStages, type Stage };
 
 const LABEL = { name: "agent-task", color: "1d76db", description: "Work order for an AI agent: run the stage named in the title" };
-
-// One row of the stage table of docs/PLAN.md.
-export interface Stage {
-  number: string;
-  name: string;
-  needs: string[];
-  specPath: string | null;
-  status: string;
-  pr: string;
-  linear: string | null;
-}
 
 export interface Issue {
   title: string;
   body: string;
   labels: string[];
-}
-
-export function parseStages(markdown: string): Stage[] {
-  const rows: Stage[] = [];
-  for (const line of markdown.split(/^## /m)[0].split("\n")) {
-    if (!line.startsWith("|")) continue;
-    const c = line.split("|").slice(1, -1).map((s) => s.trim());
-    if (c.length < 7 || !/^\d\d$/.test(c[0])) continue;
-    const link = c[3].match(/\]\(([^)]+)\)/);
-    rows.push({
-      number: c[0],
-      name: c[1].replace(/^[^\p{L}\p{N}]+/u, "").trim(),
-      needs: [...c[2].matchAll(/`([^`]+)`/g)].map((m) => m[1]),
-      specPath: link ? link[1].replace(/^\.?\/?/, "") : null,
-      status: c[4],
-      pr: c[5],
-      linear: c[6].match(/HUG-\d+/)?.[0] ?? null,
-    });
-  }
-  return rows;
 }
 
 // The stage after the one whose PR was merged; otherwise the first pending stage. null when nothing is left.
@@ -105,17 +80,65 @@ export type RunResult =
   | { action: "dry-run"; issue: Issue }
   | { action: "exists" | "created"; number: number };
 
-export async function run({ token, repo, prNumber, markdown, base = "https://api.github.com", dryRun = false }: {
+// Subjects of the first-parent chain of `main` (the merges of approved PRs), newest first. The commits API lists every
+// commit reachable from main, merges made on side branches included, so the chain is rebuilt from each commit's parents:
+// a nested `Merge pull request ... agent/stage-04-beta` inside a maintenance PR is not a merge into main and must not
+// decide who led Stage 04. The history is read page by page until it ends or 1,000 commits are read, so a long branch of
+// ordinary commits cannot push older stage merges out of it. Any failure (a rejected request, an error status, a body that
+// is not a list of commits with their ids and parents) means "history unavailable": null, and the work order says
+// rotation was not applied (ORC-04).
+export const HISTORY_PAGE = 100;
+export const HISTORY_MAX_PAGES = 10;
+interface ApiCommit { sha?: string; parents?: { sha?: string }[]; commit?: { message?: string } }
+export async function readMergeSubjects(base: string, token: string | undefined, repo: string): Promise<string[] | null> {
+  try {
+    const commits: ApiCommit[] = [];
+    for (let page = 1; page <= HISTORY_MAX_PAGES; page++) {
+      const res = await api(base, token, "GET", `/repos/${repo}/commits?sha=main&per_page=${HISTORY_PAGE}&page=${page}`);
+      if (!res.ok || !Array.isArray(res.json)) return null;
+      const batch = res.json as ApiCommit[];
+      commits.push(...batch);
+      if (batch.length < HISTORY_PAGE) break;
+    }
+    if (commits.some(c => typeof c.sha !== "string" || !Array.isArray(c.parents))) return null;
+    const bySha = new Map(commits.map(c => [c.sha!, c]));
+    const subjects: string[] = [];
+    // From the tip of main along the first parent only; it ends at the root or where the pages end.
+    for (let c: ApiCommit | undefined = commits[0]; c; c = bySha.get(c.parents![0]?.sha ?? "")) subjects.push((c.commit?.message ?? "").split("\n")[0]);
+    return subjects;
+  } catch {
+    return null;
+  }
+}
+
+// The orchestrator's recommendation (docs/specs/orchestration.md), appended to the work order. A failure to read the
+// merge history only drops the rotation; it never stops the work order.
+async function recommendation(stage: Stage, stages: Stage[], registry: string, read: () => Promise<string[] | null>): Promise<{ text: string; escalate: boolean }> {
+  const agents = parseRegistry(registry);
+  const subjects = await read();
+  const r = recommend({ stages, stageNumber: stage.number, agents, leaders: leadersFromMerges(subjects ?? [], agents.map(a => a.id)) });
+  return { text: formatRecommendation(r) + (subjects ? "" : HISTORY_UNAVAILABLE), escalate: r.leader === null };
+}
+
+export async function run({ token, repo, prNumber, markdown, registry, base = "https://api.github.com", dryRun = false }: {
   token?: string | undefined;
   repo: string;
   prNumber: string | number;
   markdown: string;
+  registry?: string;
   base?: string;
   dryRun?: boolean;
 }): Promise<RunResult> {
-  const stage = pickNext(parseStages(markdown), prNumber);
+  const stages = parseStages(markdown);
+  const stage = pickNext(stages, prNumber);
   if (!stage) return { action: "none", reason: "no pending stage left" };
   const issue = buildIssue(stage, { repo, prNumber });
+  if (registry !== undefined) {
+    const readMerges = async () => (dryRun ? null : readMergeSubjects(base, token, repo));
+    const extra = await recommendation(stage, stages, registry, readMerges);
+    issue.body += `\n\n${extra.text}`;
+    if (extra.escalate) issue.labels.push("needs-hugo");
+  }
   if (dryRun) return { action: "dry-run", issue };
 
   const open = await api(base, token, "GET", `/repos/${repo}/issues?state=open&labels=${LABEL.name}&per_page=100`);
@@ -135,7 +158,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!/^\d+$/.test(PR_NUMBER ?? "")) throw new Error("PR_NUMBER must be a number.");
   if (!/^[\w.-]+\/[\w.-]+$/.test(GITHUB_REPOSITORY ?? "")) throw new Error("GITHUB_REPOSITORY must be owner/name.");
   if (!DRY_RUN && !GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not set.");
-  const markdown = await readFile(new URL("../docs/PLAN.md", import.meta.url), "utf8");
-  const result = await run({ token: GITHUB_TOKEN, repo: GITHUB_REPOSITORY!, prNumber: PR_NUMBER!, markdown, base: GITHUB_API_URL || "https://api.github.com", dryRun: Boolean(DRY_RUN) });
+  // PLAN_FILE and REGISTRY_FILE only take effect in a dry run, which writes nothing: they let a test run the real CLI on a
+  // fixed plan instead of the repository's, which has no pending stage once the last stage is in review. The workflow
+  // never sets DRY_RUN, so it always reads the files of main.
+  const planFile = DRY_RUN && process.env.PLAN_FILE ? process.env.PLAN_FILE : fileURLToPath(new URL("../docs/PLAN.md", import.meta.url));
+  const registryFile = DRY_RUN && process.env.REGISTRY_FILE ? process.env.REGISTRY_FILE : fileURLToPath(new URL("../agents/registry.yaml", import.meta.url));
+  const markdown = await readFile(planFile, "utf8");
+  const registry = await readFile(registryFile, "utf8");
+  const result = await run({ token: GITHUB_TOKEN, repo: GITHUB_REPOSITORY!, prNumber: PR_NUMBER!, markdown, registry, base: GITHUB_API_URL || "https://api.github.com", dryRun: Boolean(DRY_RUN) });
   console.log(result.action === "dry-run" ? JSON.stringify(result.issue, null, 2) : JSON.stringify(result));
 }

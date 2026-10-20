@@ -4,7 +4,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { parseStages, type Stage } from "./next-stage-issue.ts";
+import { parseStages, type Stage } from "./plan.ts";
 import { validateOpenCodeModel } from "./opencode-runner.ts";
 import { validateCopilotModel } from "./copilot-runner.ts";
 

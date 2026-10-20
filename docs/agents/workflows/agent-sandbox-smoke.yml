@@ -10,6 +10,8 @@ on:
       - scripts/opencode-smoke-fixture.ts
       - scripts/copilot-runner.ts
       - scripts/antigravity-runner.ts
+      # The catalog check reads the Antigravity model from the registry, so a model change must run the smoke.
+      - agents/registry.yaml
       - agents/agent-seccomp.json
       - agents/agent-apparmor.profile
       - .github/workflows/agent-run.yml

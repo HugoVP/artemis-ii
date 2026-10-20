@@ -167,6 +167,9 @@ export const AGENT_CONFIG_PATHS = [
   // controls is listed as that one path, which `.github/hooks/**` does not match, and the checkout would then hold hook
   // configuration beside the reviewer's credential.
   ".github/hooks", ".github",
+  // Instruction files that Copilot, Codex, Claude Code and Antigravity load from the checkout on their own.
+  "AGENTS.override.md", "CLAUDE.local.md", ".github/copilot-instructions.md", ".github/instructions/**", ".github/agents/**",
+  ".github/prompts/**", ".github/skills/**",
   // The instructions the reviewer follows. They sit in the PR's own checkout, and the CLIs load AGENTS.md, CLAUDE.md and
   // GEMINI.md from the working directory by themselves, so a PR that edits them would rewrite the review rules before
   // anyone approved the change. Such a PR is reviewed by Hugo, not by an agent.
@@ -300,6 +303,19 @@ export function outputLines(facts: ReviewFacts): string {
   return Object.entries(values).map(([k, v]) => `${k}=${v}`).join("\n") + "\n";
 }
 
+// What the launch used and what is published must be the same: prepare recorded the reviewer's runner and model and the
+// leader at the trusted revision of main, the review job launched exactly those, and publication derives the facts again
+// at that same revision. Any difference (a registry or branch change the pinned revision should have excluded) refuses to
+// publish, so a comment and a check run can never name a model that did not produce the artifact.
+export function checkRecorded(facts: Pick<ReviewFacts, "runner" | "model" | "leader" | "reviewer">, recorded: Partial<Record<"runner" | "model" | "leader" | "reviewer", string>>): string[] {
+  const problems: string[] = [];
+  for (const field of ["reviewer", "leader", "runner", "model"] as const) {
+    if (recorded[field] === undefined) problems.push(`The recorded ${field} is missing.`);
+    else if (recorded[field] !== facts[field]) problems.push(`The ${field} changed since prepare recorded it.`);
+  }
+  return problems;
+}
+
 async function loadFacts(registry: string, plan: string, prJson: string, reviewer: string, defaultBranch: string) {
   return reviewFacts({
     agents: parseRegistry(await readFile(registry, "utf8")),
@@ -314,7 +330,7 @@ async function loadFacts(registry: string, plan: string, prJson: string, reviewe
 //   facts <registry.yaml> <PLAN.md> <pr.json> <reviewer> <default-branch>            prints key=value lines
 //   config-touched <NUL-separated-files-file>
 //   scan <review.md>                                                                 safe to upload (review job)
-//   bind <registry.yaml> <PLAN.md> <pr.json> <reviewer> <default-branch> <head> <facts-out>
+//   bind <registry.yaml> <PLAN.md> <pr.json> <reviewer> <default-branch> <head> <facts-out> <reviewer> <leader> <runner> <model>
 //   comment <review.md> <facts.json> <current-head> <run-url> <comment.json-out> <verdict-out>   exit 3: invalid, notice written
 //   check-run <facts.json> <verdict.json> <comment-id> <comment-url> <out>
 async function main(argv: string[]): Promise<number> {
@@ -344,6 +360,9 @@ async function main(argv: string[]): Promise<number> {
     if (!/^[0-9a-f]{40}$/.test(String(head))) { console.error("The reviewed head SHA is invalid."); return 1; }
     const r = await loadFacts(args[0], args[1], args[2], args[3], args[4]);
     if (!r.ok) { for (const reason of r.reasons) console.error(reason); return 1; }
+    // args[7..10]: the reviewer, leader, runner and model that prepare recorded and the review job launched.
+    const mismatch = checkRecorded(r.facts, { reviewer: args[7], leader: args[8], runner: args[9], model: args[10] });
+    if (mismatch.length) { for (const reason of mismatch) console.error(reason); return 1; }
     const facts = { ...r.facts, head };
     await writeFile(args[6], JSON.stringify({ facts, currentHead: r.facts.head }));
     console.log(r.facts.head === head ? "bound to the current head" : "bound to the reviewed head; the PR head has moved");

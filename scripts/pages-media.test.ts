@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, truncate, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { MAX_FILE_BYTES, selectOriginal, parseManifest, validateStaticTree } from './pages-media.ts';
+import { createHash } from 'node:crypto';
+import { MAX_FILE_BYTES, selectOriginal, parseManifest, validateStaticTree, pathKeyFor, assertNoKeyCollisions } from './pages-media.ts';
+import { parseCuration } from './curation.ts';
 import { packageMedia } from './package-media.ts';
 import { extractRunScripts } from './workflow-security.ts';
 import { execFileSync } from 'node:child_process';
@@ -24,12 +26,42 @@ test('GAL-05 MEDIA-05: original download switches only above 25 MiB, preserving 
   });
 });
 test('MEDIA-03/05: manifest refuses traversal, missing metadata and mislabelled originals', () => {
-  const photo = { nasaId: 'example', hash: '123456789abc', variants: [prefix + '480.avif'],
+  const photo = { nasaId: 'example', pathKey: 'example', hash: '123456789abc', variants: [prefix + '480.avif'],
     original: selectOriginal(nasa, MAX_FILE_BYTES + 1, prefix + 'original.jpg') };
   assert.equal(parseManifest({ photos: [photo] }).photos[0]!.original.kind, 'nasa');
   assert.throws(() => parseManifest({ photos: [{ ...photo, variants: [prefix + '../escape.jpg'] }] }));
   assert.throws(() => parseManifest({ photos: [{ ...photo, original: { ...photo.original, kind: 'local', path: prefix + 'original.jpg' } }] }));
   assert.throws(() => parseManifest({ photos: [{ ...photo, original: { kind: 'nasa', sourceUrl: nasa } }] }));
+});
+test('MEDIA-03 MEDIA-04 SEC-08 AC-3b: exact NASA IDs with spaces keep their ID, get a safe key, and unsafe paths stay rejected', async () => {
+  const doc = await readFile('CURATION.md', 'utf8');
+  const { mission, launch } = parseCuration(doc);
+  const ids = [...mission.rows, ...launch.rows].map((r) => r.nasaId);
+  const spaced = ids.filter((id) => id.includes(' '));
+  assert.deepEqual(spaced, ['Artemis II at the pad Moon 01292026_4', 'KSC-04012026-Artemis II_Launch-1']);
+  assert.doesNotThrow(() => assertNoKeyCollisions(ids));
+  for (const id of ids) if (!id.includes(' ')) assert.equal(pathKeyFor(id), id);
+  assert.equal(pathKeyFor('KSC-04012026-Artemis II_Launch-1'), 'KSC-04012026-Artemis_II_Launch-1');
+  assert.throws(() => assertNoKeyCollisions(['a b', 'a_b']), /collision/);
+  for (const bad of ['', ' lead', 'trail ', 'a  b\u00a0c', '../x', 'a%20b', 'a/b', 'a\nb']) {
+    // Slashes, dots and percent signs are replaced, never passed through; whitespace oddities and traversal-only IDs fail.
+    if (/^[\x21-\x7e]+(?: [\x21-\x7e]+)*$/.test(bad)) assert.match(pathKeyFor(bad), /^[A-Za-z0-9_-]+$/);
+    else assert.throws(() => pathKeyFor(bad));
+  }
+  for (const id of spaced) {
+    const key = pathKeyFor(id); const dir = `photos/${key}/123456789abc/`;
+    const photo = { nasaId: id, pathKey: key, hash: '123456789abc', variants: [dir + 'w480.avif'], original: selectOriginal(nasa, MAX_FILE_BYTES + 1, '') };
+    assert.equal(parseManifest({ photos: [photo] }).photos[0]!.nasaId, id);
+    assert.throws(() => parseManifest({ photos: [{ ...photo, pathKey: id }] }), /Path key/);
+    assert.throws(() => parseManifest({ photos: [{ ...photo, variants: [`photos/${id}/123456789abc/w480.avif`] }] }));
+    assert.throws(() => parseManifest({ photos: [{ ...photo, variants: [dir + '../w480.avif'] }] }));
+    assert.throws(() => parseManifest({ photos: [{ ...photo, variants: [dir + 'w 480.avif'] }] }));
+    assert.throws(() => parseManifest({ photos: [{ ...photo, variants: [dir + 'w%20.avif'] }] }));
+  }
+  assert.throws(() => parseManifest({ photos: [
+    { nasaId: 'a b', pathKey: 'a_b', hash: '123456789abc', variants: ['photos/a_b/123456789abc/w1.avif'], original: selectOriginal(nasa, MAX_FILE_BYTES + 1, '') },
+    { nasaId: 'a_b', pathKey: 'a_b', hash: '123456789abc', variants: ['photos/a_b/123456789abc/w1.avif'], original: selectOriginal(nasa, MAX_FILE_BYTES + 1, '') },
+  ] }), /Duplicate media path key/);
 });
 test('TECH-04 QA-06 AC-8: complete artifact accepts exactly 25 MiB and 20000 files; rejects excess and symlinks', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'pages-limits-'));
@@ -60,7 +92,8 @@ test('MEDIA-04: package requires referenced files and original size; packages HT
     const media = join(dir, 'generated'); const site = join(dir, 'dist');
     await mkdir(join(media, prefix), { recursive: true }); await mkdir(site);
     await writeFile(join(site, 'index.html'), '<html></html>');
-    const photo = { nasaId: 'example', hash: '123456789abc', variants: [prefix + '480.webp'], original: selectOriginal(nasa, 3, prefix + 'original.jpg') };
+    const photo = { nasaId: 'example', pathKey: 'example', hash: '123456789abc', variants: [prefix + '480.webp'],
+      original: selectOriginal(nasa, 3, prefix + 'original.jpg', createHash('sha256').update('jpg').digest('hex')) };
     await writeFile(join(media, 'manifest.json'), JSON.stringify({ photos: [photo] }));
     await assert.rejects(packageMedia(media, site));
     await writeFile(join(media, prefix, '480.webp'), 'image');

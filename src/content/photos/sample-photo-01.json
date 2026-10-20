@@ -1,5 +1,6 @@
 {
   "nasaId": "sample-photo-01",
+  "pathKey": "sample-photo-01",
   "chapter": "launch",
   "title": { "es": "Foto de ejemplo", "en": "Sample photo" },
   "alt": { "es": "Marcador de posición: no es una foto real.", "en": "Placeholder: not a real photo." },

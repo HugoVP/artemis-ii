@@ -20,7 +20,10 @@ export const chapterSchema = z.object({
 });
 
 export const photoSchema = z.object({
+  /** Exact NASA ID, byte for byte (it may contain spaces). */
   nasaId: z.string().min(1),
+  /** Safe media and URL key derived from the ID (`pathKeyFor` in scripts/pages-media.ts). */
+  pathKey: z.string().regex(/^[A-Za-z0-9_-]+$/),
   chapter: z.enum(chapterIds),
   title: bilingual,
   alt: bilingual,

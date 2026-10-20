@@ -10,6 +10,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "ingest": "node scripts/ingest.ts",
     "check": "astro check && npm run typecheck",
     "typecheck": "node node_modules/typescript7/bin/tsc --noEmit -p tsconfig.json",
     "test:scripts": "node --test scripts/*.test.ts",
@@ -24,6 +25,7 @@
     "astro": "^7.4.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "sharp": "0.35.5",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

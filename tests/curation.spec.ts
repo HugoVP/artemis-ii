@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { parseCuration } from '../scripts/curation.ts';
 
 // Stage 05 AC-1 and AC-2: CURATION.md is a review document, validated as data (CONT-01, CONT-02, CONT-03).
 const doc = readFileSync(new URL('../CURATION.md', import.meta.url), 'utf8');
@@ -7,32 +8,7 @@ const chapters = ['launch', 'outbound', 'far-side', 'eclipse', 'return'];
 const originalUrl = /^https:\/\/images-assets\.nasa\.gov\/image\/[^\s)]+$/;
 const recordUrl = /^https:\/\/images\.nasa\.gov\/details\/[^\s)]+$/;
 
-type Candidate = { nasaId: string; chapter: string; record: string; original: string; bytes: number; why: string };
-
-function section(heading: RegExp): { heading: string; rows: Candidate[] } {
-  const lines = doc.split('\n');
-  const start = lines.findIndex((l) => l.startsWith('## ') && heading.test(l));
-  expect(start, `section ${heading}`).toBeGreaterThan(-1);
-  const rows: Candidate[] = [];
-  for (const line of lines.slice(start + 1)) {
-    if (line.startsWith('## ')) break;
-    const cells = line.split(/\s\|\s/).map((c) => c.replace(/^\|\s*|\s*\|$/g, '').trim());
-    if (!/^\d+$/.test(cells[0] ?? '')) continue;
-    const link = (cell = '') => /\]\(([^)]+)\)/.exec(cell)?.[1] ?? '';
-    rows.push({
-      nasaId: /^`(.+)`$/.exec(cells[1] ?? '')?.[1] ?? '',
-      chapter: cells[2] ?? '',
-      record: link(cells[4]),
-      original: link(cells[5]),
-      bytes: Number((cells[6] ?? '').replace(/,/g, '')),
-      why: cells.slice(8).join(' | '),
-    });
-  }
-  return { heading: lines[start] ?? '', rows };
-}
-
-const mission = section(/^## Mission candidates/);
-const launch = section(/^## Launch candidates/);
+const { mission, launch } = parseCuration(doc);
 
 test.describe('Stage 05 curation document (CONT-01, CONT-02)', () => {
   test('AC-1 CONT-01 mission candidates are 20-30 and state their count', () => {

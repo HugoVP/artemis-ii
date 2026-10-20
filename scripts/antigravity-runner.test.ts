@@ -185,3 +185,20 @@ test('AGY-08: the design file URL reaches the CLI only on a figma-read build', a
     await runAntigravity('Prompt', { ...without.env, FIGMA: 'none', FIGMA_FILE_URL: URL_ }, without.binary);
   } finally { await rm(withUrl.root, { recursive: true, force: true }); await rm(without.root, { recursive: true, force: true }); }
 });
+
+for (const mode of ['build', 'review'] as const) {
+  test(`AGY-05: a sign-in prompt split across several writes still stops the CLI in ${mode} mode`, async () => {
+    const local = await fixture(`
+      const parts = ['Authenti', 'cation', ' requ', 'ired. Please visit the URL to log in:'];
+      let i = 0;
+      const next = () => { if (i < parts.length) { process.stdout.write(parts[i++]); setTimeout(next, 100); } };
+      next();
+      setTimeout(() => {}, 120000);
+    `);
+    const started = Date.now();
+    try {
+      await assert.rejects(runAntigravity('Prompt', local.env, local.binary, mode, join(local.root, 'work', '.agent', 'review.md')), /interactive sign-in/);
+      assert.ok(Date.now() - started < 20_000, 'the launcher waited for the CLI instead of stopping it');
+    } finally { await rm(local.root, { recursive: true, force: true }); }
+  });
+}

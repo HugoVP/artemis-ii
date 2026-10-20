@@ -114,6 +114,7 @@ export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = pr
     let tooLong = false;
     const redact = (text: string) => text.split(key).join('[redacted]');
     const fail = (message: string) => { if (!problem) problem = redact(message).slice(0, 200); };
+    const SIGN_IN_PROMPT = 'Authentication required';
     const SIGN_IN = /^\s*Authentication required/;
     const stopForSignIn = () => {
       fail('interactive sign-in requested: the Gemini API key was not used');
@@ -136,16 +137,20 @@ export async function runAntigravity(prompt: string, env: NodeJS.ProcessEnv = pr
     };
     const watch = (stream: NodeJS.ReadableStream, role: 'diagnostics' | 'answer') => {
       let pending = '';
-      let first = true;
+      // The answer is checked for the prompt until it is as long as the prompt itself.
+      let undecided = true;
       stream.setEncoding('utf8');
       stream.on('data', (chunk: string) => {
         if (role === 'answer') {
           if (answer.length + chunk.length > MAX_REVIEW) tooLong = true;
           else answer += chunk;
           // The sign-in prompt is the whole of what the CLI prints when it waits, and it has no newline until a person
-          // answers, so it is recognised on the first characters, not on a finished line. Later text is review content.
-          if (first && SIGN_IN.test(chunk)) stopForSignIn();
-          first = false;
+          // answers, so it is recognised on the first characters, not on a finished line, and on what has accumulated,
+          // since a pipe can split it across chunks. Later text is review content.
+          if (undecided) {
+            if (SIGN_IN.test(answer)) stopForSignIn();
+            if (answer.trim().length >= SIGN_IN_PROMPT.length) undecided = false;
+          }
           return;
         }
         pending += chunk;

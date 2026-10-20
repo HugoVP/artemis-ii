@@ -23,7 +23,7 @@ test('SEC-01: the Figma file-ID exception preserves default scans and is restric
   assert.match(gitleaks, /\[\[rules.allowlists\]\]/);
   assert.match(gitleaks, /condition = "AND"/);
   const literals = [...gitleaks.matchAll(/'''([^']+)'''/g)].map(m => new RegExp(m[1]!));
-  assert.equal(literals.length, 2);
+  assert.equal(literals.length, 4);
   const [path, value] = literals;
   assert.ok(path!.test('scripts/figma-mcp-gateway.test.ts'));
   assert.ok(path!.test('scripts/figma-snapshot.test.mjs'));
@@ -33,6 +33,63 @@ test('SEC-01: the Figma file-ID exception preserves default scans and is restric
   assert.ok(!value!.test('other-value'));
   assert.ok(!value!.test('prefix7b6W4tsb9Ia0J0KhyvBWCXsuffix'));
 });
+
+test('SEC-01: the NASA path-key exception is restricted to photo data files, pathKey assignments and verified NASA ID forms', () => {
+  assert.equal((gitleaks.match(/condition = "AND"/g) ?? []).length, 2);
+  assert.match(gitleaks, /description = "Public NASA image IDs stored as photo path keys"\r?\ncondition = "AND"\r?\nregexTarget = "match"/);
+  const [, , path, match] = [...gitleaks.matchAll(/'''([^']+)'''/g)].map(m => new RegExp(m[1]!));
+  const allowedFiles = ['media-lock.json', 'src/content/photos/KSC-20260410-PH-JNV01_0001.json', 'scripts/ingest.test.ts'];
+  for (const file of allowedFiles) assert.ok(path!.test(file), file);
+  for (const file of ['src/lib/media.ts', 'media-lock.json.bak', 'src/content/photos/sub/x.json', '.env', 'scripts/ingest.ts']) assert.ok(!path!.test(file), file);
+
+  const fieldName = ['path', 'Key'].join('');
+  const otherField = ['api', 'Key'].join('');
+  const assignJson = (field: string, value: string) => `${field}": "${value}"`;
+  const assignTest = (field: string, value: string) => `photo.${field}, '${value}'`;
+  const verifiedNasaIds = [
+    'art002e000192',
+    'NHQ202604010227',
+    'AFRC2026-0068-03',
+    'KSC-20260210-PH-JBS01-0035',
+    'KSC-20260401-PH-KLS01_0051',
+    'KSC-20260410-PH-JNV01_0001',
+    'KSC-20260411-KED01-0332',
+    'KSC-04012026-Artemis_II_Launch-1',
+    'Artemis_II_at_the_pad_Moon_01292026_4',
+    'SLS_MAF_20260401_ArtemisIILaunch_05',
+  ];
+  for (const id of verifiedNasaIds) {
+    assert.ok(match!.test(assignJson(fieldName, id)), id);
+    assert.ok(match!.test(assignTest(fieldName, id)), id);
+  }
+
+  const sampleValue = ['sk', 'live', '9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c'].join('_');
+  const unapprovedId = ['KSC', '20260410', 'UNAPPROVED_9999'].join('-');
+  for (const invalid of [
+    assignJson(fieldName, sampleValue),
+    assignTest(fieldName, sampleValue),
+    assignJson(fieldName, unapprovedId),
+    assignJson(fieldName, 'abc$def/ghi'),
+    assignJson(otherField, verifiedNasaIds[5]!),
+  ]) {
+    assert.ok(!match!.test(invalid), invalid);
+  }
+});
+
+for (const folder of ['pipeline/github/workflows', '.github/workflows']) {
+  test(`SEC-01: ${folder}/security runs the Gitleaks fixture test with the pinned binary after it is verified`, async () => {
+    const text = await readFile(new URL(`../${folder}/security.yml`, import.meta.url), 'utf8');
+    const secrets = text.match(/^  secrets:\r?\n([\s\S]*?)(?=^  [a-z-]+:\r?\n|(?![\s\S]))/m)?.[1];
+    assert.ok(secrets, 'Missing job: secrets');
+    const install = secrets.indexOf('sha256sum -c -');
+    const fixtures = secrets.indexOf('npm run test:gitleaks');
+    assert.ok(install >= 0 && fixtures > install, 'fixtures run after the checksum-verified download');
+    assert.match(secrets, /GITLEAKS_BIN: \$\{\{ github\.workspace \}\}\/gitleaks/);
+    assert.match(secrets, /actions\/setup-node@[0-9a-f]{40}/);
+    assert.doesNotMatch(secrets, /continue-on-error/);
+    assert.match(setup, /npm run test:gitleaks/);
+  });
+}
 
 function job(text: string, name: string): string {
   const match = new RegExp(`^  ${name}:\\n([\\s\\S]*?)(?=^  [a-z-]+:\\n|(?![\\s\\S]))`, 'm').exec(text);

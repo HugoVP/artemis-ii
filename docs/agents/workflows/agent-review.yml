@@ -429,10 +429,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # What prepare recorded and the review job launched; bind refuses to publish if the facts derived again differ.
+          LEADER: ${{ needs.prepare.outputs.leader }}
+          RUNNER_ID: ${{ needs.prepare.outputs.runner }}
+          MODEL: ${{ needs.prepare.outputs.model }}
         run: |
           set -euo pipefail
           gh pr view "$PR" --repo "$REPO" --json number,state,isCrossRepository,headRefName,headRefOid,baseRefName,title > "$RUNNER_TEMP/pr.json"
-          node scripts/agent-review.ts bind agents/registry.yaml docs/PLAN.md "$RUNNER_TEMP/pr.json" "$REVIEWER" "$DEFAULT_BRANCH" "$HEAD_SHA" "$RUNNER_TEMP/facts.json"
+          node scripts/agent-review.ts bind agents/registry.yaml docs/PLAN.md "$RUNNER_TEMP/pr.json" "$REVIEWER" "$DEFAULT_BRANCH" "$HEAD_SHA" "$RUNNER_TEMP/facts.json" "$REVIEWER" "$LEADER" "$RUNNER_ID" "$MODEL"
           CURRENT=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).currentHead" "$RUNNER_TEMP/facts.json")
           set +e
           node scripts/agent-review.ts comment "$RUNNER_TEMP/review/review.md" "$RUNNER_TEMP/facts.json" "$CURRENT" "$RUN_URL" "$RUNNER_TEMP/comment.json" "$RUNNER_TEMP/verdict.json"

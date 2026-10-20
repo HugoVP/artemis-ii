@@ -74,6 +74,16 @@ test('CPL-05: an error line split across stderr chunks is still detected, and a 
   } finally { await rm(local.root, { recursive: true, force: true }); }
 });
 
+test('CPL-05: an error line on stdout fails a zero-exit run, split across chunks too, with the transcript still suppressed', async () => {
+  const local = await fixture(`
+    process.stdout.write('PRIVATE TRANSCRIPT\\nEr');
+    setTimeout(() => { process.stdout.write('ror: authentication failed for fixture-'); setTimeout(() => { process.stdout.write('only'); process.exit(0); }, 100); }, 100);
+  `);
+  try {
+    await assert.rejects(runCopilot('Prompt', local.env, local.binary), error => error instanceof Error && /authentication failed for \[redacted\]/.test(error.message) && !/fixture-|PRIVATE/.test(error.message));
+  } finally { await rm(local.root, { recursive: true, force: true }); }
+});
+
 test('CPL-02/03: refuse a missing key, a Figma stage or the wrong CLI version before the run', async () => {
   const env = { HOME: '/unused', FIGMA: 'none', COPILOT_MODEL: 'example-model' };
   await assert.rejects(runCopilot('Prompt', env, '/must-not-exist'), /missing/);

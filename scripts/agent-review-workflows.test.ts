@@ -245,3 +245,10 @@ test('REV-05: the Claude reviewer does not auto-approve sandboxed Bash commands'
   assert.ok(settings.indexOf('autoAllowBashIfSandboxed: false') > settings.indexOf('sandbox: {'));
   assert.match(settings, /--permission-mode dontAsk/);
 });
+
+test('REV-03: publication refuses facts that differ from what prepare recorded and the review job launched', () => {
+  const step = publish.steps.find(s => s.name?.startsWith('Bind the facts'))!;
+  const text = JSON.stringify(step);
+  for (const output of ['needs.prepare.outputs.leader', 'needs.prepare.outputs.runner', 'needs.prepare.outputs.model']) assert.ok(text.includes(output), output);
+  assert.match(step.run!, /bind agents\/registry\.yaml docs\/PLAN\.md "\$RUNNER_TEMP\/pr\.json" "\$REVIEWER" "\$DEFAULT_BRANCH" "\$HEAD_SHA" "\$RUNNER_TEMP\/facts\.json" "\$REVIEWER" "\$LEADER" "\$RUNNER_ID" "\$MODEL"/);
+});

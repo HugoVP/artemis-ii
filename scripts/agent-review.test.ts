@@ -299,3 +299,20 @@ test("REV-04: a PR that edits the review rules themselves is not reviewed by an 
   }
   assert.deepEqual(agentConfigTouched(["docs/AGENTS.md.bak", "src/AGENTS.md", "docs/specs/stage-05-curation.md"]), []);
 });
+
+test("REV-03: what is published must be what was launched: a changed model, runner, leader or reviewer is refused", async () => {
+  const { checkRecorded } = await import("./agent-review.ts");
+  const facts = { reviewer: "claude", leader: "codex", runner: "claude-print", model: "" };
+  assert.deepEqual(checkRecorded(facts, { reviewer: "claude", leader: "codex", runner: "claude-print", model: "" }), []);
+  for (const field of ["reviewer", "leader", "runner", "model"] as const) {
+    const problems = checkRecorded(facts, { reviewer: "claude", leader: "codex", runner: "claude-print", model: "", [field]: "other" });
+    assert.deepEqual(problems, [`The ${field} changed since prepare recorded it.`], field);
+  }
+  assert.deepEqual(checkRecorded(facts, {}), ["reviewer", "leader", "runner", "model"].map(f => `The recorded ${f} is missing.`));
+});
+
+test("REV-04: the instruction files that each reviewer CLI loads by itself make the PR a human review", () => {
+  for (const f of ["AGENTS.override.md", "CLAUDE.local.md", ".github/copilot-instructions.md", ".github/instructions/ts.instructions.md", ".github/instructions/a/b.md", ".github/agents/x.agent.md", ".github/prompts/p.prompt.md", ".github/skills/s/SKILL.md"]) {
+    assert.deepEqual(agentConfigTouched(["src/a.ts", f]), [f], f);
+  }
+});

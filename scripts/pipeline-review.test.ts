@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const workflow = (name: string) => readFile(new URL(`../pipeline/github/workflows/${name}.yml`, import.meta.url), 'utf8');
 const production = await workflow('deploy-production');
@@ -35,9 +34,9 @@ test('SEC-01: the Figma file-ID exception preserves default scans and is restric
   assert.ok(!value!.test('prefix7b6W4tsb9Ia0J0KhyvBWCXsuffix'));
 });
 
-test('SEC-01: the NASA path-key exception is restricted to photo data files, pathKey assignments and verified NASA ID forms', async () => {
+test('SEC-01: the NASA path-key exception is restricted to photo data files, pathKey assignments and verified NASA ID forms', () => {
   assert.equal((gitleaks.match(/condition = "AND"/g) ?? []).length, 2);
-  assert.match(gitleaks, /description = "Public NASA image IDs stored as photo path keys"\ncondition = "AND"\nregexTarget = "match"/);
+  assert.match(gitleaks, /description = "Public NASA image IDs stored as photo path keys"\r?\ncondition = "AND"\r?\nregexTarget = "match"/);
   const [, , path, match] = [...gitleaks.matchAll(/'''([^']+)'''/g)].map(m => new RegExp(m[1]!));
   const allowedFiles = ['media-lock.json', 'src/content/photos/KSC-20260410-PH-JNV01_0001.json', 'scripts/ingest.test.ts'];
   for (const file of allowedFiles) assert.ok(path!.test(file), file);
@@ -75,33 +74,22 @@ test('SEC-01: the NASA path-key exception is restricted to photo data files, pat
   ]) {
     assert.ok(!match!.test(invalid), invalid);
   }
-
-  const bin = process.env.GITLEAKS_BIN ?? 'gitleaks';
-  if (spawnSync(bin, ['version'], { stdio: 'ignore' }).status === 0) {
-    const configPath = fileURLToPath(new URL('../.gitleaks.toml', import.meta.url));
-    const dir = await mkdtemp(join(tmpdir(), 'gitleaks-nasa-'));
-    try {
-      const target = join(dir, 'src', 'content', 'photos', 'KSC-20260410-PH-JNV01_0001.json');
-      await mkdir(join(dir, 'src', 'content', 'photos'), { recursive: true });
-      await writeFile(target, `{\n  "${fieldName}": "${verifiedNasaIds[5]}"\n}\n`);
-      const positive = spawnSync(bin, ['dir', '.', '--config', configPath, '--no-banner'], { cwd: dir, stdio: 'pipe' });
-      assert.equal(positive.status, 0, 'verified NASA ID in allowed path and pathKey field is suppressed');
-
-      const disallowed = join(dir, 'src', 'lib', 'media.ts');
-      await mkdir(join(dir, 'src', 'lib'), { recursive: true });
-      await writeFile(disallowed, `export const sample = { "${fieldName}": "${verifiedNasaIds[5]}" };\n`);
-      const unallowedPath = spawnSync(bin, ['dir', '.', '--config', configPath, '--no-banner'], { cwd: dir, stdio: 'pipe' });
-      assert.equal(unallowedPath.status, 1, 'same NASA ID outside allowed paths is flagged by generic-api-key');
-      await rm(disallowed);
-
-      await writeFile(target, `{\n  "${fieldName}": "${sampleValue}"\n}\n`);
-      const negative = spawnSync(bin, ['dir', '.', '--config', configPath, '--no-banner'], { cwd: dir, stdio: 'pipe' });
-      assert.equal(negative.status, 1, 'credential-shaped value in the same allowed path and pathKey field is flagged');
-    } finally {
-      await rm(dir, { recursive: true, force: true });
-    }
-  }
 });
+
+for (const folder of ['pipeline/github/workflows', '.github/workflows']) {
+  test(`SEC-01: ${folder}/security runs the Gitleaks fixture test with the pinned binary after it is verified`, async () => {
+    const text = await readFile(new URL(`../${folder}/security.yml`, import.meta.url), 'utf8');
+    const secrets = text.match(/^  secrets:\r?\n([\s\S]*?)(?=^  [a-z-]+:\r?\n|(?![\s\S]))/m)?.[1];
+    assert.ok(secrets, 'Missing job: secrets');
+    const install = secrets.indexOf('sha256sum -c -');
+    const fixtures = secrets.indexOf('npm run test:gitleaks');
+    assert.ok(install >= 0 && fixtures > install, 'fixtures run after the checksum-verified download');
+    assert.match(secrets, /GITLEAKS_BIN: \$\{\{ github\.workspace \}\}\/gitleaks/);
+    assert.match(secrets, /actions\/setup-node@[0-9a-f]{40}/);
+    assert.doesNotMatch(secrets, /continue-on-error/);
+    assert.match(setup, /npm run test:gitleaks/);
+  });
+}
 
 function job(text: string, name: string): string {
   const match = new RegExp(`^  ${name}:\\n([\\s\\S]*?)(?=^  [a-z-]+:\\n|(?![\\s\\S]))`, 'm').exec(text);

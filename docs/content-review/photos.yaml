@@ -1,0 +1,638 @@
+# Stage 08 draft: titles, captions, alt text and stories for the 33 approved photos.
+# Review only. Nothing here is integrated into the site; Stage 09 moves approved text into the content collections.
+#
+# Each photo has `title`, `caption` and `alt` in Spanish (`es`) and English (`en`), written separately and not as a
+# literal translation, and `sources`: the URLs that support every fact in the entry. `story` appears only where the
+# sources justify a longer text (CONT-04); it has its own `sources`. Alt text describes only what is visible; context
+# that is not visible belongs in the caption or the story.
+#
+# Text fetched from NASA pages is treated as data (SEC-08). The NASA record is the base source of every entry; later
+# NASA articles refine it where they are listed.
+
+urls:
+  faq: &faq https://www.nasa.gov/missions/nasa-answers-your-most-pressing-artemis-ii-questions/
+  record-release: &record-release https://www.nasa.gov/news-release/nasas-artemis-ii-crew-eclipses-record-for-farthest-human-spaceflight/
+  recap: &recap https://www.nasa.gov/centers-and-facilities/johnson/artemis-ii-mission-milestones-an-image-and-video-recap/
+  reentry: &reentry https://www.nasa.gov/blogs/missions/2026/04/10/artemis-ii-flight-day-10-re-entry-live-updates/
+
+photos:
+  # ---- Launch (display order 1 to 7) ----
+  - nasaId: "Artemis II at the pad Moon 01292026_4"
+    chapter: launch
+    title:
+      es: "La Luna sobre el cohete"
+      en: "The Moon above the rocket"
+    caption:
+      es: "La Luna brilla detrás del cohete SLS y de la nave Orion en la plataforma de lanzamiento 39B del Centro Espacial Kennedy, mientras los equipos preparaban un ensayo general de la cuenta atrás, a finales de enero de 2026."
+      en: "The Moon shines behind the SLS rocket and the Orion spacecraft at Launch Pad 39B of Kennedy Space Center, while teams prepared a wet dress rehearsal in late January 2026."
+    alt:
+      es: "El cohete SLS con la nave Orion en la parte superior, sobre el lanzador móvil, y la Luna en el cielo detrás."
+      en: "The SLS rocket with the Orion spacecraft on top, standing on its mobile launcher, with the Moon in the sky behind it."
+    sources:
+      - https://images.nasa.gov/details/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4
+
+  - nasaId: KSC-20260210-PH-JBS01-0035
+    chapter: launch
+    title:
+      es: "La sala blanca"
+      en: "The White Room"
+    caption:
+      es: "Primer plano de la sala blanca, unida al brazo de acceso de la tripulación junto a la nave Orion, el 10 de febrero de 2026. Es el pequeño espacio de ambiente controlado donde los cuatro astronautas harían los últimos preparativos antes de subir a la nave."
+      en: "A close view of the White Room, attached to the crew access arm beside the Orion spacecraft, on 10 February 2026. It is the small, environmentally controlled space where the four astronauts would make their final preparations before climbing into the spacecraft."
+    alt:
+      es: "La sala blanca conectada al brazo de acceso de la tripulación, junto a la nave Orion y su sistema de escape de lanzamiento, en lo alto del cohete."
+      en: "The White Room connected to the crew access arm, next to the Orion spacecraft and its launch abort system, high on the rocket."
+    sources:
+      - https://images.nasa.gov/details/KSC-20260210-PH-JBS01-0035
+
+  - nasaId: KSC-20260401-PH-KLS01_0051
+    chapter: launch
+    title:
+      es: "Últimas comprobaciones"
+      en: "Final checks"
+    caption:
+      es: "Christina Koch y Jeremy Hansen, de la Agencia Espacial Canadiense, terminan las pruebas de fugas de sus trajes en la sala de colocación de trajes del edificio de Operaciones y Verificación, el 1 de abril de 2026."
+      en: "Christina Koch and Jeremy Hansen of the Canadian Space Agency complete leak checks on their spacesuits in the crew suit-up room of the Operations and Checkout Building on 1 April 2026."
+    alt:
+      es: "Dos astronautas con trajes espaciales naranjas, sentados en una sala interior, comprueban que sus trajes no tengan fugas."
+      en: "Two astronauts in orange spacesuits, in an indoor room, check their suits for leaks."
+    sources:
+      - https://images.nasa.gov/details/KSC-20260401-PH-KLS01_0051
+      - *recap
+
+  - nasaId: AFRC2026-0068-03
+    chapter: launch
+    title:
+      es: "Salida hacia la plataforma"
+      en: "The walkout"
+    caption:
+      es: "Los cuatro tripulantes saludan a familiares, amigos y personal de la NASA frente al edificio de Operaciones y Verificación Neil A. Armstrong, el 1 de abril de 2026, antes de dirigirse a la plataforma de lanzamiento."
+      en: "The four crew members greet family, friends and NASA employees outside the Neil A. Armstrong Operations and Checkout Building on 1 April 2026, before heading to the launch pad."
+    alt:
+      es: "Los cuatro astronautas, con sus trajes, en el exterior del edificio de Operaciones y Verificación, rodeados de personas que los saludan."
+      en: "The four astronauts in their suits outside the Operations and Checkout Building, surrounded by people greeting them."
+    sources:
+      - https://images.nasa.gov/details/AFRC2026-0068-03
+
+  - nasaId: KSC-04012026-Artemis II_Launch-1
+    chapter: launch
+    title:
+      es: "El cohete emerge de su propia nube"
+      en: "Rising out of its own cloud"
+    caption:
+      es: "El cohete SLS asciende entre las nubes de su escape al despegar de la plataforma 39B, a las 18:35 (hora del este de EE. UU.) del 1 de abril de 2026."
+      en: "The SLS rocket rises out of the clouds of its own exhaust as it lifts off from Pad 39B at 6:35 p.m. EDT on 1 April 2026."
+    alt:
+      es: "El cohete SLS asciende entre grandes nubes de humo y vapor, con las torres de la plataforma a ambos lados."
+      en: "The SLS rocket climbs through large clouds of smoke and steam, with the pad towers on either side."
+    sources:
+      - https://images.nasa.gov/details/KSC-04012026-Artemis%20II_Launch-1
+      - *faq
+
+  - nasaId: NHQ202604010227
+    chapter: launch
+    title:
+      es: "El despegue y su reflejo"
+      en: "Liftoff and its reflection"
+    caption:
+      es: "El cohete SLS con la nave Orion despega del Complejo de Lanzamiento 39B con Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen a bordo. Foto: NASA/Bill Ingalls."
+      en: "The SLS rocket carrying the Orion spacecraft lifts off from Launch Complex 39B with Reid Wiseman, Victor Glover, Christina Koch and Jeremy Hansen on board. Photo: NASA/Bill Ingalls."
+    alt:
+      es: "El cohete en pleno despegue, con una larga llama bajo él que se refleja en el agua de un estanque."
+      en: "The rocket at liftoff, with a long flame beneath it reflected in the water of a pond."
+    sources:
+      - https://images.nasa.gov/details/NHQ202604010227
+    story:
+      es: >-
+        El 1 de abril de 2026, antes del despegue, Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen
+        saludaron a familiares, amigos y personal de la NASA frente al edificio de Operaciones y Verificación.
+        A las 18:35, hora del este de EE. UU., el cohete SLS con la nave Orion despegó del Complejo de Lanzamiento
+        39B del Centro Espacial Kennedy, en Florida. Era el primer vuelo tripulado del programa Artemis, un viaje de
+        unos diez días alrededor de la Luna y de vuelta a la Tierra.
+      en: >-
+        On 1 April 2026, before liftoff, Reid Wiseman, Victor Glover, Christina Koch and Jeremy Hansen greeted family,
+        friends and NASA employees outside the Operations and Checkout Building. At 6:35 p.m. EDT the SLS rocket and
+        the Orion spacecraft lifted off from Launch Complex 39B at Kennedy Space Center in Florida. It was the first
+        crewed flight of the Artemis program, a journey of about ten days around the Moon and back to Earth.
+      sources:
+        - https://images.nasa.gov/details/NHQ202604010227
+        - https://images.nasa.gov/details/AFRC2026-0068-03
+        - https://images.nasa.gov/details/KSC-04012026-Artemis%20II_Launch-1
+
+  - nasaId: SLS_MAF_20260401_ArtemisIILaunch_05
+    chapter: launch
+    title:
+      es: "Ascenso"
+      en: "The climb"
+    caption:
+      es: "El cohete trepa sobre su columna de fuego, entre nubes, poco después de despegar el 1 de abril de 2026. Foto: NASA/Michael DeMocker."
+      en: "The rocket climbs on its column of fire between clouds, moments after liftoff on 1 April 2026. Photo: NASA/Michael DeMocker."
+    alt:
+      es: "Vista cercana del cohete ascendiendo sobre una intensa columna de fuego, con nubes a ambos lados."
+      en: "A close view of the rocket ascending on an intense column of fire, with clouds on both sides."
+    sources:
+      - https://images.nasa.gov/details/SLS_MAF_20260401_ArtemisIILaunch_05
+
+  # ---- Outbound (display order 1, 4, 3, 2, 5) ----
+  - nasaId: art002e000192
+    chapter: outbound
+    title:
+      es: "La Tierra a la luz de la Luna"
+      en: "Earth by moonlight"
+    caption:
+      es: "Una noche en la Tierra, fotografiada el 2 de abril de 2026 desde una ventana de Orion, tras el encendido que puso la nave rumbo a la Luna. El hemisferio visible parece iluminado por el Sol, pero la luz es la de la Luna reflejando el Sol."
+      en: "Night on Earth, photographed on 2 April 2026 through an Orion window after the burn that sent the spacecraft toward the Moon. The visible hemisphere looks sunlit, but it is lit by moonlight, which is reflected sunlight."
+    alt:
+      es: "El disco de la Tierra sobre fondo negro, con auroras verdes en dos bordes, el contorno de África a la izquierda, luces de ciudades en las costas y un fino creciente luminoso en el borde inferior derecho."
+      en: "The disk of Earth on a black background, with green auroras along two edges, the outline of Africa on the left, city lights along coastlines and a thin bright crescent at the lower right edge."
+    sources:
+      - https://images.nasa.gov/details/art002e000192
+    story:
+      es: >-
+        Tras completar el encendido de inyección translunar, el 2 de abril de 2026, un tripulante apuntó una cámara
+        por una ventana de Orion hacia la Tierra. En la imagen se ven auroras verdes en dos bordes del disco,
+        África a la izquierda y las luces de las ciudades a lo largo de las costas. Un cono tenue de luz zodiacal,
+        causado por el Sol reflejándose en polvo interplanetario, se extiende hacia Venus. En la cabina, Reid
+        Wiseman también miró hacia atrás por una de las ventanas principales mientras la tripulación se alejaba
+        de casa.
+      en: >-
+        After completing the translunar injection burn on 2 April 2026, a crew member aimed a camera through an
+        Orion window at Earth. The image shows green auroras along two edges of the disk, Africa on the left and city
+        lights along the coastlines. A faint cone of zodiacal light, caused by sunlight reflecting off interplanetary
+        dust, reaches toward Venus. Inside the cabin, Reid Wiseman also looked back through one of the main windows
+        as the crew traveled away from home.
+      sources:
+        - https://images.nasa.gov/details/art002e000192
+        - https://images.nasa.gov/details/art002e009007
+        - https://www.nasa.gov/image-detail/amf-art002e009007/
+
+  - nasaId: art002e023575
+    chapter: outbound
+    title:
+      es: "Un oasis en el vacío"
+      en: "Oasis in the void"
+    caption:
+      es: "Un astronauta fotografió la Tierra desde una de las cuatro ventanas de Orion el 2 de abril de 2026."
+      en: "An astronaut photographed Earth through one of Orion's four windows on 2 April 2026."
+    alt:
+      es: "Primer plano del borde curvo de la Tierra, con bandas de nubes brillantes sobre el fondo oscuro del espacio."
+      en: "A close view of Earth's curved edge, with bright cloud bands against the dark background of space."
+    sources:
+      - https://images.nasa.gov/details/art002e023575
+
+  - nasaId: art002e009007
+    chapter: outbound
+    title:
+      es: "Mirando atrás"
+      en: "Looking back"
+    caption:
+      es: "El comandante Reid Wiseman mira por una de las ventanas principales de la cabina de Orion hacia la Tierra, mientras la tripulación viaja hacia la Luna. NASA no indica quién tomó la foto."
+      en: "Commander Reid Wiseman looks out of one of Orion's main cabin windows at Earth as the crew travels toward the Moon. NASA does not name the photographer."
+    alt:
+      es: "Un astronauta asomado a una ventana de la cabina de la nave, con la Tierra al otro lado del cristal."
+      en: "An astronaut at a window of the spacecraft cabin, with Earth on the other side of the glass."
+    sources:
+      - https://images.nasa.gov/details/art002e009007
+      - https://www.nasa.gov/image-detail/amf-art002e009007/
+
+  - nasaId: art002e004437
+    chapter: outbound
+    title:
+      es: "Tierra en cuarto creciente"
+      en: "A sliver of Earth"
+    caption:
+      es: "Solo un fino creciente de la Tierra recibe la luz del Sol en esta foto tomada por un tripulante a través de una ventana de Orion el tercer día de misión."
+      en: "Only a thin crescent of Earth is lit by the Sun in this photo taken by a crew member through an Orion window on the third day of the mission."
+    alt:
+      es: "Un fino creciente luminoso de la Tierra sobre el negro del espacio."
+      en: "A thin bright crescent of Earth against the black of space."
+    sources:
+      - https://images.nasa.gov/details/art002e004437
+
+  - nasaId: art002e024097
+    chapter: outbound
+    title:
+      es: "Antes de dormir, la Luna"
+      en: "The Moon before sleep"
+    caption:
+      es: "Reid Wiseman mira por la ventana de Orion hacia la cara visible de la Luna antes de dormir, en el quinto día de vuelo, la noche previa al sobrevuelo."
+      en: "Reid Wiseman looks out of Orion's window at the near side of the Moon before going to sleep on flight day 5, the night before the flyby."
+    alt:
+      es: "Un astronauta junto a una ventana de la nave mira hacia fuera, donde se ve la Luna."
+      en: "An astronaut beside a spacecraft window looks outside, where the Moon is visible."
+    sources:
+      - https://images.nasa.gov/details/art002e024097
+
+  # ---- Far side (display order: 7, 6, 8, 9, 13, 14, 10, 11, 12, 15, 16 in CURATION.md) ----
+  - nasaId: art002e009212
+    chapter: far-side
+    title:
+      es: "La Luna entera, con Orientale"
+      en: "The whole Moon, with Orientale"
+    caption:
+      es: "La Luna totalmente iluminada. A la derecha está la cara visible desde la Tierra, con manchas oscuras que son antiguas coladas de lava. Orientale, una cuenca de casi mil kilómetros de ancho (unas 600 millas), se extiende entre la cara visible y la oculta; a su izquierda empieza la cara oculta."
+      en: "The Moon fully lit. On the right is the near side, the hemisphere we see from Earth, marked by dark patches that are ancient lava flows. Orientale, a basin nearly 600 miles (about 1,000 km) wide, straddles the near and far sides; the far side begins to its left."
+    alt:
+      es: "El disco completo de la Luna, con manchas oscuras a la derecha y una gran cuenca circular junto al borde izquierdo."
+      en: "The full disk of the Moon, with dark patches on the right and a large circular basin near the left edge."
+    sources:
+      - https://images.nasa.gov/details/art002e009212
+
+  - nasaId: art002e012090
+    chapter: far-side
+    title:
+      es: "Los anillos de Orientale"
+      en: "The rings of Orientale"
+    caption:
+      es: "Los anillos concéntricos de la cuenca de Orientale, uno de los grandes cráteres de impacto más jóvenes y mejor conservados de la Luna, fotografiados durante el primer turno de observación del sobrevuelo."
+      en: "The concentric rings of the Orientale basin, one of the Moon's youngest and best-preserved large impact craters, photographed during the first shift of the flyby observation period."
+    alt:
+      es: "Vista de la superficie lunar con varios anillos de montañas que rodean de forma concéntrica una cuenca."
+      en: "A view of the lunar surface with several rings of mountains circling a basin concentrically."
+    sources:
+      - https://images.nasa.gov/details/art002e012090
+    story:
+      es: >-
+        Orientale es una cuenca de impacto de casi 600 millas (unos mil kilómetros) de ancho que se extiende entre
+        las dos caras de la Luna; desde la Tierra solo se ve la mitad. NASA la describe como uno de los grandes
+        cráteres de impacto más jóvenes y mejor conservados de la Luna, y su edad es de unos 3.700 millones de años.
+        Los cráteres alineados que salieron de aquel impacto marcan la cuenca de Hertzsprung, así que esta debe ser
+        aún más antigua. Al sobrevolar el terminador, la frontera entre el día y la noche, la tripulación la
+        describió como «todo menos una línea recta», con bordes de cráteres que sobresalían como «islas» en la
+        oscuridad. Los observadores de la época Apolo apodaron «el beso» a un arco de su anillo exterior.
+      en: >-
+        Orientale is an impact basin nearly 600 miles (about 1,000 km) wide that straddles the Moon's two hemispheres;
+        from Earth only half of it can be seen. NASA describes it as one of the Moon's youngest and best-preserved
+        large impact craters, about 3.7 billion years old. Chains of craters thrown out by that impact scar the
+        Hertzsprung Basin, which means Hertzsprung must be older still. Flying over the terminator, the boundary
+        between day and night, the crew described it as "anything but a straight line," with crater rims standing
+        out like "islands" in the dark. Observers of the Apollo era nicknamed an arc of its outer ring "the kiss."
+      sources:
+        - https://images.nasa.gov/details/art002e012090
+        - https://images.nasa.gov/details/art002e009212
+        - https://images.nasa.gov/details/art002e010208
+        - https://images.nasa.gov/details/art002e012273
+
+  - nasaId: art002e010208
+    chapter: far-side
+    title:
+      es: "La frontera entre el día y la noche"
+      en: "The edge of darkness"
+    caption:
+      es: "La tripulación describió el terminador como «todo menos una línea recta». Los bordes de los cráteres destacan como islas en la noche, y las cadenas de cráteres de Orientale llegan casi hasta la línea de sombra."
+      en: "The crew described the terminator as \"anything but a straight line.\" Crater rims stand out like islands in the night, and chains of craters from Orientale stretch almost to the shadow line."
+    alt:
+      es: "Paisaje lunar con una línea irregular de sombra y, en la zona iluminada, cadenas de cráteres que se alejan hacia la oscuridad."
+      en: "A lunar landscape with an irregular line of shadow and, in the lit area, chains of craters stretching toward the dark."
+    sources:
+      - https://images.nasa.gov/details/art002e010208
+
+  - nasaId: art002e012273
+    chapter: far-side
+    title:
+      es: "Un arco de montañas"
+      en: "An arc of mountains"
+    caption:
+      es: "El anillo exterior suroeste de la cuenca de Orientale, un arco de terreno montañoso formado por un impacto antiguo. Los observadores de la época Apolo lo apodaron «el beso»."
+      en: "The southwest portion of the Orientale basin's outer ring, a sweeping arc of mountainous terrain formed by an ancient impact. Observers of the Apollo era nicknamed it \"the kiss.\""
+    alt:
+      es: "Una cadena curva de montañas lunares que traza el borde de una gran cuenca."
+      en: "A curved chain of lunar mountains tracing the edge of a large basin."
+    sources:
+      - https://images.nasa.gov/details/art002e012273
+
+  - nasaId: art002e012153
+    chapter: far-side
+    title:
+      es: "Un cráter para recordar"
+      en: "A crater to remember"
+    caption:
+      es: "La pequeña mancha brillante del centro es el cráter que la tripulación propuso llamar Carroll, en recuerdo de la esposa del comandante Reid Wiseman, fallecida. Mide unos 5,6 km y está en el borde occidental de la cara visible."
+      en: "The small bright spot in the center is the crater the crew proposed to name Carroll, in memory of Commander Reid Wiseman's late wife. It is about 5.6 km across, on the western edge of the near side."
+    alt:
+      es: "Superficie lunar gris con un pequeño punto brillante en el centro, que es un cráter."
+      en: "A gray lunar surface with a small bright spot at the center, which is a crater."
+    sources:
+      - https://images.nasa.gov/details/art002e012153
+      - *record-release
+    story:
+      es: >-
+        Durante el vuelo, la tripulación propuso poner nombre a dos cráteres de la Luna. Uno es Integrity, por su nave.
+        El otro es Carroll, en honor de la esposa de Reid Wiseman, fallecida. Tiene unos 5,6 kilómetros de diámetro,
+        está en el borde occidental de la cara visible y podría verse desde la Tierra con telescopios potentes. Son
+        propuestas: NASA ha indicado que, al terminar la misión, se enviarán a la Unión Astronómica Internacional,
+        la organización que regula los nombres de los cuerpos celestes y de sus accidentes.
+      en: >-
+        During the flight the crew proposed names for two craters on the Moon. One is Integrity, after their
+        spacecraft. The other is Carroll, in honor of Reid Wiseman's late wife. It is about 5.6 kilometers across, on
+        the western edge of the near side, and would be visible from Earth with powerful telescopes. These are
+        proposals: NASA said that after the mission they would be submitted to the International Astronomical Union,
+        the organization that governs the naming of celestial bodies and their surface features.
+      sources:
+        - https://images.nasa.gov/details/art002e012153
+        - *record-release
+
+  - nasaId: art002e009279
+    chapter: far-side
+    title:
+      es: "Dos cráteres con nombre propuesto"
+      en: "Two proposed names"
+    caption:
+      es: "Los anillos de Orientale, fotografiados a las 15:41 (hora del este de EE. UU.) del 6 de abril de 2026. En la posición de las diez en punto de la cuenca se ven los dos cráteres que la tripulación propuso llamar Integrity y Carroll."
+      en: "The rings of Orientale, photographed at 3:41 p.m. EDT on 6 April 2026. At the 10 o'clock position of the basin are the two craters the crew proposed to name Integrity and Carroll."
+    alt:
+      es: "Los anillos concéntricos de una gran cuenca lunar, con dos pequeños cráteres cerca de su borde."
+      en: "The concentric rings of a large lunar basin, with two small craters near its edge."
+    sources:
+      - https://images.nasa.gov/details/art002e009279
+
+  - nasaId: art002e009284
+    chapter: far-side
+    title:
+      es: "La Tierra, pequeña junto a la Luna"
+      en: "A small Earth beside the Moon"
+    caption:
+      es: "La Tierra, en fase creciente, asoma tras el borde de la Luna, 36 minutos antes del ocaso terrestre visto desde Orion. El fondo oscuro de Orientale ocupa casi un tercio inferior de la superficie."
+      en: "Earth, in a crescent phase, appears beyond the edge of the Moon, 36 minutes before Earthset as seen from Orion. The dark floor of Orientale covers nearly the lower third of the surface."
+    alt:
+      es: "La Luna ocupa casi toda la imagen y, tras su borde, se ve la Tierra como un pequeño creciente."
+      en: "The Moon fills most of the frame and, beyond its edge, Earth is a small crescent."
+    sources:
+      - https://images.nasa.gov/details/art002e009284
+
+  - nasaId: art002e021278
+    chapter: far-side
+    title:
+      es: "Ocaso de la Tierra desde Orion"
+      en: "Earthset from Orion"
+    caption:
+      es: "Al pasar por detrás de la Luna durante el sobrevuelo, la tripulación fotografió la Tierra ocultándose tras el horizonte lunar, una imagen que evoca el famoso Earthrise de la tripulación del Apolo 8 en 1968."
+      en: "Passing behind the Moon during the flyby, the crew photographed Earth setting beyond the lunar horizon, an image that echoes the famous Apollo 8 Earthrise of 1968."
+    alt:
+      es: "La Tierra, parcialmente iluminada, sobre el horizonte gris de la Luna."
+      en: "Earth, partly lit, above the gray horizon of the Moon."
+    sources:
+      - https://images.nasa.gov/details/art002e021278
+      - *recap
+    story:
+      es: >-
+        El 6 de abril de 2026, al pasar por detrás de la Luna, la tripulación vio ocultarse la Tierra tras el
+        horizonte lunar, y la fotografió. NASA relaciona la imagen con el famoso Earthrise que captaron los
+        astronautas del Apolo 8 en 1968. No es la misma escena: una cámara montada en un panel solar de Orion
+        registró también un fino creciente de la Tierra que asomaba tras la Luna, a las 19:22, hora del este de
+        EE. UU. Más de medio siglo separa esta imagen de la del Apolo 8.
+      en: >-
+        On 6 April 2026, passing behind the Moon, the crew watched Earth set beyond the lunar horizon and
+        photographed it. NASA links the image to the famous Earthrise that the Apollo 8 astronauts captured in 1968.
+        It is not the same scene: a camera mounted on one of Orion's solar array wings also recorded a thin
+        crescent of Earth tucked behind the Moon, at 7:22 p.m. EDT. More than half a century separates this image from the one
+        taken by Apollo 8.
+      sources:
+        - https://images.nasa.gov/details/art002e021278
+        - https://images.nasa.gov/details/art002e016299
+        - https://images.nasa.gov/details/art002e009284
+        - *recap
+
+  - nasaId: art002e016299
+    chapter: far-side
+    title:
+      es: "La Tierra vista por una cámara de Orion"
+      en: "Earth through an Orion camera"
+    caption:
+      es: "Una cámara montada en uno de los paneles solares de Orion captó un fino creciente de la Tierra a las 19:22 (hora del este de EE. UU.) durante el sobrevuelo del lado oculto de la Luna. NASA no indica quién disparó; es una cámara exterior de la nave."
+      en: "A camera mounted on one of Orion's solar array wings captured a thin crescent of Earth at 7:22 p.m. EDT during the flyby of the Moon's far side. It is an exterior spacecraft camera, not a handheld photo."
+    alt:
+      es: "Un delgado creciente de la Tierra, medio oculto en la sombra y medio tras el borde de la Luna, en la esquina inferior derecha."
+      en: "A thin crescent of Earth, partly in shadow and partly tucked behind the edge of the Moon in the lower right corner."
+    sources:
+      - https://images.nasa.gov/details/art002e016299
+      - https://www.nasa.gov/image-detail/amf-art002e016299/
+
+  - nasaId: art002e009296
+    chapter: far-side
+    title:
+      es: "Los cuatro, juntos"
+      en: "All four together"
+    caption:
+      es: "A mitad del periodo de observación lunar, Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen hacen una pausa para tomarse un autorretrato dentro de Orion."
+      en: "Midway through the lunar observation period, Reid Wiseman, Victor Glover, Christina Koch and Jeremy Hansen pause for a selfie inside Orion."
+    alt:
+      es: "Los cuatro astronautas juntos dentro de la cabina de la nave, en un autorretrato."
+      en: "The four astronauts together inside the spacecraft cabin, in a self-portrait."
+    sources:
+      - https://images.nasa.gov/details/art002e009296
+
+  - nasaId: art002e014251
+    chapter: far-side
+    title:
+      es: "Trabajo en la penumbra de la cabina"
+      en: "Working in the dark cabin"
+    caption:
+      es: "Jeremy Hansen, de la Agencia Espacial Canadiense, toma fotografías por la ventana de Orion durante el sobrevuelo. La tripulación pasó unas siete horas por turnos en las ventanas para recoger datos científicos."
+      en: "Jeremy Hansen of the Canadian Space Agency takes images through Orion's window during the lunar flyby. The crew spent about seven hours taking turns at the windows to collect science data."
+    alt:
+      es: "Un astronauta junto a una ventana en una cabina a oscuras, con una pantalla encendida cerca."
+      en: "An astronaut at a window in a darkened cabin, with a lit screen nearby."
+    sources:
+      - https://images.nasa.gov/details/art002e014251
+    story:
+      es: >-
+        Durante el sobrevuelo del 6 de abril de 2026, la tripulación pasó unas siete horas por turnos en las ventanas
+        de Orion recogiendo datos científicos para el equipo en la Tierra. En el punto más cercano, estuvo a 4.067
+        millas (unos 6.545 km) de la superficie lunar. Los dispositivos de la cabina ejecutaban el Plan de Puntería
+        Lunar, un programa hecho a medida por el equipo de observaciones lunares de la tripulación, parte del equipo
+        científico de Artemis II, que guiaba la ejecución del plan de observación. NASA explica que los ojos y el
+        cerebro humanos detectan matices de color y textura que pueden aportar descubrimientos y una comprensión más
+        fina de la superficie lunar. Fue un trabajo en equipo, repartido en turnos.
+      en: >-
+        During the 6 April 2026 flyby, the crew spent about seven hours taking turns at Orion's windows, collecting
+        science data for the team on Earth. At closest approach they came within 4,067 miles (about 6,545 km) of the
+        lunar surface. Devices in the cabin ran the Lunar Targeting Plan, custom software built by the crew lunar
+        observations team, a subset of the Artemis II lunar science team, to guide the observation plan. NASA explains
+        that human eyes and brains are sensitive to subtle changes in color and texture, which may uncover new
+        discoveries and a more nuanced appreciation of the lunar surface. It was teamwork, shared in shifts.
+      sources:
+        - https://images.nasa.gov/details/art002e014251
+        - *faq
+
+  # ---- Eclipse (display order: 19, 18, 17, 20 in CURATION.md) ----
+  - nasaId: art002e010782
+    chapter: eclipse
+    title:
+      es: "Empieza el eclipse"
+      en: "The eclipse begins"
+    caption:
+      es: "Una cuña de Luna en plena noche ocupa el primer plano mientras el Sol se oculta tras ella. Desde Orion, mucho más cerca de la Luna que cualquier observador en la Tierra, el Sol tardó casi una hora en pasar tras el disco lunar. Los rayos que salen hacia abajo son parte de la corona solar."
+      en: "A wedge of the Moon in night fills the foreground as the Sun sets behind it. From Orion, much nearer the Moon than any observer on Earth, the Sun took nearly an hour to pass behind the lunar disk. The rays running outward toward the bottom are part of the Sun's corona."
+    alt:
+      es: "Un fragmento oscuro de la Luna con un borde dentado, y rayos de luz tenue que se extienden hacia abajo desde el lugar donde se oculta el Sol."
+      en: "A dark piece of the Moon with a jagged edge, and faint rays of light extending downward from where the Sun is hiding."
+    sources:
+      - https://images.nasa.gov/details/art002e010782
+
+  - nasaId: art002e009301
+    chapter: eclipse
+    title:
+      es: "Un eclipse total desde el espacio profundo"
+      en: "A total eclipse from deep space"
+    caption:
+      es: "La Luna oculta por completo al Sol. Desde la nave, la totalidad duró casi 54 minutos, mucho más de lo posible desde la Tierra. Alrededor del disco oscuro hay un halo; los científicos estudian si procede de la corona solar, de la luz zodiacal o de ambas. También se ven estrellas."
+      en: "The Moon fully covers the Sun. From the spacecraft, totality lasted nearly 54 minutes, far longer than is possible from Earth. A halo glows around the dark disk; scientists are investigating whether it comes from the solar corona, zodiacal light or both. Stars are visible too."
+    alt:
+      es: "Un disco oscuro rodeado de un halo luminoso sobre un fondo negro con estrellas."
+      en: "A dark disk surrounded by a luminous halo on a black background with stars."
+    sources:
+      - https://images.nasa.gov/details/art002e009301
+    story:
+      es: >-
+        Desde la Tierra, un eclipse total dura unos minutos, porque el Sol y la Luna tienen un tamaño aparente
+        parecido. Desde Orion, el 6 de abril de 2026, la Luna estaba tan cerca que se veía mucho mayor que el Sol,
+        y la totalidad duró casi una hora. La tripulación usó gafas de eclipse iguales a las que NASA produjo para
+        los eclipses de 2023 y 2024; fue la primera vez que se usaron en la Luna. Alrededor del disco lunar se ve un
+        halo, y los científicos investigan si es corona solar, luz zodiacal o una mezcla. Una cámara en un panel
+        solar de Orion lo registró desde fuera, con Venus a un lado de la Luna y Saturno al otro.
+      en: >-
+        From Earth, a total eclipse lasts minutes, because the Sun and the Moon look about the same size. From
+        Orion on 6 April 2026 the Moon was so close that it appeared much larger than the Sun, and totality lasted
+        nearly an hour. The crew wore eclipse viewers identical to those NASA made for the 2023 and 2024 eclipses,
+        the first use of eclipse glasses at the Moon. A halo glows around the lunar disk, and scientists are
+        investigating whether it is solar corona, zodiacal light or a mix. A camera on one of Orion's solar array
+        wings recorded it from outside, with Venus on one side of the Moon and Saturn on the other.
+      sources:
+        - https://images.nasa.gov/details/art002e009301
+        - https://images.nasa.gov/details/art002e010782
+        - https://images.nasa.gov/details/art002e016324
+        - *recap
+
+  - nasaId: art002e016324
+    chapter: eclipse
+    title:
+      es: "El eclipse visto desde fuera de la nave"
+      en: "The eclipse from outside the spacecraft"
+    caption:
+      es: "Una cámara montada en uno de los paneles solares de Orion registró el eclipse durante el sobrevuelo. Venus se ve a la izquierda de la Luna y Saturno a la derecha; los científicos estudian si el resplandor es luz zodiacal, corona solar o ambas."
+      en: "A camera mounted on one of Orion's solar array wings recorded the eclipse during the flyby. Venus can be spotted to the left of the Moon and Saturn to the right; scientists are investigating whether the glow is zodiacal light, the solar corona or both."
+    alt:
+      es: "La Luna oscura con un resplandor a su alrededor y dos puntos brillantes, uno a cada lado."
+      en: "The dark Moon with a glow around it and two bright points, one on each side."
+    sources:
+      - https://images.nasa.gov/details/art002e016324
+
+  - nasaId: art002e009575
+    chapter: eclipse
+    title:
+      es: "Vuelve la luz"
+      en: "Sunlight returns"
+    caption:
+      es: "El Sol reaparece por el borde izquierdo de la Luna y termina un eclipse total de casi una hora, el 6 de abril de 2026. Orion aparece en primer plano."
+      en: "The Sun rises at the left edge of the Moon, ending a total solar eclipse of nearly an hour on 6 April 2026. Orion is in the foreground."
+    alt:
+      es: "El borde de la Luna con un punto de luz solar en su lado izquierdo y parte de la nave en primer plano."
+      en: "The edge of the Moon with a point of sunlight on its left side and part of the spacecraft in the foreground."
+    sources:
+      - https://images.nasa.gov/details/art002e009575
+
+  # ---- Return (display order: 26, 21, 22, 23, 24, 25 in CURATION.md) ----
+  - nasaId: art002e012588
+    chapter: return
+    title:
+      es: "Estrellas de la Vía Láctea"
+      en: "Stars of the Milky Way"
+    caption:
+      es: "La tripulación fotografió la Vía Láctea durante el viaje de regreso. Nuestra galaxia mide más de 100.000 años luz de ancho y la Tierra está en uno de sus brazos, a media distancia del centro."
+      en: "The crew photographed the Milky Way on the way home. Our galaxy spans more than 100,000 light-years, and Earth lies along one of its spiral arms, about halfway from the center."
+    alt:
+      es: "Un campo denso de estrellas sobre un fondo oscuro."
+      en: "A dense field of stars on a dark background."
+    sources:
+      - https://images.nasa.gov/details/art002e012588
+      - https://www.nasa.gov/gallery/return-to-earth/
+
+  - nasaId: art002e025219
+    chapter: return
+    title:
+      es: "Con la Tierra a la espalda"
+      en: "With Earth behind"
+    caption:
+      es: "Victor Glover dentro de Orion, con la Tierra en cuarto creciente tras la ventana. La foto es posterior al sobrevuelo, cuando la tripulación ya volvía a casa."
+      en: "Victor Glover inside Orion, with the crescent Earth through the window behind him. The picture was taken after the lunar flyby, on the way back to Earth."
+    alt:
+      es: "Un astronauta dentro de la cabina, con un creciente de la Tierra visible por la ventana tras él."
+      en: "An astronaut inside the cabin, with a crescent of Earth visible through the window behind him."
+    sources:
+      - https://images.nasa.gov/details/art002e025219
+
+  - nasaId: art002e041711
+    chapter: return
+    title:
+      es: "Una Tierra y una tripulación que sonríen"
+      en: "Smiling Earth, smiling crew"
+    caption:
+      es: "Christina Koch dentro de Orion, con la Tierra en cuarto creciente tras la ventana. La foto es posterior al sobrevuelo, durante el regreso."
+      en: "Christina Koch inside Orion, with the crescent Earth through the window behind her. The picture was taken after the lunar flyby, on the return leg."
+    alt:
+      es: "Una astronauta dentro de la cabina, con un creciente de la Tierra visible por la ventana tras ella."
+      en: "An astronaut inside the cabin, with a crescent of Earth visible through the window behind her."
+    sources:
+      - https://images.nasa.gov/details/art002e041711
+
+  - nasaId: KSC-20260410-PH-JNV01_0001
+    chapter: return
+    title:
+      es: "Descenso bajo los paracaídas"
+      en: "Descent under parachutes"
+    caption:
+      es: "Los paracaídas de Orion se despliegan antes del amerizaje en el océano Pacífico, cerca de San Diego, el 10 de abril de 2026. Foto: NASA/Josh Valcarcel."
+      en: "Orion's parachutes deploy before splashdown in the Pacific Ocean near San Diego on 10 April 2026. Photo: NASA/Josh Valcarcel."
+    alt:
+      es: "La cápsula Orion colgada de varios paracaídas abiertos sobre el cielo."
+      en: "The Orion capsule hanging from several open parachutes in the sky."
+    sources:
+      - https://images.nasa.gov/details/KSC-20260410-PH-JNV01_0001
+    story:
+      es: >-
+        El 10 de abril de 2026, tras casi diez días de misión, Orion descendió bajo sus paracaídas y amerizó en el
+        Pacífico, frente a San Diego, a las 17:07 hora del Pacífico (20:07, hora del este de EE. UU.). Equipos de
+        NASA y de la Armada de EE. UU. se acercaron en balsas, ayudaron a la tripulación a salir de la nave y la
+        trasladaron en helicóptero al buque USS John P. Murtha. Orion también subió al buque para volver a tierra.
+        El regreso fue obra de muchas personas, en el agua, en el aire y en el centro de control.
+      en: >-
+        On 10 April 2026, after almost ten days of mission, Orion descended under its parachutes and splashed down in
+        the Pacific off San Diego at 5:07 p.m. PDT (8:07 p.m. EDT). NASA and U.S. Navy teams approached in rafts,
+        helped the crew out of the spacecraft and flew them by helicopter to the USS John P. Murtha. Orion was also
+        brought aboard the ship for the trip back to shore. The return was the work of many people, in the water, in
+        the air and in mission control.
+      sources:
+        - https://images.nasa.gov/details/KSC-20260410-PH-JNV01_0001
+        - https://images.nasa.gov/details/KSC-20260411-KED01-0332
+        - *reentry
+        - *recap
+
+  - nasaId: KSC-20260411-KED01-0332
+    chapter: return
+    title:
+      es: "Orion en el Pacífico"
+      en: "Orion in the Pacific"
+    caption:
+      es: "Personal de recuperación de NASA y de la Armada de EE. UU. se acerca en una balsa a la nave Orion tras el amerizaje, a las 17:07 hora del Pacífico del 10 de abril de 2026. Foto: NASA/Kevin Davis."
+      en: "NASA recovery team members and U.S. Navy personnel approach the Orion spacecraft by inflatable raft after splashdown at 5:07 p.m. PDT on 10 April 2026. Photo: NASA/Kevin Davis."
+    alt:
+      es: "La cápsula Orion flotando en el mar, con bolsas naranjas inflables, y una balsa con personas que se acerca."
+      en: "The Orion capsule floating on the sea with orange inflatable bags, and a raft with people approaching."
+    sources:
+      - https://images.nasa.gov/details/KSC-20260411-KED01-0332
+
+  - nasaId: NHQ202604100056
+    chapter: return
+    title:
+      es: "A bordo del USS John P. Murtha"
+      en: "Aboard USS John P. Murtha"
+    caption:
+      es: "Reid Wiseman llega a la cubierta del USS John P. Murtha, con ayuda del personal de recuperación, después de que la tripulación saliera de Orion y fuera trasladada en helicóptero, el 10 de abril de 2026. Foto: NASA/Bill Ingalls."
+      en: "Reid Wiseman arrives on the flight deck of USS John P. Murtha with the help of recovery personnel, after the crew left Orion and was flown to the ship by helicopter on 10 April 2026. Photo: NASA/Bill Ingalls."
+    alt:
+      es: "Un astronauta con traje, acompañado de varias personas, en la cubierta de un buque."
+      en: "An astronaut in a suit, accompanied by several people, on the deck of a ship."
+    sources:
+      - https://images.nasa.gov/details/NHQ202604100056
+      - *reentry

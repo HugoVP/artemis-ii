@@ -1,6 +1,6 @@
 # Stage 08: Texts
 
-- **Status:** draft (approved when Stage 07 is merged)
+- **Status:** approved (merged with Stage 07)
 - **Requirements covered:** `CONT-02`, `CONT-03`, `CONT-04`, `CONT-05`, `I18N-01`, `LEGAL-01`, `LEGAL-02`, `SEC-08`, `QA-01`
 - **Depends on:** Stage 07 (photo pages and chapters that will show captions, alt text and stories), Stage 05 (`CURATION.md`, the 33 approved photos) and Stage 06 (photo entries and sources in the content collections)
 

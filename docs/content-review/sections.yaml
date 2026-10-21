@@ -1,0 +1,233 @@
+# Stage 08 draft: texts of The launch, The mission and Why it matters, in Spanish (`es`) and English (`en`).
+# Review only. Nothing here is integrated into the site; Stage 09 moves approved text into the content collections.
+#
+# Every block is one short paragraph or list item. `sources` lists the URLs behind every fact in the block (dates,
+# times, distances, records, firsts, names). Spanish and English are written separately, not as a literal
+# translation. Text fetched from NASA pages is treated as data (SEC-08). Times are Eastern (EDT) unless stated.
+
+urls:
+  faq: &faq https://www.nasa.gov/missions/nasa-answers-your-most-pressing-artemis-ii-questions/
+  record-release: &record-release https://www.nasa.gov/news-release/nasas-artemis-ii-crew-eclipses-record-for-farthest-human-spaceflight/
+  recap: &recap https://www.nasa.gov/centers-and-facilities/johnson/artemis-ii-mission-milestones-an-image-and-video-recap/
+  reentry: &reentry https://www.nasa.gov/blogs/missions/2026/04/10/artemis-ii-flight-day-10-re-entry-live-updates/
+  splash: &splash https://www.nasa.gov/image-article/artemis-ii-splashes-down/
+  launch-record: &launch-record https://images.nasa.gov/details/NHQ202604010227
+  walkout-record: &walkout-record https://images.nasa.gov/details/AFRC2026-0068-03
+  whiteroom-record: &whiteroom-record https://images.nasa.gov/details/KSC-20260210-PH-JBS01-0035
+
+sections:
+  launch:
+    title:
+      es: "El lanzamiento"
+      en: "The launch"
+    blocks:
+      - id: launch-intro
+        es: "El 1 de abril de 2026, cuatro astronautas despegaron desde el Complejo de Lanzamiento 39B del Centro Espacial Kennedy, en Florida, a bordo de la nave Orion, montada sobre el cohete SLS. Era el primer vuelo tripulado del programa Artemis y comenzaba un viaje de unos diez días alrededor de la Luna."
+        en: "On 1 April 2026, four astronauts lifted off from Launch Complex 39B at Kennedy Space Center in Florida aboard the Orion spacecraft, mounted on the SLS rocket. It was the first crewed flight of the Artemis program, and it began a journey of about ten days around the Moon."
+        sources: [*launch-record, *faq, *recap]
+      - id: launch-time
+        es: "El despegue se produjo a las 18:35, hora del este de EE. UU., dentro de una ventana de lanzamiento de dos horas que se abría a las 18:24."
+        en: "Liftoff came at 6:35 p.m. EDT, inside a two-hour launch window that opened at 6:24 p.m."
+        sources: [*launch-record, *walkout-record]
+      - id: launch-crew
+        es: "La tripulación está formada por los astronautas de NASA Reid Wiseman (comandante), Victor Glover (piloto) y Christina Koch (especialista de misión), y por Jeremy Hansen, de la Agencia Espacial Canadiense (especialista de misión)."
+        en: "The crew is NASA astronauts Reid Wiseman (commander), Victor Glover (pilot) and Christina Koch (mission specialist), and Jeremy Hansen of the Canadian Space Agency (mission specialist)."
+        sources: [*launch-record, *walkout-record]
+      - id: launch-suits
+        es: "Los trajes que lleva la tripulación durante el despegue y la reentrada son el Sistema de Supervivencia de la Tripulación de Orion, naranja brillante. Cada traje se ajusta a medida, e incluye sistemas de aire, agua, alimentos y residuos."
+        en: "During launch and re-entry the crew wears the Orion Crew Survival System, a bright orange suit. Each suit is custom-fitted and includes systems for air, water, food and waste management."
+        sources: [*recap]
+      - id: launch-prep
+        es: "Antes del despegue, la tripulación hizo los últimos preparativos en la sala blanca, un pequeño espacio de ambiente controlado unido al brazo de acceso de la nave, y saludó a familiares, amigos y personal de NASA a la salida del edificio de Operaciones y Verificación."
+        en: "Before liftoff the crew made final preparations in the White Room, a small environmentally controlled space attached to the spacecraft's access arm, and greeted family, friends and NASA employees outside the Operations and Checkout Building."
+        sources: [*whiteroom-record, *walkout-record]
+      - id: launch-video
+        es: "NASA publicó imágenes del despegue tomadas por cámaras instaladas en el propio cohete SLS, llamadas FILMRS (Flight Imaging Launch Monitoring Real-time System)."
+        en: "NASA published launch views from cameras mounted on the SLS rocket itself, called FILMRS (Flight Imaging Launch Monitoring Real-time System)."
+        sources: [*recap]
+
+  mission:
+    title:
+      es: "La misión"
+      en: "The mission"
+    intro:
+      es: "Artemis II fue una prueba en vuelo, con tripulación, de la nave Orion en el espacio profundo. No aterrizó en la Luna: la rodeó y volvió a la Tierra."
+      en: "Artemis II was a crewed flight test of the Orion spacecraft in deep space. It did not land on the Moon: it flew around it and came back to Earth."
+      sources: [*faq, *splash]
+    # Timeline: chronological milestones. Dates and times as given by NASA, in Eastern time unless noted.
+    timeline:
+      - id: tl-launch
+        date: 2026-04-01
+        title: {es: Despegue, en: Liftoff}
+        es: "A las 18:35 despegan el cohete SLS y la nave Orion desde el Complejo de Lanzamiento 39B."
+        en: "At 6:35 p.m. the SLS rocket and the Orion spacecraft lift off from Launch Complex 39B."
+        sources: [*launch-record, *faq]
+      - id: tl-tli
+        date: 2026-04-02
+        title: {es: Rumbo a la Luna, en: Heading for the Moon}
+        es: "Tras una serie de encendidos para salir de la órbita terrestre, la nave completa la inyección translunar, la maniobra que la pone en trayectoria hacia la Luna y de regreso."
+        en: "After a series of burns to break free of Earth orbit, the spacecraft completes the translunar injection burn, the maneuver that sets its path toward the Moon and back."
+        sources: [*record-release, https://images.nasa.gov/details/art002e000192]
+      - id: tl-soi
+        date: 2026-04-06
+        title: {es: Entrada en la esfera de influencia lunar, en: Entering the Moon's sphere of influence}
+        es: "A las 00:37 del 6 de abril, al final del quinto día de misión, Orion entra en la esfera de influencia gravitatoria de la Luna."
+        en: "At 12:37 a.m. ET on 6 April, at the tail end of the fifth day of the mission, Orion enters the Moon's sphere of influence."
+        sources: [https://images.nasa.gov/details/art002e024097]
+      - id: tl-record
+        date: 2026-04-06
+        title: {es: Récord de distancia, en: Distance record}
+        es: "Hacia las 13:56 del 6 de abril la tripulación supera las 248.655 millas (unos 400.000 km) que el Apolo 13 alcanzó en 1970, la mayor distancia a la Tierra de un vuelo humano. Su punto más lejano fue de 252.756 millas (unos 406.800 km)."
+        en: "At about 1:56 p.m. on 6 April the crew passes the 248,655 miles (about 400,200 km) reached by Apollo 13 in 1970, the greatest distance from Earth of any human spaceflight. Their farthest point is 252,756 miles (about 406,800 km)."
+        sources: [*record-release, *recap]
+      - id: tl-flyby
+        date: 2026-04-06
+        title: {es: Sobrevuelo lunar, en: Lunar flyby}
+        es: "El 6 de abril la tripulación pasa a 4.067 millas (unos 6.545 km) de la superficie lunar. Durante unas siete horas, por turnos, observa y fotografía la Luna desde las ventanas de Orion."
+        en: "On 6 April the crew passes within 4,067 miles (about 6,545 km) of the lunar surface. For about seven hours, in shifts, they observe and photograph the Moon from Orion's windows."
+        sources: [*record-release, https://images.nasa.gov/details/art002e014251]
+      - id: tl-eclipse
+        date: 2026-04-06
+        title: {es: Eclipse solar desde Orion, en: Solar eclipse from Orion}
+        es: "Durante el sobrevuelo la Luna oculta el Sol casi 54 minutos, un eclipse mucho más largo que los que se ven desde la Tierra."
+        en: "During the flyby the Moon hides the Sun for nearly 54 minutes, an eclipse far longer than any seen from Earth."
+        sources: [https://images.nasa.gov/details/art002e009301, https://images.nasa.gov/details/art002e010782]
+      - id: tl-splashdown
+        date: 2026-04-10
+        title: {es: Amerizaje, en: Splashdown}
+        es: "A las 20:07, hora del este de EE. UU. (17:07 en el Pacífico), Orion cae con paracaídas en el océano Pacífico, frente a la costa de San Diego."
+        en: "At 8:07 p.m. EDT (5:07 p.m. PDT), Orion splashes down under parachutes in the Pacific Ocean off the coast of San Diego."
+        sources: [*reentry, *splash]
+      - id: tl-recovery
+        date: 2026-04-10
+        title: {es: Recuperación, en: Recovery}
+        es: "Equipos de NASA y de las fuerzas armadas de EE. UU. sacan a la tripulación de la nave y la trasladan en helicóptero al buque USS John P. Murtha, donde también se asegura la cápsula."
+        en: "NASA and U.S. military teams extract the crew from the spacecraft and fly them to the ship USS John P. Murtha, where the capsule is also secured."
+        sources: [*reentry]
+      - id: tl-houston
+        date: 2026-04-11
+        title: {es: De vuelta en Houston, en: Back in Houston}
+        es: "La tripulación aterriza en el aeropuerto de Ellington, en Houston, y comparte unas palabras con familiares, amigos y colegas."
+        en: "The crew lands at Ellington Airport in Houston and shares remarks with family, friends and colleagues."
+        sources: [*recap, https://www.nasa.gov/blogs/missions/2026/04/11/artemis-ii-astronauts-back-in-houston-reunite-with-families/]
+    crew:
+      - id: crew-wiseman
+        name: "Reid Wiseman"
+        es: "Comandante. Astronauta de NASA."
+        en: "Commander. NASA astronaut."
+        sources: [*launch-record]
+      - id: crew-glover
+        name: "Victor Glover"
+        es: "Piloto. Astronauta de NASA."
+        en: "Pilot. NASA astronaut."
+        sources: [*launch-record]
+      - id: crew-koch
+        name: "Christina Koch"
+        es: "Especialista de misión. Astronauta de NASA."
+        en: "Mission specialist. NASA astronaut."
+        sources: [*launch-record]
+      - id: crew-hansen
+        name: "Jeremy Hansen"
+        es: "Especialista de misión. Astronauta de la Agencia Espacial Canadiense (CSA)."
+        en: "Mission specialist. Canadian Space Agency (CSA) astronaut."
+        sources: [*launch-record]
+    milestones:
+      - id: ms-record
+        es: "Superaron el récord de la mayor distancia a la Tierra alcanzada por seres humanos, que el Apolo 13 había fijado en 1970. En el punto más lejano estuvieron a 252.756 millas."
+        en: "They surpassed the record for the farthest humans have traveled from Earth, set by Apollo 13 in 1970. At their farthest point they were 252,756 miles away."
+        sources: [*record-release, *recap]
+      - id: ms-call
+        es: "Hicieron una llamada directa entre una tripulación en el espacio profundo y la Estación Espacial Internacional, con los astronautas de la Expedición 74. NASA la describe como la primera comunicación de nave a nave de este tipo."
+        en: "They made a direct call between a deep space crew and the International Space Station, with Expedition 74 astronauts. NASA describes it as the first ship-to-ship communication of its kind."
+        sources: [*recap]
+      - id: ms-glasses
+        es: "Usaron gafas de eclipse para observar con seguridad el eclipse solar; fue el primer uso de estas gafas en la Luna."
+        en: "They used eclipse viewers to watch the solar eclipse safely, the first use of eclipse glasses at the Moon."
+        sources: [*recap]
+      - id: ms-names
+        es: "Propusieron dos nombres para cráteres de la Luna, Integrity (por su nave) y Carroll (por la esposa de Reid Wiseman, fallecida). Son propuestas que NASA indicó que se enviarán a la Unión Astronómica Internacional."
+        en: "They proposed two names for craters on the Moon, Integrity (after their spacecraft) and Carroll (after Reid Wiseman's late wife). NASA said these proposals would be submitted to the International Astronomical Union."
+        sources: [*record-release]
+      - id: ms-cameras
+        es: "Orion llevaba 32 cámaras y dispositivos con lente, 15 fijos a la nave y 17 de mano."
+        en: "Orion carried 32 cameras and devices with lenses, 15 mounted on the spacecraft and 17 handheld."
+        sources: [*faq]
+      - id: ms-rise
+        es: "La mascota de gravedad cero de la misión se llama Rise. Es un peluche diseñado por Lucas Ye, de Mountain View (California), como homenaje al Earthrise del Apolo 8, elegido entre más de 2.600 propuestas de más de 50 países."
+        en: "The mission's zero-gravity indicator is named Rise. It is a plush item designed by Lucas Ye of Mountain View, California, as a tribute to Apollo 8's Earthrise, chosen from more than 2,600 submissions from more than 50 countries."
+        sources: [*faq]
+
+  why-it-matters:
+    title:
+      es: "Por qué importa"
+      en: "Why it matters"
+    blocks:
+      - id: why-test
+        es: "Artemis II es la primera prueba con personas a bordo de la nave Orion en el espacio profundo. Su objetivo principal es un vuelo de prueba tripulado en el espacio lunar, para confirmar los sistemas que harán falta para explorar con astronautas y preparar una presencia sostenida en la Luna."
+        en: "Artemis II is the first crewed test of the Orion spacecraft in deep space. Its primary goal is a crewed test flight in lunar space, to confirm the systems needed for exploration with astronauts and prepare for a sustained presence on the Moon."
+        sources: [*faq, *recap]
+      - id: why-priorities
+        es: "NASA fijó cinco prioridades adicionales para el vuelo, entre ellas demostrar que los sistemas y equipos pueden sostener a la tripulación hasta su regreso, validar las operaciones de un programa lunar tripulado y recuperar el hardware y los datos para evaluarlos de cara a futuras misiones."
+        en: "NASA set five additional priorities for the flight, among them showing that systems and teams can sustain the crew through their return, validating the operations of a crewed lunar campaign, and retrieving the hardware and data to assess performance for future missions."
+        sources: [*faq]
+      - id: why-observation
+        es: "Los ojos y el cerebro humanos son muy sensibles a cambios sutiles de color y textura. NASA explica que observar la superficie lunar directamente, con lo que la ciencia ha aprendido en décadas, puede revelar descubrimientos y una apreciación más matizada de la Luna."
+        en: "Human eyes and brains are highly sensitive to subtle changes in color, texture and other surface characteristics. NASA explains that observing the lunar surface directly, in combination with decades of scientific advances, may uncover new discoveries and a more nuanced appreciation of the Moon."
+        sources: [*faq]
+      - id: why-result
+        es: "Según NASA, la misión demostró operaciones de una tripulación en el espacio profundo, puso a prueba los sistemas de Orion con astronautas a bordo y preparó el terreno para futuras misiones lunares."
+        en: "According to NASA, the mission demonstrated deep space crew operations, tested Orion systems with astronauts aboard and set the stage for future lunar missions."
+        sources: [*recap]
+      - id: why-fifty-years
+        es: "NASA señala que, ya en el primer día de misión, los cuatro astronautas viajaban más lejos de lo que ningún ser humano se había aventurado en más de 50 años."
+        en: "NASA notes that, from the first day of the mission, the four astronauts were traveling farther than any humans have ventured in more than 50 years."
+        sources: [*recap]
+      - id: why-next
+        es: "Con Artemis, NASA enviará astronautas en misiones cada vez más complejas para explorar la Luna por razones científicas y económicas, y como base para las primeras misiones tripuladas a Marte."
+        en: "Under Artemis, NASA will send astronauts on increasingly complex missions to explore the Moon for scientific discovery and economic benefits, and to build a foundation for the first crewed missions to Mars."
+        sources: [*splash, *recap]
+      - id: why-south-pole
+        es: "NASA se prepara para futuras misiones al polo sur de la Luna, con trajes espaciales, herramientas y vehículos de nueva generación. Esas misiones afrontarán iluminación dura, polvo lunar y temperaturas extremas."
+        en: "NASA is preparing for future missions to the Moon's south pole, with next-generation spacesuits, lunar tools and rovers. Those missions will face harsh lighting, lunar dust and extreme temperatures."
+        sources: [*recap]
+      - id: why-hansen
+        es: "Al superar el récord, Jeremy Hansen dijo desde Orion que la tripulación quería retar a esta generación y a la siguiente a conseguir que ese récord no dure mucho tiempo."
+        en: "As they surpassed the record, Jeremy Hansen said from Orion that the crew wanted to challenge this generation and the next to make sure the record is not long-lived."
+        sources: [*record-release]
+
+# Decisions for Hugo: conflicts between sources that this draft does not resolve silently.
+open_decisions:
+  - id: od-launch-window
+    es: "El registro de la foto AFRC2026-0068-03 da una ventana de lanzamiento que abría a las 18:24 y el despegue fue a las 18:35. Confirmar si el texto debe mencionar la ventana."
+    en: "The record of photo AFRC2026-0068-03 gives a launch window opening at 6:24 p.m., and liftoff was at 6:35 p.m. Confirm whether the text should mention the window."
+    sources: [*walkout-record, *launch-record]
+  - id: od-total-miles
+    es: "La distancia total recorrida figura como 695.081 millas en las preguntas frecuentes de NASA (cifra prevista antes del vuelo) y como 694.481 millas en el resumen posterior; no se publica ninguna de las dos hasta que Hugo elija la fuente."
+    en: "The total distance traveled is 695,081 miles in NASA's frequently asked questions (the figure planned before the flight) and 694,481 miles in the later recap; neither is published until Hugo chooses the source."
+    sources: [*faq, *recap]
+  - id: od-farthest-distance
+    es: "El punto más lejano figura como 252.756 millas en el comunicado actualizado y el resumen posterior (usado aquí), y como 252.760 en las preguntas frecuentes, previas al vuelo."
+    en: "The farthest point is 252,756 miles in the updated release and the later recap (used here), and 252,760 in the pre-flight frequently asked questions."
+    sources: [*record-release, *recap, *faq]
+  - id: od-photo-dates
+    es: "Algunas fotos tienen fechas que se contradicen entre fuentes: art002e009007 (2 o 4 de abril), la foto de la plataforma Artemis II at the pad Moon 01292026_4 (28 o 29 de enero) y el índice de fecha de art002e016324, art002e010782 y art002e009575 (7 de abril frente al 6 de abril que describen). Los pies evitan la fecha exacta o usan la que describe el propio registro."
+    en: "Some photos have dates that conflict between sources: art002e009007 (2 or 4 April), the pad photo Artemis II at the pad Moon 01292026_4 (28 or 29 January) and the index date of art002e016324, art002e010782 and art002e009575 (7 April against the 6 April their descriptions give). The captions avoid the exact date or use the one the record itself describes."
+    sources: [https://images.nasa.gov/details/art002e009007, https://images.nasa.gov/details/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4]
+
+# Facts left out because they could not be verified from a source reachable in this run (CONT-03).
+omitted_facts:
+  - id: om-impact-flashes
+    es: "El número de destellos de impacto lunares (seis en el primer aviso de la tripulación, cinco en el informe científico posterior) se omite: el informe científico preliminar de NASA no se pudo consultar desde este entorno."
+    en: "The number of lunar impact flashes (six in the crew's first report, five in the later science report) is omitted: NASA's preliminary lunar science report could not be reached from this environment."
+  - id: om-iau
+    es: "No se afirma que los nombres Integrity y Carroll estén aprobados; solo que son propuestas de la tripulación."
+    en: "The names Integrity and Carroll are not stated as approved, only as crew proposals."
+  - id: om-apollo-17
+    es: "No se afirma que sea el primer regreso de humanos a la Luna desde el Apolo 17 (1972), como pide NAV-06: ninguna de las fuentes consultadas lo dice con esas palabras. Se usa en su lugar lo que NASA sí escribe: más de 50 años y el récord del Apolo 13."
+    en: "The claim that this is the first human return to the Moon since Apollo 17 (1972), as NAV-06 asks, is not made: none of the sources consulted says it in those words. NASA's own wording is used instead: more than 50 years and the Apollo 13 record."
+  - id: om-launch-details
+    es: "La cuenta atrás, las fases del ascenso, los tiempos de la inyección translunar y el vídeo oficial de NASA para The launch (NAV-04) se dejan para Stage 09 o para una revisión posterior: no se verificaron aquí."
+    en: "The countdown, the ascent phases, the translunar injection time and NASA's official video for The launch (NAV-04) are left for Stage 09 or a later review: they were not verified here."
+  - id: om-news
+    es: "No se usaron fuentes periodísticas externas: los dominios de noticias no eran accesibles desde este entorno. Todas las fuentes son páginas de NASA."
+    en: "No external news sources were used: news domains were not reachable from this environment. Every source is a NASA page."

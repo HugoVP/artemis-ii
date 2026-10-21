@@ -121,20 +121,23 @@ sections:
           en: "Launch abort system jettison, core stage cutoff, and solar array deployment"
         description:
           es: >-
-            Ya por encima de la parte más densa de la atmósfera, a los 3 minutos y 13 segundos se desprendieron los paneles del módulo de servicio y la torre del sistema de aborto de lanzamiento (LAS). A los 8 minutos y 2 segundos se apagaron los cuatro motores RS-25 (MECO) y, doce segundos después (6:43 p. m. EDT), la etapa central se separó de la etapa superior ICPS y de Orion. Alrededor de dieciocho minutos después del despegue (confirmado a las 6:59 p. m. EDT), Orion desplegó sus cuatro alas de paneles solares —de casi 23 pies cada una, para una envergadura total de la nave de unos 63 pies—, equipadas con 15.000 celdas fotovoltaicas por ala.
+            Ya por encima de la parte más densa de la atmósfera, a los 3 minutos y 13 segundos se desprendieron los paneles del módulo de servicio y la torre del sistema de aborto de lanzamiento (LAS). A los 8 minutos y 2 segundos se apagaron los cuatro motores RS-25 (MECO) y, doce segundos después (6:43 p. m. EDT), la etapa central se separó de la etapa superior ICPS y de Orion. Alrededor de dieciocho minutos después del despegue (confirmado a las 6:59 p. m. EDT), Orion desplegó sus cuatro alas de paneles solares —de casi 23 pies cada una, para una envergadura total de la nave de unos 63 pies—, con tres paneles por ala y casi 15.000 celdas fotovoltaicas en total.
           en: >-
-            Above the dense lower atmosphere at 3 minutes and 13 seconds, the service module fairing panels and the Launch Abort System (LAS) tower were jettisoned. Main engine cutoff (MECO) of the four RS-25 engines occurred at 8 minutes and 2 seconds, followed twelve seconds later (6:43 p.m. EDT) by separation of the core stage from the ICPS and Orion. Roughly eighteen minutes after liftoff (confirmed by 6:59 p.m. EDT), Orion deployed its four solar array wings—nearly 23 feet long apiece, giving the spacecraft a total deployed wingspan of roughly 63 feet—with 15,000 solar cells on each wing.
+            Above the dense lower atmosphere at 3 minutes and 13 seconds, the service module fairing panels and the Launch Abort System (LAS) tower were jettisoned. Main engine cutoff (MECO) of the four RS-25 engines occurred at 8 minutes and 2 seconds, followed twelve seconds later (6:43 p.m. EDT) by separation of the core stage from the ICPS and Orion. Roughly eighteen minutes after liftoff (confirmed by 6:59 p.m. EDT), Orion deployed its four solar array wings—nearly 23 feet long apiece, giving the spacecraft a total deployed wingspan of roughly 63 feet—with three panels per wing and almost 15,000 solar cells in total.
         facts:
           - id: "launch-las-meco-solar"
             claim:
-              es: "Los paneles del módulo de servicio y el sistema de aborto de lanzamiento se desprendieron a MET +00:03:13 (6:38 p. m. EDT); el corte de motores principales ocurrió a MET +00:08:02 y la separación de la etapa central a MET +00:08:14 (6:43 p. m. EDT), seguidos a las 6:59 p. m. EDT por el despliegue de las cuatro alas de paneles solares de Orion (casi 23 pies y 15.000 celdas por ala, para una envergadura total de la nave de unos 63 pies)."
-              en: "The service module panels and Launch Abort System were jettisoned at MET +00:03:13 (6:38 p.m. EDT); main engine cutoff occurred at MET +00:08:02 and core stage separation at MET +00:08:14 (6:43 p.m. EDT), followed by 6:59 p.m. EDT by deployment of Orion's four solar array wings (nearly 23 feet and 15,000 solar cells per wing, for a total spacecraft wingspan of roughly 63 feet)."
+              es: "Los paneles del módulo de servicio y el sistema de aborto de lanzamiento se desprendieron a MET +00:03:13 (6:38 p. m. EDT); el corte de motores principales ocurrió a MET +00:08:02 y la separación de la etapa central a MET +00:08:14 (6:43 p. m. EDT), seguidos a las 6:59 p. m. EDT por el despliegue de las cuatro alas de paneles solares de Orion (casi 23 pies por ala, para una envergadura total de la nave de unos 63 pies; tres paneles por ala y casi 15.000 celdas fotovoltaicas en total)."
+              en: "The service module panels and Launch Abort System were jettisoned at MET +00:03:13 (6:38 p.m. EDT); main engine cutoff occurred at MET +00:08:02 and core stage separation at MET +00:08:14 (6:43 p.m. EDT), followed by 6:59 p.m. EDT by deployment of Orion's four solar array wings (nearly 23 feet per wing, for a total spacecraft wingspan of roughly 63 feet; three panels per wing and almost 15,000 solar cells in total)."
             sources:
               - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
                 url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
                 accessed: "2026-10-21"
               - title: "NASA Image Article: Engineers Install Orion Solar Array Wings for Artemis II"
                 url: "https://www.nasa.gov/image-article/engineers-install-orion-solar-array-wings-for-artemis-ii/"
+                accessed: "2026-10-21"
+              - title: "Airbus (builder of the European Service Module): Orion spacecraft's solar array successfully put to the test (2016)"
+                url: "https://www.airbus.com/en/newsroom/news/2016-02-orion-spacecrafts-solar-array-successfully-put-to-the-test"
                 accessed: "2026-10-21"
     video:
       title:
@@ -664,8 +667,8 @@ supporting:
         es: "El despegue"
         en: "The launch"
       summary:
-        es: "De la plataforma 39B bajo la Luna llena de invierno a la columna de fuego del 1 de abril de 2026: los preparativos, la caminata de la tripulación y el ascenso del cohete Space Launch System."
-        en: "From Pad 39B beneath the winter Moon to the pillar of fire on April 1, 2026: pad preparations, crew walkout, and the climb of the Space Launch System rocket."
+        es: "De la plataforma 39B con la Luna tras el cohete, a finales de enero de 2026, a la columna de fuego del 1 de abril de 2026: los preparativos, la caminata de la tripulación y el ascenso del cohete Space Launch System."
+        en: "From Pad 39B with the Moon behind the rocket in late January 2026 to the pillar of fire on April 1, 2026: pad preparations, crew walkout, and the climb of the Space Launch System rocket."
     outbound:
       order: 2
       title:
@@ -696,8 +699,33 @@ supporting:
         es: "Regreso"
         en: "Return"
       summary:
-        es: "El camino de vuelta a casa entre el 7 y el 10 de abril: un campo estelar de la Vía Láctea a 200.000 millas náuticas, retratos junto a la creciente terrestre y el descenso en paracaídas hacia el océano Pacífico."
-        en: "The journey home from April 7 to April 10: a Milky Way star field 200,000 nautical miles out, portraits beside the crescent Earth, and parachute descent into the Pacific Ocean."
+        es: "El camino de vuelta a casa entre el 7 y el 10 de abril: un campo estelar de la Vía Láctea el 7 de abril, retratos junto a la creciente terrestre y el descenso en paracaídas hacia el océano Pacífico."
+        en: "The journey home from April 7 to April 10: a Milky Way star field on April 7, portraits beside the crescent Earth, and parachute descent into the Pacific Ocean."
+
+  # Every supporting text points to the sourced facts (ids in sections.yaml or photos.yaml) that its figures and events
+  # come from, or says which file it is derived from. tests/content-review.spec.ts checks that each id exists and that no
+  # text is left without a reference. Nothing here adds a fact without a source.
+  references:
+    home.welcome:
+      facts: [mission-duration-and-trajectory, launch-crew-and-spacecraft-name, launch-liftoff-time-and-thrust, mission-eclipse-and-flashes, mission-reentry-and-splashdown]
+    home.cards.launch:
+      facts: [launch-liftoff-time-and-thrust]
+    home.cards.mission:
+      facts: [mission-duration-and-trajectory, launch-crew-and-spacecraft-name, fact-milestone-distance, fact-milestone-firsts]
+    home.cards.why-it-matters:
+      facts: [why-apollo-17-gap, why-artemis-iii-iv-v-architecture]
+    home.cards.gallery:
+      derivedFrom: [docs/content-review/photos.yaml]
+    chapters.launch.summary:
+      facts: [photo-launch-1-pad-wdr, launch-walkout-and-ingress, launch-liftoff-time-and-thrust]
+    chapters.outbound.summary:
+      facts: [mission-tli-burn, story-outbound-1-tli-and-moonlit-earth, photo-outbound-2-crescent]
+    chapters.far-side.summary:
+      facts: [mission-flyby-times-and-distances, story-farside-16-science-operations, story-farside-13-proposed-craters, photo-farside-6-orientale-rings, story-farside-11-earthset-earthrise-sequence]
+    chapters.eclipse.summary:
+      facts: [mission-eclipse-and-flashes, story-eclipse-18-totality-and-light, photo-eclipse-17-venus-saturn]
+    chapters.return.summary:
+      facts: [photo-return-26-milky-way, photo-return-21-glover, photo-return-22-koch, story-return-23-splashdown-recovery]
 
 openDecisions:
   - id: "conflict-launch-1-pad-date"
@@ -733,6 +761,14 @@ openDecisions:
       - "https://images.nasa.gov/details/art002e016324"
       - "https://images.nasa.gov/details/art002e010782"
       - "https://images.nasa.gov/details/art002e009575"
+  - id: "conflict-orion-solar-cell-count"
+    item: "Orion solar cells: '15,000 per wing' (NASA launch-day blog and installation article) vs about 15,000 in total (Airbus, builder of the European Service Module)"
+    summary: "NASA's launch-day blog and its installation article say each of the four wings has 15,000 solar cells. Airbus describes four wings of three panels with 1,242 cells per panel, almost 15,000 cells in total (12 panels × 1,242 = 14,904), which matches the usual total of about 15,000 and not 60,000. The 23-foot wing length and the roughly 63-foot wingspan are not in dispute."
+    proposedHandling: "State about 15,000 cells in total across the four wings and three panels per wing, citing Airbus, and keep the NASA pages as sources for the wing length and wingspan. Hugo may prefer to leave the cell count out until NASA clarifies its wording."
+    sources:
+      - "https://www.airbus.com/en/newsroom/news/2016-02-orion-spacecrafts-solar-array-successfully-put-to-the-test"
+      - "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+      - "https://www.nasa.gov/image-article/engineers-install-orion-solar-array-wings-for-artemis-ii/"
   - id: "conflict-peak-and-total-distance-figures"
     item: "Peak distance from Earth (252,756 vs 252,760 miles) and total trajectory distance (694,481 vs 695,081 miles)"
     summary: "NASA's pre-flight FAQ lists estimated figures of 252,760 miles (max distance) and 695,081 miles (total trip), while the Flight Day 6 live blog and post-flight splashdown gallery record 252,756 miles and the updated post-flight FAQ states 694,481 miles."

@@ -116,6 +116,7 @@ interface SectionsReviewDoc {
       cards: Record<string, { es: string; en: string }>;
     };
     chapters: Record<string, { order: number; title: { es: string; en: string }; summary: { es: string; en: string } }>;
+    references: Record<string, { facts?: string[]; derivedFrom?: string[] }>;
   };
   openDecisions: Array<{
     id: string;
@@ -275,6 +276,51 @@ test.describe('Stage 08 content review YAML files (CONT-02, CONT-03, CONT-04, CO
     assertBilingualText(why.nextTitle, 'why.nextTitle', 5);
     assertBilingualText(why.nextBody, 'why.nextBody', 100);
     assertFactsHaveSources(why.facts, 'why.facts');
+  });
+
+
+  test('AC-1 CONT-02 I18N-01 the supporting Home and chapter drafts are bilingual and every text points to existing sourced facts', () => {
+    const { home, chapters, references } = sectionsDoc.supporting;
+    const ids = new Set<string>();
+    const collect = (value: unknown): void => {
+      if (Array.isArray(value)) value.forEach(collect);
+      else if (value && typeof value === 'object') {
+        const record = value as Record<string, unknown>;
+        if (typeof record.id === 'string' && record.claim && Array.isArray(record.sources) && record.sources.length > 0) ids.add(record.id);
+        Object.values(record).forEach(collect);
+      }
+    };
+    collect(sectionsDoc.sections);
+    collect(photosDoc.photos);
+
+    assertBilingualText(home.heading, 'supporting.home.heading', 5);
+    assertBilingualText(home.welcome, 'supporting.home.welcome', 60);
+    expect(Object.keys(home.cards).sort()).toEqual(['gallery', 'launch', 'mission', 'why-it-matters']);
+    for (const [name, card] of Object.entries(home.cards)) assertBilingualText(card, `supporting.home.cards.${name}`, 40);
+    expect(photosDoc.photos.some((photo) => JSON.stringify(photo).includes(home.featuredPhotoId)), 'featuredPhotoId names one of the 33 photos (its NASA id appears in the photo record)').toBe(true);
+
+    expect(Object.keys(chapters)).toEqual([...chapterIds]);
+    chapterIds.forEach((id, index) => {
+      expect(chapters[id].order, `supporting.chapters.${id}.order`).toBe(index + 1);
+      // A short title can be the same word in both languages ("Eclipse"), so only its presence is checked.
+      const title = bilingual.safeParse(chapters[id].title);
+      expect(title.success, `supporting.chapters.${id}.title must have non-empty es and en strings`).toBe(true);
+      assertBilingualText(chapters[id].summary, `supporting.chapters.${id}.summary`, 80);
+    });
+
+    // Every text has a reference: sourced facts that exist, or the file it is derived from. Nothing is left unreferenced.
+    const texts = ['home.welcome', ...Object.keys(home.cards).map((name) => `home.cards.${name}`), ...chapterIds.map((id) => `chapters.${id}.summary`)];
+    expect(Object.keys(references).sort()).toEqual([...texts].sort());
+    for (const key of texts) {
+      const ref = references[key]!;
+      expect(Boolean(ref.facts?.length) !== Boolean(ref.derivedFrom?.length), `${key} has facts or derivedFrom, not both and not neither`).toBe(true);
+      for (const id of ref.facts ?? []) expect(ids.has(id), `${key} references the unknown or unsourced fact "${id}"`).toBe(true);
+      expect(new Set(ref.facts ?? []).size, `${key} has no duplicate fact ids`).toBe((ref.facts ?? []).length);
+      for (const file of ref.derivedFrom ?? []) expect(file).toBe('docs/content-review/photos.yaml');
+    }
+    // The gallery card states a count that photos.yaml proves.
+    expect(photosDoc.photos).toHaveLength(33);
+    expect(new Set(photosDoc.photos.map((photo) => photo.chapter))).toEqual(new Set(chapterIds));
   });
 
   test('AC-2 CONT-04 CONT-05 all 33 curated photos have bilingual title, caption, alt text, and sourced facts', () => {

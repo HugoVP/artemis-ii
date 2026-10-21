@@ -120,6 +120,9 @@ jobs:
           # api-key: a model key from the secret named by the registry. federation: no static key (claude-print only).
           AUTH=$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).auth" "$RUNNER_TEMP/plan.json")
           if [ "$RUNNER" = opencode-run ]; then node scripts/opencode-runner.ts validate "$OPENCODE_MODEL"; fi
+          # OPENCODE_MODEL carries the registry's model for every runner that has one; Copilot needs an explicit id.
+          if [ "$RUNNER" = copilot-cli ]; then node scripts/copilot-runner.ts validate "$OPENCODE_MODEL"; fi
+          if [ "$RUNNER" = antigravity-cli ]; then node scripts/antigravity-runner.ts validate "$OPENCODE_MODEL"; fi
           {
             echo "stage=$STAGE"
             echo "agent=$AGENT"
@@ -376,6 +379,16 @@ jobs:
               ;;
             opencode-run)
               OPENCODE_API_KEY="$KEY" node /opt/artemis/opencode-runner.ts run "$KICKOFF All code must be TypeScript with erasable syntax; do not create JavaScript files."
+              ;;
+            copilot-cli)
+              # The key is a fine-grained PAT with only "Copilot Requests": no repository permission. The launcher runs
+              # the pinned CLI headless, with GitHub's built-in MCP servers off and an explicit allow/deny tool list.
+              COPILOT_GITHUB_TOKEN="$KEY" COPILOT_MODEL="$OPENCODE_MODEL" node /opt/artemis/copilot-runner.ts run "$KICKOFF All code must be TypeScript with erasable syntax; do not create JavaScript files."
+              ;;
+            antigravity-cli)
+              # The key is a Gemini API key; the launcher writes settings.json with modelProvider "gemini" in a throwaway
+              # home, runs the pinned CLI in accept-edits mode with an explicit command allowlist, and prints no transcript.
+              GEMINI_API_KEY="$KEY" ANTIGRAVITY_MODEL="$OPENCODE_MODEL" node /opt/artemis/antigravity-runner.ts run "$KICKOFF All code must be TypeScript with erasable syntax; do not create JavaScript files."
               ;;
             *)
               echo "Unknown runner '$RUNNER'."; exit 1 ;;

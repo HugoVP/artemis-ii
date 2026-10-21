@@ -42,6 +42,13 @@ FROM tools AS agent-runner
 ARG CODEX_VERSION=0.163.0
 ARG CLAUDE_CODE_VERSION=2.1.302
 ARG OPENCODE_VERSION=1.19.3
+# The npm package is a loader; it pins the native binary as @github/copilot-linux-x64 at the same version.
+ARG COPILOT_VERSION=1.0.92
+# Antigravity CLI is a single binary outside npm. Google's install script follows a "latest" manifest; the image instead
+# fetches this exact build and checks the sha512 that Google's manifest published for it on 2026-10-20.
+ARG AGY_VERSION=1.4.3
+ARG AGY_URL=https://storage.googleapis.com/antigravity-public/antigravity-cli/1.4.3-4577820882632704/linux-x64/cli_linux_x64.tar.gz
+ARG AGY_SHA512=9b726b86280a56e8ffa84b3b3a1c00d19972833a1f6c0b21d85c5fc6e408af6492e4c61353cad9b500bee599af264c92cfc2ead1f5048ab9525328e1e4199c40
 # bubblewrap and socat: the sandbox that Claude Code uses for shell commands on Linux.
 # Codex uses the system CA store for its OpenAI HTTPS and WebSocket connections; the slim base
 # removes ca-certificates after building Node, so the agent image must install it explicitly.
@@ -49,9 +56,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap soca
  && test -s /etc/ssl/certs/ca-certificates.crt \
  && rm -rf /var/lib/apt/lists/*
 RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION} @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} opencode-ai@${OPENCODE_VERSION} \
- && test "$(opencode --version)" = "${OPENCODE_VERSION}"
-# Root-owned launcher from the reviewed image; the agent cannot edit it or see runner folders.
+    @github/copilot@${COPILOT_VERSION} \
+ && test "$(opencode --version)" = "${OPENCODE_VERSION}" \
+ && CI=true copilot --version | grep -qx "GitHub Copilot CLI ${COPILOT_VERSION}\."
+# Root-owned launchers from the reviewed image; the agent cannot edit them or see runner folders.
 COPY scripts/opencode-runner.ts /opt/artemis/opencode-runner.ts
+COPY scripts/copilot-runner.ts /opt/artemis/copilot-runner.ts
+# Node downloads (the slim base has no curl), sha512sum checks, and the root-owned binary is exposed as `agy`. The hash of
+# the extracted binary is recorded so the next step can prove it was not replaced.
+RUN node -e 'fetch(process.argv[1]).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); }).then(b => require("fs").writeFileSync("/tmp/agy.tar.gz", Buffer.from(b)))' "$AGY_URL" \
+ && echo "$AGY_SHA512  /tmp/agy.tar.gz" | sha512sum -c - \
+ && mkdir -p /opt/agy && tar --no-same-owner -xzf /tmp/agy.tar.gz -C /opt/agy && rm /tmp/agy.tar.gz \
+ && chmod 0755 /opt/agy/antigravity \
+ && test "$(stat -c %U /opt/agy/antigravity)" = root \
+ && ln -s /opt/agy/antigravity /usr/local/bin/agy \
+ && sha512sum /opt/agy/antigravity > /opt/agy/antigravity.sha512
+# The CLI starts a background updater that cannot be turned off (checked on 1.4.3). Without network it cannot fetch a
+# newer build while the image is built; the version check runs in a throwaway home and the binary hash is checked again.
+RUN --network=none test "$(HOME=$(mktemp -d) CI=true agy --version)" = "${AGY_VERSION}" \
+ && sha512sum -c /opt/agy/antigravity.sha512
+COPY scripts/antigravity-runner.ts /opt/artemis/antigravity-runner.ts
 
 # Static build. MEDIA_BASE_URL defaults to the preview layout (media served from /media).
 FROM deps AS build

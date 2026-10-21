@@ -57,7 +57,7 @@ test("rotation excludes the previous leader, and cost then registry order break 
   const r = recommend({ stages, stageNumber: "06", agents: team, leaders: new Map([["04", "alpha"]]) });
   assert.equal(r.previousLeader, "alpha");
   assert.equal(r.leader?.id, "beta");
-  assert.deepEqual(r.alternatives.map(c => c.id), ["gamma", "delta"]);
+  assert.deepEqual(r.alternatives.map(c => c.id), ["delta", "gamma"]);
   assert.ok(r.excluded.some(e => e.id === "alpha" && /previous stage/.test(e.reason)));
   assert.ok(r.excluded.some(e => e.id === "omega" && /not active/.test(e.reason)));
 });
@@ -142,4 +142,23 @@ test("ORC-04: the local history comes from this repository's main, not from the 
   } finally { rmSync(dir, { recursive: true, force: true }); }
   const empty = mkdtempSync(join(tmpdir(), "orc-nogit-"));
   try { assert.equal(readLocalHistory(empty), null); } finally { rmSync(empty, { recursive: true, force: true }); }
+});
+
+test("ORC-07: an eligible agent that has never led comes before one that has, whatever the score", () => {
+  // beta led Stage 02 and scores higher (subscription); gamma never led, so gamma is recommended.
+  const r = recommend({ stages, stageNumber: "06", agents: team, leaders: new Map([["02", "beta"], ["04", "alpha"]]) });
+  assert.equal(r.leader?.id, "gamma");
+  assert.ok(r.leader!.score < r.alternatives.find(c => c.id === "beta")!.score);
+  assert.match(formatRecommendation(r), /`gamma` \([^)]*has not led a stage yet\)/);
+  // Once everyone eligible has led, the score decides again.
+  const later = recommend({ stages, stageNumber: "06", agents: team, leaders: new Map([["02", "beta"], ["03", "gamma"], ["04", "alpha"]]) });
+  assert.equal(later.leader?.id, "beta");
+});
+
+test("ORC-07: a lead-small agent comes first among the alternatives, even behind a full leader that has already led", () => {
+  // beta led Stage 02, gamma never led (recommended); delta is lead-small and never led, so it is listed before beta.
+  const r = recommend({ stages, stageNumber: "06", agents: team, leaders: new Map([["02", "beta"], ["04", "alpha"]]) });
+  assert.equal(r.leader?.id, "gamma");
+  assert.deepEqual(r.alternatives.map(c => c.id), ["delta", "beta"]);
+  assert.notEqual(r.leader?.id, "delta");
 });

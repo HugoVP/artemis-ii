@@ -21,7 +21,8 @@ test('CPL-01: Copilot is registered without Figma and the image pins its CLI and
   assert.equal(agent.runner, 'copilot-cli');
   assert.equal(agent.key_secret, 'AGENT_KEY_COPILOT');
   assert.deepEqual(missingCapabilities(['git', 'node', 'browser', 'web'], agent.capabilities), []);
-  assert.deepEqual(missingCapabilities(['figma-read'], agent.capabilities), ['figma-read']);
+  assert.deepEqual(missingCapabilities(['figma-read'], agent.capabilities), []);
+  assert.deepEqual(missingCapabilities(['figma-write'], agent.capabilities), ['figma-write']);
   const dockerfile = await read('Dockerfile');
   assert.ok(dockerfile.includes(`ARG COPILOT_VERSION=${COPILOT_VERSION}`));
   assert.ok(dockerfile.includes('@github/copilot@${COPILOT_VERSION}'));
@@ -64,4 +65,11 @@ test('CPL-03: the Copilot smoke proposal uses the action pins installed on main'
   const installed = [...(await read('.github/workflows/opencode-smoke.yml')).matchAll(/uses: (\S+)/g)].map(match => match[1]);
   const proposed = [...(await read('docs/agents/workflows/copilot-smoke.yml')).matchAll(/uses: (\S+)/g)].map(match => match[1]);
   assert.deepEqual(proposed, installed);
+});
+
+test('CPL-02: the setup guide sets the model with its family and activates the agent only after a passing smoke', async () => {
+  const guide = await read('docs/agents/copilot.md');
+  assert.match(guide, /`model: <id>` and `family: <vendor of that model>`/);
+  assert.match(guide, /Leave `status: pending`/);
+  assert.match(guide, /\*\*Activate it\*\* after a passing smoke: set `status: active`/);
 });

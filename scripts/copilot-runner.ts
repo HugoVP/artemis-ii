@@ -1,7 +1,7 @@
 // Root-owned launcher for GitHub Copilot CLI in the digest-pinned image; no project dependencies or credential files.
 // Contract: docs/specs/copilot-runner.md. Flags were checked against `copilot --help` of the pinned version.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,6 +26,13 @@ export const REVIEW_ALLOWED_TOOLS = [
 ];
 export const REVIEW_DENIED_TOOLS = [...DENIED_TOOLS, 'shell(npm:*)', 'shell(npx:*)', 'shell(node:*)'];
 export type Mode = 'build' | 'review';
+// Figma read access (figma-read stages), only through the pipeline's gateway, which holds the token and enforces the
+// same list; the same read tools as the Codex and Claude Code branches of agent-run.yml. No write tool: no figma-write.
+export const FIGMA_GATEWAY = 'http://figma-gateway:8787/mcp';
+export const FIGMA_READ_TOOLS = ['get_metadata', 'get_screenshot', 'get_variable_defs', 'get_design_context'];
+export function figmaMcpConfig() {
+  return { mcpServers: { figma: { type: 'http', url: FIGMA_GATEWAY, tools: FIGMA_READ_TOOLS } } };
+}
 // The npm registry and the NASA domains of docs/SETUP.md, as for the other agents.
 export const ALLOWED_URLS = [
   'registry.npmjs.org', 'eol.jsc.nasa.gov', 'pds-imaging.jpl.nasa.gov', 'www.nasa.gov',
@@ -40,8 +47,9 @@ export function validateCopilotModel(value: unknown): string {
   return value;
 }
 
-export function copilotArgs(model: string, prompt: string, mode: Mode = 'build'): string[] {
+export function copilotArgs(model: string, prompt: string, mode: Mode = 'build', figma = false): string[] {
   const review = mode === 'review';
+  if (review && figma) throw new Error('A review has no Figma access.');
   return [
     '-p', prompt,
     '--model', validateCopilotModel(model),
@@ -53,13 +61,16 @@ export function copilotArgs(model: string, prompt: string, mode: Mode = 'build')
     ...(review ? REVIEW_ALLOWED_TOOLS : ALLOWED_TOOLS).map(tool => `--allow-tool=${tool}`),
     ...(review ? REVIEW_DENIED_TOOLS : DENIED_TOOLS).map(tool => `--deny-tool=${tool}`),
     ...(review ? [] : ALLOWED_URLS).map(url => `--allow-url=${url}`),
+    ...(figma ? FIGMA_READ_TOOLS.map(tool => `--allow-tool=figma(${tool})`) : []),
   ];
 }
 
 export async function runCopilot(prompt: string, env: NodeJS.ProcessEnv = process.env, binary = 'copilot', mode: Mode = 'build'): Promise<void> {
   const model = validateCopilotModel(env.COPILOT_MODEL);
   if (!env.COPILOT_GITHUB_TOKEN) throw new Error('AGENT_KEY_COPILOT is missing from the agents environment.');
-  if (env.FIGMA !== 'none') throw new Error('Copilot is not qualified for Figma stages.');
+  // figma-read stages only: the registry gives Copilot no figma-write, and a review never gets Figma.
+  if (env.FIGMA !== 'none' && !(env.FIGMA === 'read' && mode === 'build')) throw new Error('Copilot is qualified only for Figma read stages, and reviews get no Figma.');
+  const figma = env.FIGMA === 'read';
   if (!env.HOME) throw new Error('The isolated agent HOME is required.');
   const state = await mkdtemp(join(env.HOME, 'copilot-state-'));
   try {
@@ -70,12 +81,18 @@ export async function runCopilot(prompt: string, env: NodeJS.ProcessEnv = proces
       PLAYWRIGHT_BROWSERS_PATH: env.PLAYWRIGHT_BROWSERS_PATH,
       COPILOT_HOME: state, COPILOT_AUTO_UPDATE: 'false',
     };
+    // The gateway requires the design file's key in every call, and agent-run.yml gives the agent that file's URL (not a
+    // secret) in FIGMA_FILE_URL: forward it on a Figma read build, so the CLI targets the configured file and not whatever
+    // a checked-in link says.
+    if (figma && env.FIGMA_FILE_URL) childEnv.FIGMA_FILE_URL = env.FIGMA_FILE_URL;
+    // The user MCP configuration lives in COPILOT_HOME (format written by `copilot mcp add --transport http --tools`).
+    if (figma) await writeFile(join(state, 'mcp-config.json'), JSON.stringify(figmaMcpConfig()), { mode: 0o600 });
     const version = spawnSync(binary, ['--version'], { env: childEnv, encoding: 'utf8', timeout: 30_000 });
     if (version.status !== 0 || !version.stdout.includes(`GitHub Copilot CLI ${COPILOT_VERSION}.`)) {
       throw new Error(`The runner image must contain Copilot CLI ${COPILOT_VERSION}; rebuild it before running.`);
     }
     childEnv.COPILOT_GITHUB_TOKEN = env.COPILOT_GITHUB_TOKEN;
-    const child = spawn(binary, copilotArgs(model, prompt, mode), { env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(binary, copilotArgs(model, prompt, mode, figma), { env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
     // The transcript and provider messages can hold private data; only a short, redacted error line is kept, from either
     // stream. Chunks are not lines: an "Error:" or the token may be split across two of them, so each stream has its own
     // buffer, only complete lines are scanned, and they are redacted before they are cut: no prefix of the token survives.

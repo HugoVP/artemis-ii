@@ -48,7 +48,7 @@
   runner: copilot-cli
   # model: <explicit id>           # Hugo picks it from `/model` in his own Copilot CLI; runs stop until it is set
   # family: <vendor of that model> # set together with the model
-  capabilities: [git, node, browser, web]
+  capabilities: [git, node, browser, web, figma-read]   # Figma read through the gateway; to verify on its first figma-read stage
   status: pending                  # becomes active after the model is set and the Copilot smoke passes
   roles: [lead, review]
   cost: subscription
@@ -61,7 +61,7 @@
   model: gemini-4-argon-medium     # chosen by Hugo 2026-10-20 from `agy models`; the suffix is the reasoning level
   # Plan B (Hugo, 2026-10-20): gemini-3.8-flash-high. Not automatic: if Argon is refused or too costly, switch this line in a
   # reviewed PR and run the smoke again. No silent fallback between models.
-  capabilities: [git, node, browser, web]
+  capabilities: [git, node, browser, web, figma-read]   # Figma read through the gateway; to verify on its first figma-read stage
   status: pending                  # becomes active after the model is set and the Antigravity smoke passes
   roles: [lead, review]
   family: google                   # every model reachable with a Gemini API key is a Gemini model

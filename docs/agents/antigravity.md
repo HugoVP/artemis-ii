@@ -1,6 +1,6 @@
 # Google Antigravity CLI in the remote agent pipeline
 
-Google's Antigravity CLI (`agy`) is a selectable Phase 2 builder and a Phase 3a reviewer, with Gemini models through a Gemini API key. It runs inside the same unprivileged container as the other agents, so its result goes through the same scan, protected-path check and trusted publisher. It registers `git`, `node`, `browser` and `web`, the model family `google`, and no Figma. Contract: [`docs/specs/antigravity-runner.md`](../specs/antigravity-runner.md).
+Google's Antigravity CLI (`agy`) is a selectable Phase 2 builder and a Phase 3a reviewer, with Gemini models through a Gemini API key. It runs inside the same unprivileged container as the other agents, so its result goes through the same scan, protected-path check and trusted publisher. It registers `git`, `node`, `browser`, `web` and `figma-read` (through the pipeline's Figma gateway, read tools only; `AGY-08`), the model family `google`, and no `figma-write`. Contract: [`docs/specs/antigravity-runner.md`](../specs/antigravity-runner.md).
 
 Antigravity's IDE, Gemini CLI (replaced by Antigravity CLI on 2026-06-18 for unpaid and Google One users) and Jules (its own PRs, outside the pipeline's checks) are not used in the pipeline. Hugo can still use the IDE on his machine as a vendor environment, like any other agent.
 

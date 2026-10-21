@@ -25,7 +25,9 @@ test('AGY-03: build and review arguments and settings use the Gemini API key and
     assert.ok(!args.some(arg => /dangerously|--sandbox|--remote-control|--continue|--conversation|--project|--new-project|--mode=auto|^auto$/.test(arg)));
   }
   assert.equal(antigravitySettings('build').modelProvider, 'gemini');
-  assert.deepEqual(antigravitySettings('build').permission.allow, BUILD_ALLOW);
+  assert.deepEqual(antigravitySettings('build').permission.allow.slice(0, BUILD_ALLOW.length), BUILD_ALLOW);
+  assert.ok(antigravitySettings('build').permission.allow.includes('read_url(images-api.nasa.gov)'));
+  assert.ok(!antigravitySettings('build').permission.allow.some(rule => rule.startsWith('mcp(')));
   assert.deepEqual(antigravitySettings('review').permission.allow, REVIEW_ALLOW);
   assert.ok(!REVIEW_ALLOW.some(rule => /npm|npx|node|mkdir/.test(rule)));
   assert.ok(![...BUILD_ALLOW, ...REVIEW_ALLOW].some(rule => /push|commit|config|rm|curl|wget|gh\b|^command\(\)$|\*/.test(rule)));
@@ -91,7 +93,8 @@ for (const [name, body, expected] of [
 test('AGY-02/03: refuse a missing key, a Figma stage or the wrong CLI version before the run', async () => {
   const env = { HOME: '/unused', FIGMA: 'none', ANTIGRAVITY_MODEL: 'example-model' };
   await assert.rejects(runAntigravity('Prompt', env, '/must-not-exist'), /missing/);
-  await assert.rejects(runAntigravity('Prompt', { ...env, GEMINI_API_KEY: 'fixture-only', FIGMA: 'read' }, '/must-not-exist'), /Figma/);
+  await assert.rejects(runAntigravity('Prompt', { ...env, GEMINI_API_KEY: 'fixture-only', FIGMA: 'write' }, '/must-not-exist'), /Figma read/);
+  await assert.rejects(runAntigravity('Prompt', { ...env, GEMINI_API_KEY: 'fixture-only', FIGMA: 'read' }, '/must-not-exist', 'review'), /reviews get no Figma/);
   const local = await fixture('process.exit(0);');
   try {
     await writeFile(local.binary, `#!/usr/bin/env node\nconsole.log('0.0.1');\n`, { mode: 0o700 });
@@ -152,6 +155,35 @@ test('AGY-02: the registry model must be in the pinned CLI catalog, which needs 
     await assert.rejects(checkModel('gemini-z-high', local.env, local.binary), /not in the model catalog/);
     await assert.rejects(checkModel('auto', local.env, local.binary), /explicit Antigravity model/);
   } finally { console.log = originalLog; await rm(local.root, { recursive: true, force: true }); }
+});
+
+test('AGY-08: a figma-read build gets the gateway, only the read tools of agent-run.yml, and nothing else', async () => {
+  const { figmaMcpConfig, FIGMA_READ_TOOLS, FIGMA_GATEWAY } = await import('./antigravity-runner.ts');
+  const workflow = await readFile(new URL('../docs/agents/workflows/agent-run.yml', import.meta.url), 'utf8');
+  assert.deepEqual(FIGMA_READ_TOOLS, /TOOLS=\((get_metadata[^)]*)\)/.exec(workflow)![1].split(' '));
+  assert.equal(FIGMA_GATEWAY, /GATEWAY="([^"]+)"/.exec(workflow)![1]);
+  assert.deepEqual(figmaMcpConfig(), { mcpServers: { figma: { disabled: false, serverUrl: FIGMA_GATEWAY } } });
+  const allow = antigravitySettings('build', true).permission.allow;
+  assert.deepEqual(allow.filter(rule => rule.startsWith('mcp(')), FIGMA_READ_TOOLS.map(tool => `mcp(figma/${tool})`));
+  assert.ok(!allow.some(rule => /use_figma|mcp\(\*\)|mcp\(figma\/\*\)/.test(rule)));
+  assert.throws(() => antigravitySettings('review', true), /no Figma/);
+  const local = await fixture(`
+    const config = JSON.parse(fs.readFileSync(process.env.HOME + '/.gemini/config/mcp_config.json', 'utf8'));
+    const settings = JSON.parse(fs.readFileSync(process.env.HOME + '/.gemini/antigravity-cli/settings.json', 'utf8'));
+    if (config.mcpServers.figma.serverUrl !== '${FIGMA_GATEWAY}' || !settings.permission.allow.includes('mcp(figma/get_metadata)')) process.exit(3);
+  `);
+  try { await runAntigravity('Prompt', { ...local.env, FIGMA: 'read' }, local.binary); }
+  finally { await rm(local.root, { recursive: true, force: true }); }
+});
+
+test('AGY-08: the design file URL reaches the CLI only on a figma-read build', async () => {
+  const URL_ = 'https://www.figma.com/design/FILEKEY/Artemis';
+  const withUrl = await fixture(`if (process.env.FIGMA_FILE_URL !== '${URL_}') process.exit(3);`);
+  const without = await fixture(`if (process.env.FIGMA_FILE_URL !== undefined) process.exit(3);`);
+  try {
+    await runAntigravity('Prompt', { ...withUrl.env, FIGMA: 'read', FIGMA_FILE_URL: URL_ }, withUrl.binary);
+    await runAntigravity('Prompt', { ...without.env, FIGMA: 'none', FIGMA_FILE_URL: URL_ }, without.binary);
+  } finally { await rm(withUrl.root, { recursive: true, force: true }); await rm(without.root, { recursive: true, force: true }); }
 });
 
 for (const mode of ['build', 'review'] as const) {

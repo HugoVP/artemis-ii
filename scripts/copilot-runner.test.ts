@@ -87,10 +87,40 @@ test('CPL-05: an error line on stdout fails a zero-exit run, split across chunks
 test('CPL-02/03: refuse a missing key, a Figma stage or the wrong CLI version before the run', async () => {
   const env = { HOME: '/unused', FIGMA: 'none', COPILOT_MODEL: 'example-model' };
   await assert.rejects(runCopilot('Prompt', env, '/must-not-exist'), /missing/);
-  await assert.rejects(runCopilot('Prompt', { ...env, COPILOT_GITHUB_TOKEN: 'fixture-only', FIGMA: 'read' }, '/must-not-exist'), /Figma/);
+  await assert.rejects(runCopilot('Prompt', { ...env, COPILOT_GITHUB_TOKEN: 'fixture-only', FIGMA: 'write' }, '/must-not-exist'), /Figma read/);
+  await assert.rejects(runCopilot('Prompt', { ...env, COPILOT_GITHUB_TOKEN: 'fixture-only', FIGMA: 'read' }, '/must-not-exist', 'review'), /reviews get no Figma/);
   const local = await fixture('process.exit(0);');
   try {
     await writeFile(local.binary, `#!/usr/bin/env node\nconsole.log('GitHub Copilot CLI 0.0.1.');\n`, { mode: 0o700 });
     await assert.rejects(runCopilot('Prompt', local.env, local.binary), /must contain Copilot CLI/);
   } finally { await rm(local.root, { recursive: true, force: true }); }
+});
+
+test('CPL-07: a figma-read build gets the gateway, only the read tools of agent-run.yml, and nothing else', async () => {
+  const { figmaMcpConfig, FIGMA_READ_TOOLS, FIGMA_GATEWAY } = await import('./copilot-runner.ts');
+  const workflow = await (await import('node:fs/promises')).readFile(new URL('../docs/agents/workflows/agent-run.yml', import.meta.url), 'utf8');
+  assert.deepEqual(FIGMA_READ_TOOLS, /TOOLS=\((get_metadata[^)]*)\)/.exec(workflow)![1].split(' '));
+  assert.equal(FIGMA_GATEWAY, /GATEWAY="([^"]+)"/.exec(workflow)![1]);
+  assert.deepEqual(figmaMcpConfig(), { mcpServers: { figma: { type: 'http', url: FIGMA_GATEWAY, tools: FIGMA_READ_TOOLS } } });
+  const args = copilotArgs('example-model', 'Prompt', 'build', true);
+  assert.deepEqual(args.filter(arg => arg.startsWith('--allow-tool=figma(')), FIGMA_READ_TOOLS.map(tool => `--allow-tool=figma(${tool})`));
+  assert.ok(!args.some(arg => /use_figma|figma\(\)/.test(arg)));
+  assert.ok(!copilotArgs('example-model', 'Prompt', 'build').some(arg => arg.includes('figma(')));
+  assert.throws(() => copilotArgs('example-model', 'Prompt', 'review', true), /no Figma/);
+  const local = await fixture(`
+    const config = JSON.parse(require('fs').readFileSync(process.env.COPILOT_HOME + '/mcp-config.json', 'utf8'));
+    if (config.mcpServers.figma.url !== '${FIGMA_GATEWAY}' || !process.argv.includes('--allow-tool=figma(get_metadata)')) process.exit(3);
+  `);
+  try { await runCopilot('Prompt', { ...local.env, FIGMA: 'read' }, local.binary); }
+  finally { await rm(local.root, { recursive: true, force: true }); }
+});
+
+test('CPL-07: the design file URL reaches the CLI only on a figma-read build', async () => {
+  const URL_ = 'https://www.figma.com/design/FILEKEY/Artemis';
+  const withUrl = await fixture(`if (process.env.FIGMA_FILE_URL !== '${URL_}') process.exit(3);`);
+  const without = await fixture(`if (process.env.FIGMA_FILE_URL !== undefined) process.exit(3);`);
+  try {
+    await runCopilot('Prompt', { ...withUrl.env, FIGMA: 'read', FIGMA_FILE_URL: URL_ }, withUrl.binary);
+    await runCopilot('Prompt', { ...without.env, FIGMA: 'none', FIGMA_FILE_URL: URL_ }, without.binary);
+  } finally { await rm(withUrl.root, { recursive: true, force: true }); await rm(without.root, { recursive: true, force: true }); }
 });

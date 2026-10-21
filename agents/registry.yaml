@@ -58,9 +58,7 @@
   provider: google
   key_secret: AGENT_KEY_ANTIGRAVITY  # Gemini API key from Google AI Studio, in a project with a spend cap; see docs/agents/antigravity.md
   runner: antigravity-cli
-  model: gemini-4-argon-medium     # chosen by Hugo 2026-10-20 from `agy models`; the suffix is the reasoning level
-  # Plan B (Hugo, 2026-10-20): gemini-3.8-flash-high. Not automatic: if Argon is refused or too costly, switch this line in a
-  # reviewed PR and run the smoke again. No silent fallback between models.
+  model: gemini-3.8-flash-high     # Plan B (Hugo, 2026-10-20): switched after Argon smoke failure
   capabilities: [git, node, browser, web, figma-read]   # Figma read through the gateway; to verify on its first figma-read stage
   status: pending                  # becomes active after the model is set and the Antigravity smoke passes
   roles: [lead, review]

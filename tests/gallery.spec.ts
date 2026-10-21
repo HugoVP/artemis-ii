@@ -82,3 +82,27 @@ test.describe('LEGAL-01 every photo shown in the gallery has a credit linked to 
     });
   }
 });
+
+test.describe('LEGAL-01 the linked credit is visible, not only present, in every view and language', () => {
+  for (const lang of ['es', 'en'] as const) {
+    for (const view of ['mosaic', 'gallery', 'immersive'] as const) {
+      test(`LEGAL-01 ${lang} ${view}: every card shows its credit link`, async ({ page }) => {
+        await page.addInitScript((v) => localStorage.setItem('artemis-view', v), view);
+        for (const slug of Object.values(chapters[lang])) {
+          await page.goto(`/${lang}/${lang === 'es' ? 'galeria' : 'gallery'}/${slug}/`);
+          await expect(page.locator('html')).toHaveAttribute('data-view', view);
+          const credits = page.locator('[data-testid="photo-grid"] .photo-card a[data-credit]');
+          const count = await credits.count();
+          for (let i = 0; i < count; i++) {
+            const link = credits.nth(i);
+            await expect(link).toBeVisible();
+            await expect(link).toHaveText(lang === 'es' ? 'Crédito: NASA' : 'Credit: NASA');
+            const box = await link.boundingBox();
+            expect(box!.width).toBeGreaterThan(0);
+            expect(box!.height).toBeGreaterThan(0);
+          }
+        }
+      });
+    }
+  }
+});

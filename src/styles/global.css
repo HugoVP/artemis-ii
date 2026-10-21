@@ -115,13 +115,14 @@
   .photo-card-image { display: block; width: 100%; height: auto; border-radius: var(--radius-sm); background: var(--color-surface); }
   .photo-card-title { font-family: var(--font-display); font-weight: 600; }
   .photo-card-caption { margin: 0; color: var(--color-text-muted); font-size: var(--text-label); }
-  .photo-card-credit { color: var(--color-text-muted); font-size: var(--text-caption); }
+  .photo-card-credit { color: var(--color-text-muted); font-size: var(--text-caption); justify-self: start; }
 
-  /* Mosaic: dense square thumbnails, text hidden visually but kept for assistive technology. */
+  /* Mosaic: dense square thumbnails. Title hidden visually but kept for assistive technology, caption hidden; the linked
+     credit stays visible in every view (LEGAL-01). */
   :root[data-view='mosaic'] .photo-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
   :root[data-view='mosaic'] .photo-card-image { aspect-ratio: 1 / 1; object-fit: cover; }
   :root[data-view='mosaic'] .photo-card-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  :root[data-view='mosaic'] .photo-card-caption, :root[data-view='mosaic'] .photo-card-credit { display: none; }
+  :root[data-view='mosaic'] .photo-card-caption { display: none; }
 
   /* Gallery: cards with title, caption and credit. */
   :root[data-view='gallery'] .photo-grid { grid-template-columns: 1fr; }

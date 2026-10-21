@@ -25,10 +25,10 @@ test('AGY-03: build and review arguments and settings use the Gemini API key and
     assert.ok(!args.some(arg => /dangerously|--sandbox|--remote-control|--continue|--conversation|--project|--new-project|--mode=auto|^auto$/.test(arg)));
   }
   assert.equal(antigravitySettings('build').modelProvider, 'gemini');
-  assert.deepEqual(antigravitySettings('build').permission.allow.slice(0, BUILD_ALLOW.length), BUILD_ALLOW);
-  assert.ok(antigravitySettings('build').permission.allow.includes('read_url(images-api.nasa.gov)'));
-  assert.ok(!antigravitySettings('build').permission.allow.some(rule => rule.startsWith('mcp(')));
-  assert.deepEqual(antigravitySettings('review').permission.allow, REVIEW_ALLOW);
+  assert.deepEqual(antigravitySettings('build').permissions.allow.slice(0, BUILD_ALLOW.length), BUILD_ALLOW);
+  assert.ok(antigravitySettings('build').permissions.allow.includes('read_url(images-api.nasa.gov)'));
+  assert.ok(!antigravitySettings('build').permissions.allow.some(rule => rule.startsWith('mcp(')));
+  assert.deepEqual(antigravitySettings('review').permissions.allow, REVIEW_ALLOW);
   assert.ok(!REVIEW_ALLOW.some(rule => /npm|npx|node|mkdir/.test(rule)));
   assert.ok(![...BUILD_ALLOW, ...REVIEW_ALLOW].some(rule => /push|commit|config|rm|curl|wget|gh\b|^command\(\)$|\*/.test(rule)));
 });
@@ -63,7 +63,7 @@ test('AGY-06: review mode runs in plan mode and the launcher writes the printed 
   const local = await fixture(`
     if (!process.argv.includes('plan')) process.exit(3);
     const settings = JSON.parse(fs.readFileSync(process.env.HOME + '/.gemini/antigravity-cli/settings.json', 'utf8'));
-    if (settings.permission.allow.some(rule => rule.includes('npm'))) process.exit(4);
+    if (settings.permissions.allow.some(rule => rule.includes('npm'))) process.exit(4);
     console.log('No blocking findings. fixture-only');
     console.log('<!-- agent-review: {"verdict": "pass", "findings": 0} -->');
   `);
@@ -163,14 +163,14 @@ test('AGY-08: a figma-read build gets the gateway, only the read tools of agent-
   assert.deepEqual(FIGMA_READ_TOOLS, /TOOLS=\((get_metadata[^)]*)\)/.exec(workflow)![1].split(' '));
   assert.equal(FIGMA_GATEWAY, /GATEWAY="([^"]+)"/.exec(workflow)![1]);
   assert.deepEqual(figmaMcpConfig(), { mcpServers: { figma: { disabled: false, serverUrl: FIGMA_GATEWAY } } });
-  const allow = antigravitySettings('build', true).permission.allow;
+  const allow = antigravitySettings('build', true).permissions.allow;
   assert.deepEqual(allow.filter(rule => rule.startsWith('mcp(')), FIGMA_READ_TOOLS.map(tool => `mcp(figma/${tool})`));
   assert.ok(!allow.some(rule => /use_figma|mcp\(\*\)|mcp\(figma\/\*\)/.test(rule)));
   assert.throws(() => antigravitySettings('review', true), /no Figma/);
   const local = await fixture(`
     const config = JSON.parse(fs.readFileSync(process.env.HOME + '/.gemini/config/mcp_config.json', 'utf8'));
     const settings = JSON.parse(fs.readFileSync(process.env.HOME + '/.gemini/antigravity-cli/settings.json', 'utf8'));
-    if (config.mcpServers.figma.serverUrl !== '${FIGMA_GATEWAY}' || !settings.permission.allow.includes('mcp(figma/get_metadata)')) process.exit(3);
+    if (config.mcpServers.figma.serverUrl !== '${FIGMA_GATEWAY}' || !settings.permissions.allow.includes('mcp(figma/get_metadata)')) process.exit(3);
   `);
   try { await runAntigravity('Prompt', { ...local.env, FIGMA: 'read' }, local.binary); }
   finally { await rm(local.root, { recursive: true, force: true }); }

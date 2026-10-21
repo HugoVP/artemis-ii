@@ -12,7 +12,7 @@ export const AGY_VERSION = '1.4.3';
 export const AGY_BINARY = '/opt/agy/antigravity';
 export type Mode = 'build' | 'review';
 
-// Shell commands approved in build mode, in the `permission.allow` form of settings.json (`command(<words>)`); file
+// Shell commands approved in build mode, in the `permissions.allow` form of settings.json (`command(<words>)`); file
 // edits are approved by `--mode accept-edits`. Anything else is not approved, and in print mode an action that is not
 // approved is denied without failing the run.
 export const BUILD_ALLOW = [
@@ -52,7 +52,7 @@ export function antigravitySettings(mode: Mode, figma = false) {
     ...ALLOWED_URLS.map(domain => `read_url(${domain})`),
     ...(figma ? FIGMA_READ_TOOLS.map(tool => `mcp(figma/${tool})`) : []),
   ];
-  return { modelProvider: 'gemini', permission: { allow } };
+  return { modelProvider: 'gemini', permissions: { allow } };
 }
 
 export function antigravityArgs(model: string, prompt: string, mode: Mode, logFile: string): string[] {

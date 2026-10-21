@@ -57,7 +57,7 @@ for (const [density, size, space, width] of [['Compact', '15px', '16px', '880px'
   test(`Stage 04 AC-3 PREF-03 ${density} changes spacing, text and width on every page`, async ({ page }) => {
     await page.goto('/en/'); await open(page); await choice(page, 'Density', density!).click();
     for (const lang of ['es', 'en']) {
-      const slugs = lang === 'es' ? ['', 'despegue/', 'mision/', 'por-que-importa/', 'acerca/', 'galeria/', 'galeria/despegue/', 'galeria/rumbo-a-la-luna/', 'galeria/lado-oculto/', 'galeria/eclipse/', 'galeria/regreso/', 'galeria/despegue/sample-photo-01/'] : ['', 'launch/', 'mission/', 'why-it-matters/', 'about/', 'gallery/', 'gallery/launch/', 'gallery/outbound/', 'gallery/far-side/', 'gallery/eclipse/', 'gallery/return/', 'gallery/launch/sample-photo-01/'];
+      const slugs = lang === 'es' ? ['', 'despegue/', 'mision/', 'por-que-importa/', 'acerca/', 'galeria/', 'galeria/despegue/', 'galeria/rumbo-a-la-luna/', 'galeria/lado-oculto/', 'galeria/eclipse/', 'galeria/regreso/', 'galeria/despegue/KSC-04012026-Artemis_II_Launch-1/'] : ['', 'launch/', 'mission/', 'why-it-matters/', 'about/', 'gallery/', 'gallery/launch/', 'gallery/outbound/', 'gallery/far-side/', 'gallery/eclipse/', 'gallery/return/', 'gallery/launch/KSC-04012026-Artemis_II_Launch-1/'];
       for (const slug of slugs) {
         await page.goto(`/${lang}/${slug}`);
         const actual = await page.evaluate(() => {
@@ -84,7 +84,7 @@ test('Stage 04 AC-4 PREF-04 gallery control is scoped, persistent and independen
     await expect(choice(page, 'View', view)).toHaveAttribute('aria-pressed', 'true');
   }
   await choice(page, 'View', 'Immersive').click();
-  for (const path of ['/en/gallery/launch/', '/en/gallery/launch/sample-photo-01/', '/es/galeria/']) {
+  for (const path of ['/en/gallery/launch/', '/en/gallery/launch/KSC-04012026-Artemis_II_Launch-1/', '/es/galeria/']) {
     await page.goto(path); await open(page);
     await expect(page.locator('html')).toHaveAttribute('data-view', 'immersive');
     await expect(page.locator('html')).toHaveAttribute('data-density', 'spacious');

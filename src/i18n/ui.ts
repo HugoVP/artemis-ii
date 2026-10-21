@@ -18,7 +18,7 @@ type Ui = {
   about: { sources: { title: string; text: string }; credits: { title: string; text: string }; nasa: { title: string; text: string }; ai: { title: string; text: string }; contact: { title: string; button: string } };
   gallery: { intro: string; photoCount: (n: number) => string; none: string; viewPhoto: string };
   chapters: Record<string, string>;
-  photo: { credit: string; original: string; download: string; nasaId: string; date: string; camera: string; tbc: string; back: string };
+  photo: { credit: string; record: string; download: (size: string) => string; downloadExternal: (size: string) => string; nasaId: string; date: string; camera: string; tbc: string; back: string };
   placeholder: string;
   photoPlaceholder: string;
 };
@@ -102,7 +102,7 @@ export const ui: Record<Lang, Ui> = {
       contact: { title: 'Contacto', button: 'Escribir al autor' },
     },
     chapters: { launch: 'El despegue', outbound: 'Rumbo a la Luna', 'far-side': 'Lado oculto', eclipse: 'Eclipse', return: 'Regreso' },
-    photo: { credit: 'Crédito: NASA', original: 'Ver original', download: 'Descargar', nasaId: 'ID de NASA', date: 'Fecha', camera: 'Cámara', tbc: 'Por confirmar', back: 'Volver al capítulo' },
+    photo: { credit: 'Crédito: NASA', record: 'Ver registro en NASA', download: (size) => `Descargar original (${size})`, downloadExternal: (size) => `Descargar original desde NASA (${size}, sitio externo)`, nasaId: 'ID de NASA', date: 'Fecha', camera: 'Cámara', tbc: 'Por confirmar', back: 'Volver al capítulo' },
     placeholder: 'Marcador de posición',
     photoPlaceholder: 'Marcador de posición de foto',
   },
@@ -184,7 +184,7 @@ export const ui: Record<Lang, Ui> = {
       contact: { title: 'Contact', button: 'Write to the author' },
     },
     chapters: { launch: 'Launch', outbound: 'Outbound', 'far-side': 'Far side', eclipse: 'Eclipse', return: 'Return' },
-    photo: { credit: 'Credit: NASA', original: 'View original', download: 'Download', nasaId: 'NASA ID', date: 'Date', camera: 'Camera', tbc: 'To be confirmed', back: 'Back to chapter' },
+    photo: { credit: 'Credit: NASA', record: 'View NASA record', download: (size) => `Download original (${size})`, downloadExternal: (size) => `Download original from NASA (${size}, external site)`, nasaId: 'NASA ID', date: 'Date', camera: 'Camera', tbc: 'To be confirmed', back: 'Back to chapter' },
     placeholder: 'Placeholder',
     photoPlaceholder: 'Photo placeholder',
   },

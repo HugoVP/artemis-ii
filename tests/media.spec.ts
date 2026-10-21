@@ -22,8 +22,8 @@ test.describe('AC-6 media URLs come from MEDIA_BASE_URL (MEDIA-01)', () => {
     const base = (loadEnv('production', process.cwd(), '').MEDIA_BASE_URL || '/media').replace(/\/+$/, '');
     const pages = htmlFiles('dist');
     expect(pages.length).toBeGreaterThan(20);
-    const photoPage = readFileSync('dist/en/gallery/launch/sample-photo-01/index.html', 'utf8');
-    expect(photoPage).toContain(`${base}/photos/sample-photo-01/00000000/original.jpg`);
+    const photoPage = readFileSync('dist/en/gallery/outbound/art002e000192/index.html', 'utf8');
+    expect(photoPage).toContain(`${base}/photos/art002e000192/`);
     for (const file of pages) {
       const html = readFileSync(file, 'utf8');
       // Loaded resources only (src, srcset, stylesheets, preloads); "view original" links may point to NASA.
@@ -31,5 +31,24 @@ test.describe('AC-6 media URLs come from MEDIA_BASE_URL (MEDIA-01)', () => {
       const links = [...html.matchAll(/<link[^>]*\shref="([^"]+)"/g)].map((m) => m[1]);
       for (const url of [...loaded, ...links]) expect(url, file).not.toMatch(/nasa\.gov|nasa\.org/i);
     }
+  });
+});
+
+test.describe('AC-5 gallery images are same-origin with dimensions and alt text (MEDIA-01, QA-02)', () => {
+  test('AC-5 every <img> has width, height and an alt attribute and loads from the media base', () => {
+    const base = (loadEnv('production', process.cwd(), '').MEDIA_BASE_URL || '/media').replace(/\/+$/, '');
+    let images = 0;
+    for (const file of htmlFiles('dist')) {
+      const html = readFileSync(file, 'utf8');
+      for (const [tag] of html.matchAll(/<img\b[^>]*>/g)) {
+        images += 1;
+        expect(tag, file).toMatch(/\swidth="\d+"/);
+        expect(tag, file).toMatch(/\sheight="\d+"/);
+        expect(tag, file).toMatch(/\salt(?:=|\s|>)/);
+        const src = /\ssrc="([^"]+)"/.exec(tag)?.[1] ?? '';
+        expect(src, file).toMatch(new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/photos/`));
+      }
+    }
+    expect(images).toBeGreaterThan(33);
   });
 });

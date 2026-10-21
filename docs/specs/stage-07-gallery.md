@@ -1,6 +1,6 @@
 # Stage 07: Gallery
 
-- **Status:** draft (approved when Stage 06 is merged)
+- **Status:** approved (merged with Stage 06)
 - **Requirements covered:** `GAL-01`, `GAL-02`, `GAL-03`, `GAL-04`, `GAL-05`, `GAL-06`, `LEGAL-01`, `PREF-04`, `QA-01`, `QA-02`
 - **Depends on:** Stage 06 (ingested photos in `media-lock.json`, photo entries in `src/content/photos`, manifest with `pathKey`, local originals and external-original records), Stage 04 (gallery view preference) and the Figma frames listed below
 

@@ -12,7 +12,7 @@ const pages = [
   ['/es/galeria/lado-oculto/', '/en/gallery/far-side/'],
   ['/es/galeria/eclipse/', '/en/gallery/eclipse/'],
   ['/es/galeria/regreso/', '/en/gallery/return/'],
-  ['/es/galeria/despegue/sample-photo-01/', '/en/gallery/launch/sample-photo-01/'],
+  ['/es/galeria/despegue/KSC-04012026-Artemis_II_Launch-1/', '/en/gallery/launch/KSC-04012026-Artemis_II_Launch-1/'],
   ['/es/acerca/', '/en/about/'],
 ];
 

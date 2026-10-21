@@ -1,0 +1,36 @@
+---
+import PhotoImage from './PhotoImage.astro';
+import type { PhotoMedia } from '../lib/gallery-media';
+import { ui } from '../i18n/ui';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+  href: string;
+  title: string;
+  alt: string;
+  caption: string;
+  media: PhotoMedia;
+  /** The photo's original at NASA: "Credit: NASA" links to it (LEGAL-01). */
+  creditHref: string;
+  /** The first cards of a page load eagerly; the rest below the fold are lazy. */
+  eager?: boolean;
+}
+const { lang, href, title, alt, caption, media, creditHref, eager = false } = Astro.props;
+const t = ui[lang];
+---
+
+<li class="photo-card">
+  <a class="photo-card-link" href={href}>
+    <PhotoImage
+      media={media}
+      alt={alt}
+      eager={eager}
+      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+      class="photo-card-image"
+    />
+    <span class="photo-card-title">{title}</span>
+  </a>
+  <p class="photo-card-caption">{caption}</p>
+  <a class="photo-card-credit" data-credit href={creditHref} rel="noopener noreferrer">{t.photo.credit}</a>
+</li>

@@ -17,9 +17,9 @@ The project follows spec-driven development (see [`specs/README.md`](specs/READM
 | 03 | Delivery pipeline and security baseline: preview, staging and production deploys, security checks | `node` | [stage-03-pipeline](specs/stage-03-pipeline.md) | approved | #14 | `HUG-7` |
 | 04 | Preferences: theme, language, site density and gallery view | `node`, `browser`, `figma-read` | [stage-04-preferences](specs/stage-04-preferences.md) | approved | #31 | |
 | 05 | 🔍 Curation: candidate photos with IDs in `CURATION.md` (no downloads) | `web` | [stage-05-curation](specs/stage-05-curation.md) | approved | #34 | |
-| 06 | Ingestion: script, variants with sharp, static Pages packaging | `node`, `web` | [stage-06-ingestion](specs/stage-06-ingestion.md) | in review | #44 | |
-| 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | [stage-07-gallery](specs/stage-07-gallery.md) | pending | | |
-| 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | written in 07 | pending | | |
+| 06 | Ingestion: script, variants with sharp, static Pages packaging | `node`, `web` | [stage-06-ingestion](specs/stage-06-ingestion.md) | approved | #44 | |
+| 07 | Gallery: chapters, Mosaic/Gallery/Immersive views and per-photo page | `node`, `browser`, `figma-read` | [stage-07-gallery](specs/stage-07-gallery.md) | in review | #47 | |
+| 08 | 🔍 Texts: The launch, The mission and Why it matters, in both languages, with sources | `web` | [stage-08-texts](specs/stage-08-texts.md) | pending | | |
 | 09 | Sections: Home, The launch (with video), The mission (timeline) and Why it matters; photo stories, captions and alt text into the gallery | `node`, `browser`, `figma-read` | written in 08 | pending | | |
 | 10 | About, AI notice, credits, Open Graph and hreflang | `node`, `browser`, `figma-read` | written in 09 | pending | | |
 | 11 | Final review: accessibility, performance, security, links, traceability | `node`, `browser`, `web`, `figma-read` | written in 10 | pending | | |
@@ -172,3 +172,4 @@ Each stage adds a line here before opening its PR (date, stage and one sentence 
 - 2026-10-20 — Stage 05 — PR #34 — Editorial review retained all 33 candidates, reconciled preliminary and later science, documented date conflicts and supplemental credits, and aligned the exact-ID/media-path handoff contract.
 - 2026-10-20 — Process (requested by Hugo) — Added iteration 2 (stages 12–17: design, gallery search and filters, glossary and fact cards, interactive timeline, monitoring, review), its requirements in `product.md` and the releases `v1.1.0` and `v1.2.0`. <!-- notion -->
 - 2026-10-20 — Stage 05 approved (PR #34 merged); Stage 06 — PR #44 — Ingestion: `scripts/ingest.ts` with pinned sharp, AVIF/WebP widths, thumbnail and OG image for the 33 approved photos, a tracked `media-lock.json` of source and output checksums, exact NASA IDs with safe path keys, photo entries and sources in the content collections, decoding smoke checks; Stage 07 spec written.
+- 2026-10-21 — Stage 06 approved (PR #44 merged); Stage 07 — PR #47 — Gallery: chapter pages in Mosaic/Gallery/Immersive views over the ingested photos, per-photo pages with original download (local or external NASA link) and Open Graph images, manifest reader that fails the build on any mismatch; Stage 08 spec written.

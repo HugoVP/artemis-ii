@@ -53,7 +53,7 @@ test.describe('AC-5 content collections reject incomplete entries (TECH-02)', ()
 test.describe('AC-5 ingested photo entries and sources validate (CONT-02, MEDIA-03)', () => {
   const read = (dir: string) => readdirSync(`src/content/${dir}`).map((f) => JSON.parse(readFileSync(`src/content/${dir}/${f}`, 'utf8')) as Record<string, unknown>);
   const lock = JSON.parse(readFileSync('media-lock.json', 'utf8')) as { photos: Record<string, { pathKey: string; hash: string }> };
-  const photos = read('photos').filter((p) => p.nasaId !== 'sample-photo-01');
+  const photos = read('photos');
   const sources = new Set(readdirSync('src/content/sources').map((f) => f.replace(/\.json$/, '')));
 
   test('AC-5 every ingested ID has one valid photo entry with its lock hash, path key and sources', () => {

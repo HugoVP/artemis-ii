@@ -51,5 +51,5 @@ A visitor reads Home, The launch, The mission and Why it matters in Spanish or E
 ## Risks and open questions
 
 - `NAV-06` asks for "the first crewed return to the Moon since Apollo 17"; no source consulted in Stage 08 says it in those words, so Hugo decides whether to find a source or reword the requirement.
-- The countdown, ascent phases and the official NASA video (`NAV-04`) were not verified in Stage 08; this stage verifies them against NASA sources first or leaves them out and lists them in the PR.
+- Playing the external NASA MP4 (`KSC ART II Cause Way Launch low angle`) when the visitor clicks Play requires `media-src 'self' https://images-assets.nasa.gov` in `public/_headers` (a protected path); Stage 09 must call this out under "Security-relevant changes" in its PR.
 - Spanish text can be longer than English; check the Home frame in Spanish (`11:1349`).

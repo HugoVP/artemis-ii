@@ -9,17 +9,43 @@ urls:
   faq: &faq https://www.nasa.gov/missions/nasa-answers-your-most-pressing-artemis-ii-questions/
   record-release: &record-release https://www.nasa.gov/news-release/nasas-artemis-ii-crew-eclipses-record-for-farthest-human-spaceflight/
   recap: &recap https://www.nasa.gov/centers-and-facilities/johnson/artemis-ii-mission-milestones-an-image-and-video-recap/
+  launch-blog: &launch-blog https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/
+  solar-wings: &solar-wings https://www.nasa.gov/image-article/engineers-install-orion-solar-array-wings-for-artemis-ii/
+  launch-video-record: &launch-video-record https://images.nasa.gov/details/KSC%20ART%20II%20Cause%20Way%20Launch%20low%20angle
   reentry: &reentry https://www.nasa.gov/blogs/missions/2026/04/10/artemis-ii-flight-day-10-re-entry-live-updates/
   splash: &splash https://www.nasa.gov/image-article/artemis-ii-splashes-down/
   launch-record: &launch-record https://images.nasa.gov/details/NHQ202604010227
   walkout-record: &walkout-record https://images.nasa.gov/details/AFRC2026-0068-03
   whiteroom-record: &whiteroom-record https://images.nasa.gov/details/KSC-20260210-PH-JBS01-0035
 
+home:
+  title:
+    es: "Artemis II, de regreso a la Luna"
+    en: "Artemis II, back to the Moon"
+  featuredPhotoId: art002e021278
+  blocks:
+    - id: home-welcome
+      es: "Un recorrido visual y documentado en español e inglés por los diez días en que cuatro astronautas rodearon la Luna a bordo de Orion en abril de 2026."
+      en: "A documented visual journey in Spanish and English through the ten days in April 2026 when four astronauts flew around the Moon aboard Orion."
+      sources: [*faq, *recap]
+
 sections:
   launch:
     title:
       es: "El lanzamiento"
       en: "The launch"
+    video:
+      nasaId: "KSC ART II Cause Way Launch low angle"
+      recordUrl: https://images.nasa.gov/details/KSC%20ART%20II%20Cause%20Way%20Launch%20low%20angle
+      mp4Url: https://images-assets.nasa.gov/video/KSC%20ART%20II%20Cause%20Way%20Launch%20low%20angle/KSC%20ART%20II%20Cause%20Way%20Launch%20low%20angle~orig.mp4
+      posterPhotoId: NHQ202604010227
+      title:
+        es: "Vídeo oficial del despegue (NASA)"
+        en: "Official launch video (NASA)"
+      caption:
+        es: "Grabación oficial de NASA del ascenso de Artemis II desde el Complejo de Lanzamiento 39B el 1 de abril de 2026. El archivo de vídeo solo se carga cuando pulsas Reproducir. Crédito: NASA."
+        en: "Official NASA footage of the Artemis II liftoff from Launch Complex 39B on 1 April 2026. The video file loads only when you press Play. Credit: NASA."
+      sources: [*launch-video-record]
     blocks:
       - id: launch-intro
         es: "El 1 de abril de 2026, cuatro astronautas despegaron desde el Complejo de Lanzamiento 39B del Centro Espacial Kennedy, en Florida, a bordo de la nave Orion, montada sobre el cohete SLS. Era el primer vuelo tripulado del programa Artemis y comenzaba un viaje de unos diez días alrededor de la Luna."
@@ -38,13 +64,17 @@ sections:
         en: "During launch and re-entry the crew wears the Orion Crew Survival System, a bright orange suit. Each suit is custom-fitted and includes systems for air, water, food and waste management."
         sources: [*recap]
       - id: launch-prep
-        es: "Antes del despegue, la tripulación hizo los últimos preparativos en la sala blanca, un pequeño espacio de ambiente controlado unido al brazo de acceso de la nave, y saludó a familiares, amigos y personal de NASA a la salida del edificio de Operaciones y Verificación."
-        en: "Before liftoff the crew made final preparations in the White Room, a small environmentally controlled space attached to the spacecraft's access arm, and greeted family, friends and NASA employees outside the Operations and Checkout Building."
-        sources: [*whiteroom-record, *walkout-record]
+        es: "Antes del despegue, los equipos cargaron más de 700.000 galones de hidrógeno y oxígeno líquidos en el cohete SLS. La tripulación salió del edificio de Operaciones y Verificación a las 14:00, llegó a la plataforma 39B a las 14:14 e ingresó en Orion desde la sala blanca a partir de las 14:31."
+        en: "Before liftoff, ground teams loaded more than 700,000 gallons of liquid hydrogen and liquid oxygen into the SLS rocket. The crew walked out of the Operations and Checkout Building at 2:00 p.m. EDT, arrived at Pad 39B at 2:14 p.m., and began boarding Orion from the White Room at 2:31 p.m."
+        sources: [*launch-blog, *whiteroom-record, *walkout-record]
+      - id: launch-ascent-phases
+        es: "Tras una breve pausa en T-10 minutos para verificar el enlace del sistema de terminación de vuelo del rango oriental, los cuatro motores RS-25 y los dos propulsores sólidos elevaron el cohete con 8,8 millones de libras de empuje a las 18:35. El vehículo superó Mach 1 a los 56 segundos, pasó por la máxima presión aerodinámica (Max Q) a 1 minuto y 12 segundos, separó los propulsores sólidos a los 2 minutos y 9 segundos, desprendió la torre de aborto a los 3 minutos y 13 segundos, apagó sus motores principales a los 8 minutos y 2 segundos, separó la etapa central a los 8 minutos y 14 segundos, y confirmó a las 18:59 el despliegue de las cuatro alas de paneles solares de Orion (casi 23 pies cada una, para una envergadura total de la nave de unos 63 pies)."
+        en: "Following a brief hold at T-minus 10 minutes to verify an Eastern Range flight termination system link, the four RS-25 engines and twin solid rocket boosters lifted the vehicle with 8.8 million pounds of thrust at 6:35 p.m. EDT. The rocket reached supersonic speed at 56 seconds, passed maximum dynamic pressure (Max Q) at 1 minute 12 seconds, separated its solid rocket boosters at 2 minutes 9 seconds, jettisoned the launch abort tower at 3 minutes 13 seconds, cut off its main engines at 8 minutes 2 seconds, separated the core stage at 8 minutes 14 seconds, and confirmed deployment of Orion's four solar array wings by 6:59 p.m. EDT (nearly 23 feet per wing, giving the spacecraft a total wingspan of roughly 63 feet)."
+        sources: [*launch-blog, *solar-wings]
       - id: launch-video
-        es: "NASA publicó imágenes del despegue tomadas por cámaras instaladas en el propio cohete SLS, llamadas FILMRS (Flight Imaging Launch Monitoring Real-time System)."
-        en: "NASA published launch views from cameras mounted on the SLS rocket itself, called FILMRS (Flight Imaging Launch Monitoring Real-time System)."
-        sources: [*recap]
+        es: "NASA publicó imágenes del despegue tomadas desde las calzadas del Centro Espacial Kennedy y por cámaras instaladas en el propio cohete SLS, llamadas FILMRS (Flight Imaging Launch Monitoring Real-time System)."
+        en: "NASA published launch footage captured from the Kennedy Space Center causeways and from cameras mounted on the SLS rocket itself, called FILMRS (Flight Imaging Launch Monitoring Real-time System)."
+        sources: [*launch-video-record, *recap]
 
   mission:
     title:
@@ -225,9 +255,6 @@ omitted_facts:
   - id: om-apollo-17
     es: "No se afirma que sea el primer regreso de humanos a la Luna desde el Apolo 17 (1972), como pide NAV-06: ninguna de las fuentes consultadas lo dice con esas palabras. Se usa en su lugar lo que NASA sí escribe: más de 50 años y el récord del Apolo 13."
     en: "The claim that this is the first human return to the Moon since Apollo 17 (1972), as NAV-06 asks, is not made: none of the sources consulted says it in those words. NASA's own wording is used instead: more than 50 years and the Apollo 13 record."
-  - id: om-launch-details
-    es: "La cuenta atrás, las fases del ascenso, los tiempos de la inyección translunar y el vídeo oficial de NASA para The launch (NAV-04) se dejan para Stage 09 o para una revisión posterior: no se verificaron aquí."
-    en: "The countdown, the ascent phases, the translunar injection time and NASA's official video for The launch (NAV-04) are left for Stage 09 or a later review: they were not verified here."
   - id: om-news
     es: "No se usaron fuentes periodísticas externas: los dominios de noticias no eran accesibles desde este entorno. Todas las fuentes son páginas de NASA."
     en: "No external news sources were used: news domains were not reachable from this environment. Every source is a NASA page."

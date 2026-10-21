@@ -1,0 +1,31 @@
+---
+import type { PhotoMedia } from '../lib/gallery-media';
+import { heightAt } from '../lib/gallery-media';
+
+interface Props {
+  media: PhotoMedia;
+  alt: string;
+  /** Rendered width hints for the browser, e.g. `(min-width: 768px) 33vw, 100vw`. */
+  sizes: string;
+  /** Largest variant to fall back to for browsers without `srcset` support. */
+  fallbackWidth?: number;
+  eager?: boolean;
+  class?: string;
+}
+const { media, alt, sizes, fallbackWidth = 960, eager = false, class: className } = Astro.props;
+const fallback = media.widths.includes(fallbackWidth) ? fallbackWidth : media.widths[media.widths.length - 1]!;
+---
+
+<picture>
+  <source type="image/avif" srcset={media.srcset('avif')} sizes={sizes} />
+  <source type="image/webp" srcset={media.srcset('webp')} sizes={sizes} />
+  <img
+    src={media.src(`w${fallback}.webp`)}
+    alt={alt}
+    width={fallback}
+    height={heightAt(media, fallback)}
+    loading={eager ? 'eager' : 'lazy'}
+    decoding="async"
+    class={className}
+  />
+</picture>

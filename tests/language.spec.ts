@@ -18,7 +18,7 @@ test('Stage 04 AC-7 I18N-02 blocked storage and unsupported language fall back t
 });
 
 test('Stage 04 AC-7 I18N-03 switching language preserves section, chapter and photo', async ({ page }) => {
-  for (const [es, en] of [['mision/', 'mission/'], ['por-que-importa/', 'why-it-matters/'], ['galeria/rumbo-a-la-luna/', 'gallery/outbound/'], ['galeria/despegue/sample-photo-01/', 'gallery/launch/sample-photo-01/']]) {
+  for (const [es, en] of [['mision/', 'mission/'], ['por-que-importa/', 'why-it-matters/'], ['galeria/rumbo-a-la-luna/', 'gallery/outbound/'], ['galeria/despegue/KSC-04012026-Artemis_II_Launch-1/', 'gallery/launch/KSC-04012026-Artemis_II_Launch-1/']]) {
     await page.goto(`/es/${es}`);
     await page.getByRole('button', { name: /^(Ajustes|Menú)$/ }).filter({ visible: true }).click();
     await page.getByRole('link', { name: 'English', exact: true }).click();

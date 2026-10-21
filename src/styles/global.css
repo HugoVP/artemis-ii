@@ -106,3 +106,40 @@
   max-height: calc(100dvh - var(--space-6));
   overflow-y: auto;
 }
+
+/* Figma PhotoCard: one list, three views chosen by html[data-view] (set before paint by preferences-head.ts). */
+@layer components {
+  .photo-grid { display: grid; gap: var(--space-3); list-style: none; margin: 0; padding: 0; }
+  .photo-card { display: grid; align-content: start; gap: var(--space-2); }
+  .photo-card-link { display: grid; gap: var(--space-2); color: var(--color-text); text-decoration: none; }
+  .photo-card-image { display: block; width: 100%; height: auto; border-radius: var(--radius-sm); background: var(--color-surface); }
+  .photo-card-title { font-family: var(--font-display); font-weight: 600; }
+  .photo-card-caption { margin: 0; color: var(--color-text-muted); font-size: var(--text-label); }
+  .photo-card-credit { color: var(--color-text-muted); font-size: var(--text-caption); }
+
+  /* Mosaic: dense square thumbnails, text hidden visually but kept for assistive technology. */
+  :root[data-view='mosaic'] .photo-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
+  :root[data-view='mosaic'] .photo-card-image { aspect-ratio: 1 / 1; object-fit: cover; }
+  :root[data-view='mosaic'] .photo-card-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  :root[data-view='mosaic'] .photo-card-caption, :root[data-view='mosaic'] .photo-card-credit { display: none; }
+
+  /* Gallery: cards with title, caption and credit. */
+  :root[data-view='gallery'] .photo-grid { grid-template-columns: 1fr; }
+  :root[data-view='gallery'] .photo-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); padding: var(--space-3); }
+
+  /* Immersive: one large photo at a time, full width. */
+  :root[data-view='immersive'] .photo-grid { grid-template-columns: 1fr; gap: var(--space-5); }
+  :root[data-view='immersive'] .photo-card-image { border-radius: var(--radius-md); }
+
+  @media (min-width: 640px) {
+    :root[data-view='mosaic'] .photo-grid { grid-template-columns: repeat(3, 1fr); }
+    :root[data-view='gallery'] .photo-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    :root[data-view='mosaic'] .photo-grid { grid-template-columns: repeat(4, 1fr); }
+    :root[data-view='gallery'] .photo-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .photo-facts { display: grid; gap: var(--space-1); margin: 0; font-size: var(--text-label); }
+  .photo-hero { display: block; width: 100%; height: auto; border-radius: var(--radius-md); background: var(--color-surface); }
+}

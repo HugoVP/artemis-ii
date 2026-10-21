@@ -61,3 +61,24 @@ test.describe('AC-6 keyboard use and focus on the views', () => {
     await expect(page).toHaveURL(/\/en\/gallery\/far-side\/[A-Za-z0-9_-]+\/$/);
   });
 });
+
+test.describe('LEGAL-01 every photo shown in the gallery has a credit linked to its NASA original', () => {
+  for (const lang of ['es', 'en'] as const) {
+    test(`LEGAL-01 ${lang}: chapter cards and chapter covers`, async ({ page }) => {
+      const credit = lang === 'es' ? 'Crédito: NASA' : 'Credit: NASA';
+      for (const slug of Object.values(chapters[lang])) {
+        await page.goto(`/${lang}/${lang === 'es' ? 'galeria' : 'gallery'}/${slug}/`);
+        const cards = page.locator('[data-testid="photo-grid"] .photo-card');
+        const links = page.locator('[data-testid="photo-grid"] .photo-card a[data-credit]');
+        await expect(links).toHaveCount(await cards.count());
+        for (const href of await links.evaluateAll((a) => a.map((x) => x.getAttribute('href')!))) expect(href).toMatch(/^https:\/\/images-assets\.nasa\.gov\//);
+        if (await cards.count()) await expect(links.first()).toHaveText(credit);
+      }
+      await page.goto(`/${lang}/${lang === 'es' ? 'galeria' : 'gallery'}/`);
+      const covers = await page.locator('main img').count();
+      const coverCredits = page.locator('main a[data-credit]');
+      await expect(coverCredits).toHaveCount(covers);
+      for (const href of await coverCredits.evaluateAll((a) => a.map((x) => x.getAttribute('href')!))) expect(href).toMatch(/^https:\/\/images-assets\.nasa\.gov\//);
+    });
+  }
+});

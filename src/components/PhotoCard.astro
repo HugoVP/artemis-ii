@@ -11,10 +11,12 @@ interface Props {
   alt: string;
   caption: string;
   media: PhotoMedia;
+  /** The photo's original at NASA: "Credit: NASA" links to it (LEGAL-01). */
+  creditHref: string;
   /** The first cards of a page load eagerly; the rest below the fold are lazy. */
   eager?: boolean;
 }
-const { lang, href, title, alt, caption, media, eager = false } = Astro.props;
+const { lang, href, title, alt, caption, media, creditHref, eager = false } = Astro.props;
 const t = ui[lang];
 ---
 
@@ -30,5 +32,5 @@ const t = ui[lang];
     <span class="photo-card-title">{title}</span>
   </a>
   <p class="photo-card-caption">{caption}</p>
-  <span class="photo-card-credit">{t.photo.credit}</span>
+  <a class="photo-card-credit" data-credit href={creditHref} rel="noopener noreferrer">{t.photo.credit}</a>
 </li>

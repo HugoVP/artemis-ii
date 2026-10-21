@@ -205,6 +205,9 @@ const h2 = 'text-h2 mb-3';
                 <span class="font-display text-h3 font-semibold">{t.chapters[id]}</span>
                 <span class="text-caption text-muted">{t.gallery.photoCount(chapterPhotos(id).length)}</span>
               </a>
+              {chapterPhotos(id)[0] && (
+                <a class="text-caption text-muted" data-credit href={chapterPhotos(id)[0]!.data.originalUrl} rel="noopener noreferrer">{t.photo.credit}</a>
+              )}
             </li>
           ))}
         </ul>
@@ -247,6 +250,7 @@ const h2 = 'text-h2 mb-3';
               alt={p.data.alt[lang]}
               caption={p.data.caption[lang]}
               media={mediaByKey.get(p.data.pathKey)!}
+              creditHref={p.data.originalUrl}
               eager={i < 2}
             />
           ))}

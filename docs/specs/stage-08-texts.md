@@ -10,13 +10,13 @@ Hugo can review, in Spanish and English, sourced drafts of the texts of the site
 
 ## Scope
 
-- Drafts in `docs/content-review/`, English-only Markdown files that contain both language versions of each text side by side, written naturally in each language and never as a literal translation:
+- Drafts in `docs/content-review/` as structured YAML data files, not Markdown, because they hold Spanish and English text and every Markdown file of the repository is English only (`AGENTS.md`): `sections.yaml` for the section texts and `photos.yaml` for the photos. Each text has an `es` and an `en` version, written naturally in each language and never as a literal translation, and each fact its source URLs. Hugo reads them in the PR diff or in the preview of a later stage:
   - The launch, The mission (timeline, crew, milestones) and Why it matters.
   - For each of the 33 photos: title, caption, descriptive alt text, and a short story only where one is worth telling (`CONT-04`, `CONT-05`).
 - Every fact (dates, times, distances, records, firsts, names) has a source link next to it, taken from official or reliable journalistic sources. Facts that cannot be verified are left out and listed in the PR (`CONT-03`).
 - Sensitive stories (for example Carroll crater) are written with respect and without dramatizing.
 - Date conflicts recorded in `CURATION.md` are shown to Hugo as open decisions, not resolved silently.
-- A validation test in `tests/content-review.spec.ts`: every photo has a draft in both languages, every fact line has a source URL, and no draft is missing a language.
+- A validation test in `tests/content-review.spec.ts` that parses the YAML files: every photo has a draft in both languages, every fact has a source URL, no draft is missing a language, and `docs/content-review/` contains no Markdown file.
 - Write the Stage 09 spec from the template.
 
 ## Out of scope

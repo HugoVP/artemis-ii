@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import { parse } from 'yaml';
 import { copilotArgs, REVIEW_ALLOWED_TOOLS } from './copilot-runner.ts';
 import { openCodeConfig, openCodeReviewConfig } from './opencode-runner.ts';
@@ -12,6 +13,17 @@ interface Job { if?: string; environment?: string; permissions?: Record<string, 
 const source = await read('docs/agents/workflows/agent-review.yml');
 const workflow = parse(source) as { on: Record<string, { types?: string[] }>; permissions: Record<string, string>; concurrency: { group: string; 'cancel-in-progress': boolean }; jobs: Record<string, Job> };
 const { prepare, review, publish, report } = workflow.jobs;
+
+test('REV-06: both the reviewer step and its nested container script have valid Bash syntax', async () => {
+  assert.equal(await read('.github/workflows/agent-review.yml'), source, 'the installed workflow must match its proposal');
+  const run = review.steps.find(step => step.name === 'Run the reviewer')!.run!;
+  const nested = /<<'IN_CONTAINER'[^\n]*\n([\s\S]*?)^IN_CONTAINER$/m.exec(run);
+  assert.ok(nested, 'the container script must be checked separately from its heredoc wrapper');
+  for (const script of [run, nested[1]]) {
+    // Parse only: never start Docker, a model, or any command from the workflow.
+    execFileSync('bash', ['--noprofile', '--norc', '-n'], { input: script, stdio: 'pipe' });
+  }
+});
 
 test('REV-01: started only by label on a PR or by hand, with no permissions by default', () => {
   assert.deepEqual(Object.keys(workflow.on).sort(), ['pull_request_target', 'workflow_dispatch']);

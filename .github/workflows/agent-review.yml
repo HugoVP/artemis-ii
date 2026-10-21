@@ -282,8 +282,8 @@ jobs:
               CFG=$(mktemp -d)
               # Shell commands run in Claude Code's sandbox with no network. Settings come only from this file:
               # --setting-sources user with an empty home keeps the PR's .claude/ settings and hooks out.
-              node -e '
-                require("fs").writeFileSync(process.argv[1], JSON.stringify({
+              node - "$CFG/settings.json" <<'CLAUDE_SETTINGS'
+                require("fs").writeFileSync(process.argv[2], JSON.stringify({
                   sandbox: {
                     enabled: true, failIfUnavailable: true, enableWeakerNestedSandbox: true, allowUnsandboxedCommands: false,
                     // The default (true) approves any sandboxed Bash command without asking, which would let project
@@ -292,7 +292,8 @@ jobs:
                     network: { allowedDomains: [] },
                   },
                   permissions: { deny: ["Edit(//work/.git/**)", "Write(//work/.git/**)"] },
-                }), { mode: 0o600 });' "$CFG/settings.json"
+                }), { mode: 0o600 });
+          CLAUDE_SETTINGS
               ALLOWED=(Read Glob Grep "Bash(git status*)" "Bash(git diff*)" "Bash(git log*)" "Bash(git show*)" "Bash(git ls-files*)" "Write(//work/.agent/review.md)")
               # dontAsk: anything not in the allow list is denied, every other write and every web tool included.
               if [ "$AUTH" = federation ]; then

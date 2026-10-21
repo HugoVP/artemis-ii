@@ -116,7 +116,7 @@ test("the registry parser reads scalars and inline lists, and rejects incomplete
   assert.equal(real[0].id, "codex");
   assert.equal(real[0].key_secret, "AGENT_KEY_CODEX");
   assert.deepEqual(real[0].capabilities, ["git", "node", "browser", "web", "figma-read", "figma-write"]);
-  assert.deepEqual(real.map((a) => a.id), ["codex", "claude", "opencode"]);
+  assert.deepEqual(real.map((a) => a.id), ["codex", "claude", "opencode", "copilot", "antigravity"]);
   assert.throws(() => parseRegistry("- id: x\n  key_secret: AGENT_KEY_X\n  runner: shell-anything\n  capabilities: [git]\n"), /unknown runner/);
   assert.throws(() => parseRegistry("- id: x\n  runner: y\n"), /key_secret/);
   assert.throws(() => parseRegistry("  id: x\n"), /Unreadable|start with/);

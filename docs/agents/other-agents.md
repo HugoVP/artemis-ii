@@ -53,6 +53,20 @@ The CLI pipeline completed the Stage 04 builder run and opened PR #31 on 2026-10
 
 Its branches usually start with `codex/`; `AGENTS.md` rule 2 asks for an `agent/…` branch instead (`agent/stage-NN-short-name` for a stage), so name the branch that way when you start the task.
 
+## GitHub Copilot CLI
+
+The pipeline integration pins `@github/copilot` 1.0.92 and runs `copilot -p` through the root-owned launcher `scripts/copilot-runner.ts`. Setup and exact owner commands are in [`copilot.md`](copilot.md); the contract is [`docs/specs/copilot-runner.md`](../specs/copilot-runner.md).
+
+Checked on 2026-10-19 against `copilot --help` of 1.0.92, installed in an isolated home with no credential: `-p`, `--model`, `--no-ask-user`, `--no-auto-update`, `--no-remote-export`, `--disable-builtin-mcps`, `--allow-tool`, `--deny-tool` (denials win), `--allow-url`, `--secret-env-vars` and `--silent` exist; `COPILOT_GITHUB_TOKEN` takes precedence over `GH_TOKEN` and `GITHUB_TOKEN`; without a token the CLI exits with "No authentication information found" instead of waiting for input. GitHub's documentation ([run programmatically](https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically), [automate with Actions](https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/automate-with-actions)) names a fine-grained token with the "Copilot Requests" permission for CI. The npm package is a loader that pins the native binary `@github/copilot-linux-x64` at the same version. Real authentication, the model and the allow-list behaviour in `-p` mode are verified by the manual smoke.
+
+Copilot routes to models of several vendors. The registry needs an explicit model so the pipeline knows its model family when it picks reviewers; `auto` is refused.
+
+## Google Antigravity CLI
+
+The pipeline integration installs Antigravity CLI 1.4.3 from its exact build URL with the sha512 of Google's manifest, and runs `agy --print` through the root-owned launcher `scripts/antigravity-runner.ts`. Setup is in [`antigravity.md`](antigravity.md); the contract is [`docs/specs/antigravity-runner.md`](../specs/antigravity-runner.md).
+
+Checked on 2026-10-20 with the pinned binary in an isolated home and no credential: `--help` lists `--print`, `--model`, `--mode` (`accept-edits`, `auto`, `plan`), `--output-format`, `--disable-slash-commands`, `--log-file`, `--print-timeout` and `--sandbox`; without a key, print mode starts a browser sign-in and waits. Its bundled changelog (`agy changelog`) documents the Gemini API key setup (`modelProvider: "gemini"` in `~/.gemini/antigravity-cli/settings.json` plus `GEMINI_API_KEY`), `--mode` and `settings.json` permissions (`permission.allow`, `command(...)`) being honoured in print mode, and `AGY_ERROR` lines with exit code 3. Gemini CLI's own repository says it "was replaced by Antigravity CLI on June 18th, 2026" for unpaid and Google One users. Real authentication, the command allowlist and the background updater are verified by the manual smoke.
+
 ## Open-source agents and open-weight models
 
 ### OpenCode

@@ -14,6 +14,7 @@
     "check": "astro check && npm run typecheck",
     "typecheck": "node node_modules/typescript7/bin/tsc --noEmit -p tsconfig.json",
     "test:scripts": "node --test scripts/*.test.ts",
+    "test:gitleaks": "node --test scripts/security/gitleaks-allowlist.test.ts",
     "test": "npm run test:scripts && npm run build && playwright test"
   },
   "dependencies": {

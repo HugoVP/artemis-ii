@@ -23,9 +23,11 @@ The detailed design of phases 2 to 4 (jobs, permissions, acceptance criteria, ro
 
 | Phase | What it delivers | Where it runs | Status |
 | --- | --- | --- | --- |
-| 1 | Docker images and dev container (`Dockerfile`, `compose.yaml`) | Local, Codespaces | PR open |
-| 2 | Agent runner image and one workflow that runs one agent on one work order | GitHub Actions | This plan |
-| 3 | Agent registry, orchestrator script, reviewers, `iteration/N` branch | GitHub Actions | Later |
+| 1 | Docker images and dev container (`Dockerfile`, `compose.yaml`) | Local, Codespaces | Merged |
+| 2 | Agent runner image and one workflow that runs one agent on one work order | GitHub Actions | Running: Codex led Stage 04; OpenCode passed its smoke; Claude Code and Copilot CLI await their keys |
+| 3a | Recommended leader and cross-family reviewers on every work order; Hugo still starts runs and merges ([`specs/orchestration.md`](specs/orchestration.md)) | GitHub Actions | Proposed |
+| 3a-2 | Read-only reviewer jobs and a trusted publisher that posts each verdict; Hugo starts them with `review:<id>` and still merges ([`specs/agent-review.md`](specs/agent-review.md)) | GitHub Actions | Proposed |
+| 3 | Iteration branches where the pipeline merges stages, and the gate on reviewer verdicts | GitHub Actions | Later |
 | 4 | Own server for long or heavy runs | A small VPS | Only if needed |
 
 ### Phase 2: runner image and workflow

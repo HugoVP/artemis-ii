@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 import { parseRegistry, missingCapabilities, RUNNERS } from './agent-checks.ts';
-import { AGY_VERSION } from './antigravity-runner.ts';
+import { AGY_VERSION, validateAntigravityModel } from './antigravity-runner.ts';
 import { AGENT_CONFIG_PATHS } from './agent-review.ts';
 
 const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -16,13 +16,15 @@ test('AGY-02: registry accepts Antigravity without a model but rejects auto or a
   assert.equal(parseRegistry(`${entry}  model: example-model-4\n`)[0].model, 'example-model-4');
 });
 
-test('AGY-01: Antigravity is registered without Figma, as the google family, and the image pins the exact build', async () => {
+test('AGY-01: Antigravity is registered active, with figma-read but no figma-write, as the google family, and the image pins the exact build', async () => {
   assert.ok(RUNNERS.includes('antigravity-cli'));
   const agent = parseRegistry(await read('agents/registry.yaml')).find(entry => entry.id === 'antigravity')!;
   assert.equal(agent.runner, 'antigravity-cli');
   assert.equal(agent.key_secret, 'AGENT_KEY_ANTIGRAVITY');
   assert.equal(agent.family, 'google');
-  assert.equal(agent.status, 'pending');
+  // Active since its smoke passed (2026-10-21): an active Antigravity must name an explicit, valid model.
+  assert.equal(agent.status, 'active');
+  assert.equal(validateAntigravityModel(agent.model), agent.model);
   assert.deepEqual(missingCapabilities(['git', 'node', 'browser', 'web'], agent.capabilities), []);
   assert.deepEqual(missingCapabilities(['figma-read'], agent.capabilities), []);
   assert.deepEqual(missingCapabilities(['figma-write'], agent.capabilities), ['figma-write']);

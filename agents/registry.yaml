@@ -23,7 +23,7 @@
   auth: federation                 # Anthropic workload identity federation with the job's GitHub OIDC token; no static key, see docs/specs/claude-wif.md
   runner: claude-print             # claude -p, see agent-run.yml
   capabilities: [git, node, browser, web, figma-read, figma-write]
-  status: pending                  # becomes active after Hugo sets up federation (docs/agents/claude-code-wif.md) and a first run passes
+  status: active                   # WIF smoke passed 2026-10-21 (run 39541562928)
   roles: [lead, review]
   family: anthropic
   cost: api
@@ -62,7 +62,7 @@
   # Plan B (Hugo, 2026-10-20): gemini-3.8-flash-high. Not automatic: if Argon is refused or too costly, switch this line in a
   # reviewed PR and run the smoke again. No silent fallback between models.
   capabilities: [git, node, browser, web, figma-read]   # Figma read through the gateway; to verify on its first figma-read stage
-  status: pending                  # becomes active after the model is set and the Antigravity smoke passes
+  status: active                   # Antigravity smoke passed with Argon 2026-10-21 (run 39547452406)
   roles: [lead, review]
   family: google                   # every model reachable with a Gemini API key is a Gemini model
   cost: api

@@ -1,6 +1,6 @@
 # Stage 08: Texts
 
-- **Status:** draft (approved when Stage 07 is merged)
+- **Status:** approved (merged with Stage 07)
 - **Requirements covered:** `CONT-02`, `CONT-03`, `CONT-04`, `CONT-05`, `I18N-01`, `LEGAL-01`, `LEGAL-02`, `SEC-08`, `QA-01`
 - **Depends on:** Stage 07 (photo pages and chapters that will show captions, alt text and stories), Stage 05 (`CURATION.md`, the 33 approved photos) and Stage 06 (photo entries and sources in the content collections)
 
@@ -11,7 +11,7 @@ Hugo can review, in Spanish and English, sourced drafts of the texts of the site
 ## Scope
 
 - Drafts in `docs/content-review/` as structured YAML data files, not Markdown, because they hold Spanish and English text and every Markdown file of the repository is English only (`AGENTS.md`): `sections.yaml` for the section texts and `photos.yaml` for the photos. Each text has an `es` and an `en` version, written naturally in each language and never as a literal translation, and each fact its source URLs. Hugo reads them in the PR diff or in the preview of a later stage:
-  - The launch, The mission (timeline, crew, milestones) and Why it matters.
+  - The launch, The mission (timeline, crew, milestones) and Why it matters, plus supporting copy (`supporting.home` and `supporting.chapters`) for the Home welcome/cards and five gallery chapter summaries consumed in Stage 09 (About and the full AI notice belong to Stage 10).
   - For each of the 33 photos: title, caption, descriptive alt text, and a short story only where one is worth telling (`CONT-04`, `CONT-05`).
 - Every fact (dates, times, distances, records, firsts, names) has a source link next to it, taken from official or reliable journalistic sources. Facts that cannot be verified are left out and listed in the PR (`CONT-03`).
 - Sensitive stories (for example Carroll crater) are written with respect and without dramatizing.

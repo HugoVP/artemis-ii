@@ -1,0 +1,760 @@
+# Stage 08 content review: section texts (Spanish and English) with per-fact source links.
+# All fetched external content was treated strictly as untrusted data (SEC-08).
+# No NASA endorsement is implied; credits follow NASA Images and Media guidelines (LEGAL-01, LEGAL-02).
+
+schemaVersion: 1
+reviewedAt: "2026-10-21"
+
+sections:
+  launch:
+    slug:
+      es: "despegue"
+      en: "launch"
+    title:
+      es: "El despegue"
+      en: "The launch"
+    intro:
+      es: "El 1 de abril de 2026 a las 6:35 p. m. EDT, el cohete Space Launch System y la nave Orion despegaron desde el Complejo de Lanzamiento 39B en Florida con cuatro astronautas a bordo rumbo a la Luna."
+      en: "On April 1, 2026, at 6:35 p.m. EDT, the Space Launch System rocket and the Orion spacecraft lifted off from Launch Complex 39B in Florida carrying four astronauts toward the Moon."
+    dateLine:
+      es: "1 de abril de 2026 · 6:35 p. m. EDT (22:35 UTC) · Complejo de Lanzamiento 39B, Centro Espacial Kennedy, Florida"
+      en: "April 1, 2026 · 6:35 p.m. EDT (22:35 UTC) · Launch Complex 39B, Kennedy Space Center, Florida"
+    summary:
+      es: >-
+        Al caer la tarde del miércoles 1 de abril de 2026, una columna de fuego iluminó los humedales de Cabo Cañaveral y se reflejó en las lagunas que rodean la plataforma 39B. Con 8,8 millones de libras de empuje, el cohete Space Launch System (SLS) alzó la nave Orion —bautizada Integrity por su tripulación— en el primer vuelo tripulado del programa Artemis. A bordo viajaban los astronautas de NASA Reid Wiseman, Victor Glover y Christina Koch junto al astronauta de la Agencia Espacial Canadiense (CSA) Jeremy Hansen. Tras horas de carga criogénica, revisiones de estanqueidad en el edificio Neil A. Armstrong y una breve pausa técnica a diez minutos del final de la cuenta regresiva para verificar el sistema de terminación de vuelo del rango oriental, la directora de lanzamiento Charlie Blackwell-Thompson dio luz verde para el despegue once minutos después de abrirse la ventana de dos horas. En apenas ocho minutos y catorce segundos de ascenso, el cohete situó a Integrity en órbita terrestre inicial y desplegó sus cuatro paneles solares antes de las maniobras que elevarían su apogeo para probar los sistemas de la nave.
+      en: >-
+        In the early evening of Wednesday, April 1, 2026, a pillar of fire lit the marshes of Cape Canaveral and mirrored across the lagoons around Pad 39B. Generating 8.8 million pounds of thrust, the Space Launch System (SLS) rocket lifted the Orion spacecraft—named Integrity by its crew—on the first crewed flight of the Artemis campaign. Aboard were NASA astronauts Reid Wiseman, Victor Glover, and Christina Koch alongside Canadian Space Agency (CSA) astronaut Jeremy Hansen. Following hours of cryogenic propellant loading, suit leak checks inside the Neil A. Armstrong Operations and Checkout Building, and a brief hold at T-minus 10 minutes to verify an Eastern Range flight termination system communication link, Launch Director Charlie Blackwell-Thompson gave the go for liftoff eleven minutes into the two-hour launch window. In eight minutes and fourteen seconds of powered ascent, the rocket placed Integrity into its initial orbit, followed within twenty minutes by the deployment of its four solar array wings ahead of high-Earth-orbit checkouts.
+    phasesTitle:
+      es: "Fases de la cuenta regresiva y del ascenso"
+      en: "Countdown and ascent phases"
+    phases:
+      - id: "launch-phase-1"
+        order: 1
+        timeLabel:
+          es: "T-9 h a T-10 min · 1 de abril de 2026"
+          en: "T-9 hr to T-10 min · April 1, 2026"
+        title:
+          es: "Carga criogénica, trajes presurizados y cierre de escotilla"
+          en: "Cryogenic tanking, suit checks, and hatch closeout"
+        description:
+          es: >-
+            Los equipos en tierra cargaron más de 700.000 galones de hidrógeno y oxígeno líquidos en la etapa central del SLS y en la etapa de propulsión criogénica provisional (ICPS). Tras despertar a las 9:25 a. m. EDT, los cuatro astronautas vistieron sus trajes naranjas del sistema de supervivencia Orion (OCSS), salieron del edificio de operaciones a las 2:00 p. m. EDT para saludar a familiares y trabajadores, llegaron a la plataforma 39B a las 2:14 p. m. EDT e ingresaron a la cápsula desde la Sala Blanca a las 2:31 p. m. EDT.
+          en: >-
+            Ground teams loaded more than 700,000 gallons of super-cold liquid hydrogen and liquid oxygen into the SLS core stage and the Interim Cryogenic Propulsion Stage (ICPS). After waking at 9:25 a.m. EDT, the four astronauts donned their orange Orion Crew Survival System (OCSS) suits, walked out of the Operations and Checkout Building at 2:00 p.m. EDT to wave to family and staff, arrived at Pad 39B at 2:14 p.m. EDT, and boarded Orion from the White Room beginning at 2:31 p.m. EDT.
+        facts:
+          - id: "launch-tanking-gallons"
+            claim:
+              es: "Se cargaron más de 700.000 galones de propulsante criogénico (hidrógeno líquido y oxígeno líquido) en el cohete SLS."
+              en: "More than 700,000 gallons of cryogenic propellant (liquid hydrogen and liquid oxygen) were loaded into the SLS rocket."
+            sources:
+              - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+                accessed: "2026-10-21"
+          - id: "launch-walkout-and-ingress"
+            claim:
+              es: "La tripulación salió del edificio Neil A. Armstrong a las 2:00 p. m. EDT, llegó a la plataforma 39B a las 2:14 p. m. EDT y comenzó a abordar Orion a las 2:31 p. m. EDT del 1 de abril de 2026."
+              en: "The crew walked out of the Neil A. Armstrong Operations and Checkout Building at 2:00 p.m. EDT, arrived at Pad 39B at 2:14 p.m. EDT, and began boarding Orion at 2:31 p.m. EDT on April 1, 2026."
+            sources:
+              - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+                accessed: "2026-10-21"
+              - title: "NASA Image and Video Library: AFRC2026-0068-03"
+                url: "https://images.nasa.gov/details/AFRC2026-0068-03"
+                accessed: "2026-10-20"
+      - id: "launch-phase-2"
+        order: 2
+        timeLabel:
+          es: "T-00:00:00 · 6:35 p. m. EDT"
+          en: "T-00:00:00 · 6:35 p.m. EDT"
+        title:
+          es: "Encendido de motores RS-25 y despegue desde el Complejo 39B"
+          en: "RS-25 ignition and liftoff from Launch Complex 39B"
+        description:
+          es: >-
+            A las 6:25 p. m. EDT el secuenciador de lanzamiento en tierra tomó el control de la cuenta terminal. Seis segundos antes de cero se encendieron en secuencia los cuatro motores RS-25 de combustible líquido; al llegar a cero se activaron los dos propulsores sólidos de cinco segmentos y las abrazaderas liberaron el vehículo de 5,75 millones de libras, que ascendió con 8,8 millones de libras de empuje a las 6:35 p. m. EDT.
+          en: >-
+            At 6:25 p.m. EDT the Ground Launch Sequencer assumed control of the terminal countdown. Roughly six seconds before zero, the four liquid-fueled RS-25 engines ignited in staggered sequence; at zero, the twin five-segment solid rocket boosters ignited and hold-down bolts released the 5.75-million-pound vehicle, lifting off under 8.8 million pounds of thrust at 6:35 p.m. EDT.
+        facts:
+          - id: "launch-liftoff-time-and-thrust"
+            claim:
+              es: "Artemis II despegó a las 6:35 p. m. EDT del 1 de abril de 2026 desde el Complejo de Lanzamiento 39B con 8,8 millones de libras de empuje y un peso total de 5,75 millones de libras."
+              en: "Artemis II lifted off at 6:35 p.m. EDT on April 1, 2026, from Launch Complex 39B with 8.8 million pounds of thrust and a liftoff weight of 5.75 million pounds."
+            sources:
+              - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+                accessed: "2026-10-21"
+              - title: "NASA Curious Universe Podcast Transcript: Artemis II Crew Flies Around the Moon"
+                url: "https://www.nasa.gov/podcasts/curious-universe/artemis-ii-circles-moon/"
+                accessed: "2026-10-20"
+              - title: "NASA Image and Video Library: NHQ202604010227"
+                url: "https://images.nasa.gov/details/NHQ202604010227"
+                accessed: "2026-10-20"
+      - id: "launch-phase-3"
+        order: 3
+        timeLabel:
+          es: "MET +00:00:56 a +00:02:09 · 6:36–6:37 p. m. EDT"
+          en: "MET +00:00:56 to +00:02:09 · 6:36–6:37 p.m. EDT"
+        title:
+          es: "Velocidad supersónica, Max Q y separación de los propulsores sólidos"
+          en: "Supersonic climb, Max Q, and solid rocket booster separation"
+        description:
+          es: >-
+            El cohete superó la barrera del sonido a los 56 segundos de vuelo y atravesó el punto de máxima presión aerodinámica (Max Q) a los 72 segundos. Tras consumir su propulsante durante poco más de dos minutos, los dos propulsores sólidos de 177 pies de longitud se separaron limpiamente de la etapa central a las 6:37 p. m. EDT (MET +00:02:09).
+          en: >-
+            The rocket broke the sound barrier 56 seconds into flight and passed through maximum dynamic pressure (Max Q) at 1 minute and 12 seconds. Having burned their propellant for just over two minutes, the twin 177-foot solid rocket boosters separated cleanly from the core stage at 6:37 p.m. EDT (MET +00:02:09).
+        facts:
+          - id: "launch-maxq-and-srb-sep"
+            claim:
+              es: "El SLS superó Mach 1 a los 56 segundos, pasó por Max Q a 1 minuto y 12 segundos, y separó sus dos propulsores sólidos de 177 pies a los 2 minutos y 9 segundos (6:37 p. m. EDT)."
+              en: "SLS reached supersonic speed at 56 seconds, passed Max Q at 1 minute 12 seconds, and separated its twin 177-foot solid rocket boosters at 2 minutes 9 seconds into flight (6:37 p.m. EDT)."
+            sources:
+              - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+                accessed: "2026-10-21"
+      - id: "launch-phase-4"
+        order: 4
+        timeLabel:
+          es: "MET +00:03:13 a +00:18:00 · 6:38–6:59 p. m. EDT"
+          en: "MET +00:03:13 to +00:18:00 · 6:38–6:59 p.m. EDT"
+        title:
+          es: "Eyección de la torre de aborto, corte de etapa central y despliegue solar"
+          en: "Launch abort system jettison, core stage cutoff, and solar array deployment"
+        description:
+          es: >-
+            Ya por encima de la parte más densa de la atmósfera, a los 3 minutos y 13 segundos se desprendieron los paneles del módulo de servicio y la torre del sistema de aborto de lanzamiento (LAS). A los 8 minutos y 2 segundos se apagaron los cuatro motores RS-25 (MECO) y, doce segundos después (6:43 p. m. EDT), la etapa central se separó de la etapa superior ICPS y de Orion. Alrededor de dieciocho minutos después del despegue (confirmado a las 6:59 p. m. EDT), Orion desplegó sus cuatro alas de paneles solares —de casi 23 pies cada una, para una envergadura total de la nave de unos 63 pies—, equipadas con 15.000 celdas fotovoltaicas por ala.
+          en: >-
+            Above the dense lower atmosphere at 3 minutes and 13 seconds, the service module fairing panels and the Launch Abort System (LAS) tower were jettisoned. Main engine cutoff (MECO) of the four RS-25 engines occurred at 8 minutes and 2 seconds, followed twelve seconds later (6:43 p.m. EDT) by separation of the core stage from the ICPS and Orion. Roughly eighteen minutes after liftoff (confirmed by 6:59 p.m. EDT), Orion deployed its four solar array wings—nearly 23 feet long apiece, giving the spacecraft a total deployed wingspan of roughly 63 feet—with 15,000 solar cells on each wing.
+        facts:
+          - id: "launch-las-meco-solar"
+            claim:
+              es: "Los paneles del módulo de servicio y el sistema de aborto de lanzamiento se desprendieron a MET +00:03:13 (6:38 p. m. EDT); el corte de motores principales ocurrió a MET +00:08:02 y la separación de la etapa central a MET +00:08:14 (6:43 p. m. EDT), seguidos a las 6:59 p. m. EDT por el despliegue de las cuatro alas de paneles solares de Orion (casi 23 pies y 15.000 celdas por ala, para una envergadura total de la nave de unos 63 pies)."
+              en: "The service module panels and Launch Abort System were jettisoned at MET +00:03:13 (6:38 p.m. EDT); main engine cutoff occurred at MET +00:08:02 and core stage separation at MET +00:08:14 (6:43 p.m. EDT), followed by 6:59 p.m. EDT by deployment of Orion's four solar array wings (nearly 23 feet and 15,000 solar cells per wing, for a total spacecraft wingspan of roughly 63 feet)."
+            sources:
+              - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+                accessed: "2026-10-21"
+              - title: "NASA Image Article: Engineers Install Orion Solar Array Wings for Artemis II"
+                url: "https://www.nasa.gov/image-article/engineers-install-orion-solar-array-wings-for-artemis-ii/"
+                accessed: "2026-10-21"
+    video:
+      title:
+        es: "Video oficial del despegue"
+        en: "Official launch video"
+      description:
+        es: "Grabación oficial de NASA del ascenso de Artemis II desde el Complejo de Lanzamiento 39B el 1 de abril de 2026. Por privacidad, el archivo de video solo se carga desde los servidores de NASA cuando pulsas Reproducir."
+        en: "Official NASA footage of the Artemis II liftoff from Launch Complex 39B on April 1, 2026. For privacy, the video file is only requested from NASA servers when you press Play."
+      playLabel:
+        es: "Reproducir video oficial (NASA)"
+        en: "Play official video (NASA)"
+      privacyNote:
+        es: "Ningún recurso de video se solicita hasta que eliges reproducirlo. Crédito: NASA."
+        en: "No video resource is requested until you choose to play it. Credit: NASA."
+      nasaId: "KSC ART II Cause Way Launch low angle"
+      recordUrl: "https://images.nasa.gov/details/KSC%20ART%20II%20Cause%20Way%20Launch%20low%20angle"
+      mp4Url: "https://images-assets.nasa.gov/video/KSC%20ART%20II%20Cause%20Way%20Launch%20low%20angle/KSC%20ART%20II%20Cause%20Way%20Launch%20low%20angle~orig.mp4"
+      posterPhotoId: "NHQ202604010227"
+      sources:
+        - title: "NASA Image and Video Library: KSC ART II Cause Way Launch low angle"
+          url: "https://images.nasa.gov/details/KSC%20ART%20II%20Cause%20Way%20Launch%20low%20angle"
+          accessed: "2026-10-21"
+    photosSection:
+      title:
+        es: "Fotografías del despegue"
+        en: "Launch photographs"
+      intro:
+        es: "Las siete fotografías seleccionadas del capítulo El despegue: desde el cohete en la plataforma bajo la Luna hasta el ascenso sobre el Complejo 39B."
+        en: "All seven curated photographs from the Launch chapter: from the stacked rocket under the Moon to liftoff above Pad 39B."
+    facts:
+      - id: "launch-crew-and-spacecraft-name"
+        claim:
+          es: "La tripulación de Artemis II estuvo integrada por los astronautas de NASA Reid Wiseman (comandante), Victor Glover (piloto) y Christina Koch (especialista de misión), y el astronauta de la Agencia Espacial Canadiense (CSA) Jeremy Hansen (especialista de misión), a bordo de la nave Orion bautizada Integrity."
+          en: "The Artemis II crew consisted of NASA astronauts Reid Wiseman (commander), Victor Glover (pilot), and Christina Koch (mission specialist), and Canadian Space Agency (CSA) astronaut Jeremy Hansen (mission specialist), flying aboard the Orion spacecraft named Integrity."
+        sources:
+          - title: "NASA Mission Page: Artemis II"
+            url: "https://www.nasa.gov/mission/artemis-ii/"
+            accessed: "2026-10-21"
+          - title: "NASA Curious Universe Podcast Transcript: Artemis II Crew Flies Around the Moon"
+            url: "https://www.nasa.gov/podcasts/curious-universe/artemis-ii-circles-moon/"
+            accessed: "2026-10-20"
+      - id: "launch-window-and-director"
+        claim:
+          es: "La ventana de lanzamiento de dos horas se abrió a las 6:24 p. m. EDT del 1 de abril de 2026 y la directora de lanzamiento Charlie Blackwell-Thompson autorizó el despegue tras completarse la verificación de comunicaciones del sistema de terminación de vuelo del rango oriental."
+          en: "The two-hour launch window opened at 6:24 p.m. EDT on April 1, 2026, and Launch Director Charlie Blackwell-Thompson gave the go for launch after verification of the Eastern Range flight termination system communication link."
+        sources:
+          - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
+            url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+            accessed: "2026-10-21"
+          - title: "NASA Image and Video Library: KSC-20260401-PH-KLS01_0051"
+            url: "https://images.nasa.gov/details/KSC-20260401-PH-KLS01_0051"
+            accessed: "2026-10-20"
+
+  mission:
+    slug:
+      es: "mision"
+      en: "mission"
+    title:
+      es: "La misión"
+      en: "The mission"
+    intro:
+      es: >-
+        Artemis II fue un vuelo de prueba tripulado de diez días calendario (9 días, 1 hora y 32 minutos de duración total, del 1 al 10 de abril de 2026) que llevó a cuatro astronautas alrededor de la Luna en una trayectoria de retorno libre de unas 694.481 millas. A diferencia de futuras misiones de alunizaje, su objetivo fue certificar en el espacio profundo todos los sistemas de soporte vital, propulsión, navegación, comunicaciones y protección térmica de Orion, además de realizar observaciones científicas de la superficie lunar desde una distancia mínima de 4.067 millas.
+      en: >-
+        Artemis II was a ten-calendar-day crewed test flight (9 days, 1 hour, and 32 minutes total duration, from April 1 to April 10, 2026) that carried four astronauts around the Moon along a free-return trajectory of roughly 694,481 miles. Rather than landing on the lunar surface, the mission was designed to certify Orion's life support, propulsion, navigation, communication, and thermal protection systems in deep space while conducting coordinated lunar science observations from as close as 4,067 miles above the Moon.
+    timelineTitle:
+      es: "Cronología del viaje"
+      en: "Mission timeline"
+    timeline:
+      - id: "timeline-1-launch-orbit"
+        order: 1
+        dateLabel:
+          es: "Día de vuelo 1 · 1 de abril de 2026"
+          en: "Flight Day 1 · April 1, 2026"
+        title:
+          es: "Despegue, órbita terrestre alta y pilotaje manual"
+          en: "Liftoff, high-Earth orbit, and manual handling demonstration"
+        description:
+          es: >-
+            Tras despegar a las 6:35 p. m. EDT y desplegar los paneles solares de Orion, la etapa superior ICPS elevó el perigeo y el apogeo de la órbita terrestre. Una vez separada de la ICPS, el piloto Victor Glover tomó los mandos manuales de Integrity durante unos 70 minutos en una demostración de operaciones de proximidad, acercando la nave a unos 30 pies de la etapa descartada para validar las cámaras de acoplamiento y el control de actitud antes de partir hacia la Luna.
+          en: >-
+            Following liftoff at 6:35 p.m. EDT and solar array deployment, the ICPS upper stage executed burns to raise Orion's Earth orbit. After separating from the ICPS, Pilot Victor Glover manually flew Integrity for roughly 70 minutes in a proximity operations demonstration, maneuvering within about 30 feet of the spent stage to validate Orion's handling qualities and docking cameras before committing to the lunar trajectory.
+        facts:
+          - id: "mission-prox-ops"
+            claim:
+              es: "En el día de vuelo 1, tras separarse de la etapa ICPS, el piloto Victor Glover realizó una demostración de operaciones de proximidad de unos 70 minutos aproximando Orion manualmente hasta unos 30 pies de la etapa ICPS."
+              en: "On Flight Day 1, after separating from the ICPS, Pilot Victor Glover conducted an approximately 70-minute proximity operations demonstration, manually flying Orion to within about 30 feet of the ICPS."
+            sources:
+              - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+                accessed: "2026-10-21"
+              - title: "NASA Mission Page: Artemis II"
+                url: "https://www.nasa.gov/mission/artemis-ii/"
+                accessed: "2026-10-21"
+      - id: "timeline-2-tli"
+        order: 2
+        dateLabel:
+          es: "Día de vuelo 2 · 2 de abril de 2026, 7:49 p. m. EDT"
+          en: "Flight Day 2 · April 2, 2026, 7:49 p.m. EDT"
+        title:
+          es: "Encendido de inyección translunar (TLI)"
+          en: "Translunar injection (TLI) burn"
+        description:
+          es: >-
+            A las 7:49 p. m. EDT del 2 de abril, el motor principal del Módulo de Servicio Europeo de Orion —capaz de generar hasta 6.700 libras de empuje— se encendió durante 5 minutos y 50 segundos. La maniobra consumió cerca de 1.000 libras de propulsante y colocó a la nave, de unas 58.000 libras de masa, en una ruta de cuatro días hacia la Luna bajo una trayectoria de retorno libre que garantizaba el regreso por gravedad terrestre incluso sin encendidos posteriores.
+          en: >-
+            At 7:49 p.m. EDT on April 2, the main engine on Orion's European Service Module—capable of up to 6,700 pounds of thrust—fired for 5 minutes and 50 seconds. Burning roughly 1,000 pounds of propellant at a spacecraft mass of about 58,000 pounds, the maneuver sent the crew out of Earth orbit on a four-day outbound path to the Moon along a free-return trajectory that used lunar and Earth gravity to ensure a safe return path.
+        facts:
+          - id: "mission-tli-burn"
+            claim:
+              es: "El encendido de inyección translunar ocurrió a las 7:49 p. m. EDT del 2 de abril de 2026; el motor principal del Módulo de Servicio Europeo (hasta 6.700 libras de empuje) funcionó durante 5 minutos y 50 segundos y consumió unas 1.000 libras de propulsante."
+              en: "The translunar injection burn took place at 7:49 p.m. EDT on April 2, 2026; the European Service Module main engine (up to 6,700 pounds of thrust) fired for 5 minutes and 50 seconds, burning approximately 1,000 pounds of propellant."
+            sources:
+              - title: "NASA Blog: Artemis II Flight Day 2 — Orion Completes TLI Burn, Crew Begins Journey to the Moon (April 2, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/02/artemis-ii-flight-day-2-orion-completes-tli-burn-crew-begins-journey-to-the-moon/"
+                accessed: "2026-10-21"
+      - id: "timeline-3-outbound-soi"
+        order: 3
+        dateLabel:
+          es: "Días de vuelo 3 a 6 · 3 al 6 de abril de 2026"
+          en: "Flight Days 3 to 6 · April 3 to April 6, 2026"
+        title:
+          es: "Travesía de ida e ingreso en la esfera de influencia lunar"
+          en: "Outbound coast and lunar sphere of influence entry"
+        description:
+          es: >-
+            Durante el viaje de ida, la tripulación probó los sistemas de comunicación por radiofrecuencia de la Red del Espacio Profundo (DSN) y el sistema óptico de comunicaciones láser de Orion (O2O), además de fotografiar la Tierra menguante. A las 12:37 a. m. EDT del 6 de abril, al cierre del quinto día de misión, Orion cruzó hacia la esfera de influencia lunar, donde la gravedad de la Luna pasó a dominar la trayectoria de la nave.
+          en: >-
+            During the outbound coast, the crew tested Deep Space Network (DSN) radio communications and the Orion Artemis II Optical Communications System (O2O) while photographing the receding Earth. At 12:37 a.m. EDT on April 6, at the tail end of the fifth mission day, Orion entered the lunar sphere of influence, where the Moon's gravity became the dominant force acting on the spacecraft.
+        facts:
+          - id: "mission-lunar-soi-entry"
+            claim:
+              es: "Orion ingresó en la esfera de influencia lunar a las 12:37 a. m. EDT del 6 de abril de 2026."
+              en: "Orion entered the lunar sphere of influence at 12:37 a.m. EDT on April 6, 2026."
+            sources:
+              - title: "NASA Image and Video Library: art002e024097"
+                url: "https://images.nasa.gov/details/art002e024097"
+                accessed: "2026-10-20"
+              - title: "NASA Blog: Artemis II Flight Day 6 — Lunar Flyby Updates (April 6, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/06/artemis-ii-flight-day-6-lunar-flyby-updates/"
+                accessed: "2026-10-21"
+      - id: "timeline-4-flyby"
+        order: 4
+        dateLabel:
+          es: "Día de vuelo 6 · 6 de abril de 2026, 1:56–7:25 p. m. EDT"
+          en: "Flight Day 6 · April 6, 2026, 1:56–7:25 p.m. EDT"
+        title:
+          es: "Récord de distancia, sobrevuelo lunar y puesta y salida de la Tierra"
+          en: "Distance record, lunar flyby, Earthset, and Earthrise"
+        description:
+          es: >-
+            A la 1:56 p. m. EDT del 6 de abril, la tripulación superó el récord histórico de distancia humana a la Tierra establecido por Apolo 13 en 1970 (248.655 millas). Durante unas siete horas de observación lunar coordinada con el equipo científico en Houston y guiada por el software Lunar Targeting Plan, los astronautas fotografiaron cuencas de impacto como Orientale y Hertzsprung. A las 6:41 p. m. EDT contemplaron la puesta de la Tierra tras el limbo lunar; entre las 6:44 y las 7:25 p. m. EDT volaron en silencio de radio detrás de la Luna, alcanzando su máxima aproximación a la superficie a las 7:00 p. m. EDT (4.067 millas) y su distancia máxima a la Tierra a las 7:02 p. m. EDT (252.756 millas en el registro de vuelo; 252.760 millas en la estimación previa), antes de captar la salida de la Tierra a las 7:22 p. m. EDT.
+          en: >-
+            At 1:56 p.m. EDT on April 6, the crew surpassed the human distance record from Earth set by Apollo 13 in 1970 (248,655 miles). Over roughly seven hours of lunar observation coordinated with the Science Evaluation Room in Houston and guided by the custom Lunar Targeting Plan software, the astronauts documented impact basins including Orientale and Hertzsprung. They witnessed Earthset at 6:41 p.m. EDT, flew through a planned 41-minute radio blackout behind the Moon from 6:44 to 7:25 p.m. EDT—reaching closest approach to the lunar surface at 7:00 p.m. EDT (4,067 miles) and maximum distance from Earth at 7:02 p.m. EDT (252,756 miles in flight logs; 252,760 miles in pre-flight estimates)—and captured Earthrise at 7:22 p.m. EDT.
+        facts:
+          - id: "mission-flyby-times-and-distances"
+            claim:
+              es: "El 6 de abril de 2026, Artemis II superó las 248.655 millas de Apolo 13 a la 1:56 p. m. EDT, observó la puesta de la Tierra a las 6:41 p. m. EDT, permaneció sin comunicaciones entre las 6:44 y las 7:25 p. m. EDT, pasó a 4.067 millas de la Luna a las 7:00 p. m. EDT, alcanzó 252.756 millas de la Tierra a las 7:02 p. m. EDT y registró la salida de la Tierra a las 7:22 p. m. EDT."
+              en: "On April 6, 2026, Artemis II passed Apollo 13's 248,655-mile mark at 1:56 p.m. EDT, observed Earthset at 6:41 p.m. EDT, flew in communications blackout from 6:44 to 7:25 p.m. EDT, reached closest lunar approach of 4,067 miles at 7:00 p.m. EDT, reached a peak distance of 252,756 miles from Earth at 7:02 p.m. EDT, and recorded Earthrise at 7:22 p.m. EDT."
+            sources:
+              - title: "NASA Blog: Artemis II Flight Day 6 — Lunar Flyby Updates (April 6, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/06/artemis-ii-flight-day-6-lunar-flyby-updates/"
+                accessed: "2026-10-21"
+              - title: "NASA Gallery: Artemis II Splashdown and Recovery"
+                url: "https://www.nasa.gov/gallery/artemis-ii-splashdown/"
+                accessed: "2026-10-21"
+              - title: "NASA Image and Video Library: art002e016299"
+                url: "https://images.nasa.gov/details/art002e016299"
+                accessed: "2026-10-20"
+              - title: "NASA Image and Video Library: art002e014251"
+                url: "https://images.nasa.gov/details/art002e014251"
+                accessed: "2026-10-20"
+              - title: "NASA FAQ: NASA Answers Your Most Pressing Artemis II Questions"
+                url: "https://www.nasa.gov/missions/nasa-answers-your-most-pressing-artemis-ii-questions/"
+                accessed: "2026-10-21"
+      - id: "timeline-5-eclipse"
+        order: 5
+        dateLabel:
+          es: "Día de vuelo 6 · 6 de abril de 2026, 8:35–9:32 p. m. EDT"
+          en: "Flight Day 6 · April 6, 2026, 8:35–9:32 p.m. EDT"
+        title:
+          es: "Eclipse solar total desde el espacio profundo y destellos de impacto"
+          en: "Deep-space total solar eclipse and lunar impact flashes"
+        description:
+          es: >-
+            Poco después del sobrevuelo, entre las 8:35 y las 9:32 p. m. EDT del 6 de abril, Orion atravesó la sombra de la Luna y la tripulación presenció un eclipse solar con casi 54 minutos de totalidad. Desde esa perspectiva única documentaron corrientes de la corona solar, luz zodiacal, los planetas Venus y Saturno, y breves destellos de luz sobre el disco lunar en sombra producidos por el impacto de meteoroides: seis reportados inicialmente por radio a las 9:00 p. m. EDT y cinco confirmados en el informe científico preliminar actualizado el 7 de octubre de 2026.
+          en: >-
+            Shortly after closest approach, between 8:35 and 9:32 p.m. EDT on April 6, Orion passed through the Moon's shadow and the crew witnessed a solar eclipse featuring nearly 54 minutes of totality. From that vantage point they documented solar coronal streamers, zodiacal light, the planets Venus and Saturn, and brief pinpoint flashes on the unlit lunar surface caused by meteoroid impacts—six initially reported by radio at 9:00 p.m. EDT, with five confirmed in the preliminary lunar science report updated on October 7, 2026.
+        facts:
+          - id: "mission-eclipse-and-flashes"
+            claim:
+              es: "El eclipse solar observado desde Orion el 6 de abril de 2026 se extendió de las 8:35 a las 9:32 p. m. EDT con casi 54 minutos de totalidad; el informe científico preliminar del 7 de octubre de 2026 confirma cinco destellos de impacto de meteoroides a unas 46.000 millas de distancia (frente a los seis comunicados inicialmente a las 9:00 p. m. EDT)."
+              en: "The solar eclipse observed from Orion on April 6, 2026, ran from 8:35 to 9:32 p.m. EDT with nearly 54 minutes of totality; the preliminary lunar science report updated October 7, 2026, confirms five meteoroid impact flashes observed from roughly 46,000 miles away (compared with six initially reported at 9:00 p.m. EDT)."
+            sources:
+              - title: "NASA Blog: Artemis II Flight Day 6 — Lunar Flyby Updates (April 6, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/06/artemis-ii-flight-day-6-lunar-flyby-updates/"
+                accessed: "2026-10-21"
+              - title: "NASA Image and Video Library: art002e009301"
+                url: "https://images.nasa.gov/details/art002e009301"
+                accessed: "2026-10-20"
+              - title: "NASA Image and Video Library: art002e009575"
+                url: "https://images.nasa.gov/details/art002e009575"
+                accessed: "2026-10-20"
+              - title: "Artemis II Preliminary Lunar Science Report (updated October 7, 2026)"
+                url: "https://science.nasa.gov/feature/artemis-ii-preliminary-lunar-science-report/"
+                accessed: "2026-10-20"
+      - id: "timeline-6-splashdown"
+        order: 6
+        dateLabel:
+          es: "Días de vuelo 7 a 10 · 7 al 10 de abril de 2026 (amerizaje 8:07 p. m. EDT)"
+          en: "Flight Days 7 to 10 · April 7 to April 10, 2026 (splashdown 8:07 p.m. EDT)"
+        title:
+          es: "Viaje de regreso, reentrada atmosférica y amerizaje en el Pacífico"
+          en: "Return coast, atmospheric re-entry, and Pacific splashdown"
+        description:
+          es: >-
+            Orion salió de la esfera de influencia lunar el 7 de abril y durante el regreso envió a la Tierra más de 800 gigabytes de datos científicos. El viernes 10 de abril, el módulo de tripulación se separó del módulo de servicio a las 7:33 p. m. EDT e ingresó en la atmósfera a las 7:53 p. m. EDT a unos 400.000 pies de altitud y cerca de 35 veces la velocidad del sonido, soportando temperaturas cercanas a 3.000 °F en su escudo térmico y seis minutos de corte de comunicaciones. Tras desplegar sus paracaídas de frenado y sus tres paracaídas principales, Integrity amerizó frente a la costa de San Diego a las 8:07 p. m. EDT (5:07 p. m. PDT), y los equipos de recuperación de NASA y de la Marina de EE. UU. trasladaron a los cuatro astronautas en helicóptero al buque USS John P. Murtha antes de las 9:58 p. m. EDT.
+          en: >-
+            Orion exited the lunar sphere of influence on April 7 and downlinked more than 800 gigabytes of science data during the return coast. On Friday, April 10, the crew module separated from the service module at 7:33 p.m. EDT and hit atmospheric entry interface at 7:53 p.m. EDT at 400,000 feet and roughly 35 times the speed of sound, enduring heat-shield temperatures near 3,000 °F and a six-minute communications blackout. Following drogue and triple main parachute deployment, Integrity splashed down off San Diego at 8:07 p.m. EDT (5:07 p.m. PDT), and NASA Exploration Ground Systems and U.S. Navy recovery teams brought all four astronauts aboard USS John P. Murtha by helicopter before 9:58 p.m. EDT.
+        facts:
+          - id: "mission-reentry-and-splashdown"
+            claim:
+              es: "El 10 de abril de 2026, el módulo de tripulación se separó a las 7:33 p. m. EDT, inició la reentrada atmosférica a las 7:53 p. m. EDT (400.000 pies, ~Mach 35, ~3.000 °F), amerizó en el océano Pacífico cerca de San Diego a las 8:07 p. m. EDT (5:07 p. m. PDT) tras 9 días, 1 hora y 32 minutos de misión, y los cuatro tripulantes llegaron en helicóptero al USS John P. Murtha a las 9:58 p. m. EDT."
+              en: "On April 10, 2026, the crew module separated at 7:33 p.m. EDT, reached entry interface at 7:53 p.m. EDT (400,000 feet, ~Mach 35, ~3,000 °F), splashed down in the Pacific Ocean off San Diego at 8:07 p.m. EDT (5:07 p.m. PDT) after a mission duration of 9 days, 1 hour, and 32 minutes, and all four astronauts arrived by helicopter aboard USS John P. Murtha by 9:58 p.m. EDT."
+            sources:
+              - title: "NASA Blog: Artemis II Flight Day 10 — Re-entry Live Updates (April 10, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/10/artemis-ii-flight-day-10-re-entry-live-updates/"
+                accessed: "2026-10-21"
+              - title: "NASA Gallery: Artemis II Splashdown and Recovery"
+                url: "https://www.nasa.gov/gallery/artemis-ii-splashdown/"
+                accessed: "2026-10-21"
+              - title: "NASA Image and Video Library: KSC-20260411-KED01-0332"
+                url: "https://images.nasa.gov/details/KSC-20260411-KED01-0332"
+                accessed: "2026-10-20"
+              - title: "NASA Image and Video Library: NHQ202604100056"
+                url: "https://images.nasa.gov/details/NHQ202604100056"
+                accessed: "2026-10-20"
+    crewTitle:
+      es: "Tripulación"
+      en: "Crew"
+    crew:
+      - id: "reid-wiseman"
+        name: "Reid Wiseman"
+        agency: "NASA"
+        role:
+          es: "Comandante (NASA)"
+          en: "Commander (NASA)"
+        photoId: "art002e009007"
+        bio:
+          es: "Astronauta de NASA y comandante de Artemis II. Dirigió las operaciones de vuelo y observación lunar a bordo de Integrity y propuso junto a sus compañeros los nombres Integrity y Carroll —en recuerdo de su difunta esposa— para dos pequeños cráteres cercanos a la cuenca Orientale."
+          en: "NASA astronaut and Artemis II commander. He led flight and lunar observation operations aboard Integrity and, with his crewmates, proposed the names Integrity and Carroll—in remembrance of his late wife—for two small craters near the Orientale basin."
+        facts:
+          - id: "crew-wiseman-role"
+            claim:
+              es: "Reid Wiseman, astronauta de NASA, fue el comandante de la misión Artemis II."
+              en: "NASA astronaut Reid Wiseman served as commander of the Artemis II mission."
+            sources:
+              - title: "NASA Mission Page: Artemis II"
+                url: "https://www.nasa.gov/mission/artemis-ii/"
+                accessed: "2026-10-21"
+              - title: "NASA Image and Video Library: art002e012153"
+                url: "https://images.nasa.gov/details/art002e012153"
+                accessed: "2026-10-20"
+      - id: "victor-glover"
+        name: "Victor Glover"
+        agency: "NASA"
+        role:
+          es: "Piloto (NASA)"
+          en: "Pilot (NASA)"
+        photoId: "art002e025219"
+        bio:
+          es: "Astronauta de NASA y piloto de Artemis II. Ejecutó la demostración de pilotaje manual en operaciones de proximidad con la etapa ICPS en el primer día de vuelo y se convirtió en la primera persona negra en viajar alrededor de la Luna."
+          en: "NASA astronaut and Artemis II pilot. He flew the manual proximity operations demonstration with the spent ICPS stage on Flight Day 1 and became the first Black person to fly around the Moon."
+        facts:
+          - id: "crew-glover-role"
+            claim:
+              es: "Victor Glover, astronauta de NASA, fue el piloto de Artemis II y la primera persona negra en viajar alrededor de la Luna."
+              en: "NASA astronaut Victor Glover served as pilot of Artemis II and became the first Black person to fly around the Moon."
+            sources:
+              - title: "NASA Mission Page: Artemis II"
+                url: "https://www.nasa.gov/mission/artemis-ii/"
+                accessed: "2026-10-21"
+              - title: "NASA Curious Universe Podcast Transcript: Artemis II Crew Flies Around the Moon"
+                url: "https://www.nasa.gov/podcasts/curious-universe/artemis-ii-circles-moon/"
+                accessed: "2026-10-20"
+              - title: "NASA Image and Video Library: art002e025219"
+                url: "https://images.nasa.gov/details/art002e025219"
+                accessed: "2026-10-20"
+      - id: "christina-koch"
+        name: "Christina Koch"
+        agency: "NASA"
+        role:
+          es: "Especialista de misión (NASA)"
+          en: "Mission Specialist (NASA)"
+        photoId: "art002e041711"
+        bio:
+          es: "Astronauta de NASA y especialista de misión en Artemis II. Participó en la verificación de los sistemas de soporte vital, comunicaciones y observación geológica lunar, y se convirtió en la primera mujer en viajar más allá de la órbita terrestre baja y rodear la Luna."
+          en: "NASA astronaut and Artemis II mission specialist. She helped verify Orion's life support, communication, and geological observation systems, becoming the first woman to travel beyond low Earth orbit and fly around the Moon."
+        facts:
+          - id: "crew-koch-role"
+            claim:
+              es: "Christina Koch, astronauta de NASA y especialista de misión en Artemis II, fue la primera mujer en viajar alrededor de la Luna."
+              en: "NASA astronaut Christina Koch served as mission specialist on Artemis II and became the first woman to fly around the Moon."
+            sources:
+              - title: "NASA Mission Page: Artemis II"
+                url: "https://www.nasa.gov/mission/artemis-ii/"
+                accessed: "2026-10-21"
+              - title: "NASA Curious Universe Podcast Transcript: Artemis II Crew Flies Around the Moon"
+                url: "https://www.nasa.gov/podcasts/curious-universe/artemis-ii-circles-moon/"
+                accessed: "2026-10-20"
+              - title: "NASA Image and Video Library: art002e041711"
+                url: "https://images.nasa.gov/details/art002e041711"
+                accessed: "2026-10-20"
+      - id: "jeremy-hansen"
+        name: "Jeremy Hansen"
+        agency: "CSA"
+        role:
+          es: "Especialista de misión (Agencia Espacial Canadiense, CSA)"
+          en: "Mission Specialist (Canadian Space Agency, CSA)"
+        photoId: "art002e014251"
+        bio:
+          es: "Astronauta de la Agencia Espacial Canadiense (CSA) y especialista de misión en Artemis II. Trabajó en los turnos de observación científica con el Lunar Targeting Plan y se convirtió en la primera persona no estadounidense en viajar más allá de la órbita terrestre baja y rodear la Luna."
+          en: "Canadian Space Agency (CSA) astronaut and Artemis II mission specialist. He worked the scientific observation shifts using the Lunar Targeting Plan and became the first non-American to travel beyond low Earth orbit and fly around the Moon."
+        facts:
+          - id: "crew-hansen-role"
+            claim:
+              es: "Jeremy Hansen, astronauta de la Agencia Espacial Canadiense (CSA) y especialista de misión en Artemis II, fue el primer canadiense y la primera persona no estadounidense en viajar alrededor de la Luna."
+              en: "Canadian Space Agency (CSA) astronaut Jeremy Hansen served as mission specialist on Artemis II, becoming the first Canadian and first non-American to fly around the Moon."
+            sources:
+              - title: "NASA Mission Page: Artemis II"
+                url: "https://www.nasa.gov/mission/artemis-ii/"
+                accessed: "2026-10-21"
+              - title: "NASA Curious Universe Podcast Transcript: Artemis II Crew Flies Around the Moon"
+                url: "https://www.nasa.gov/podcasts/curious-universe/artemis-ii-circles-moon/"
+                accessed: "2026-10-20"
+              - title: "NASA Image and Video Library: art002e014251"
+                url: "https://images.nasa.gov/details/art002e014251"
+                accessed: "2026-10-20"
+    milestonesTitle:
+      es: "Hitos y récords verificados"
+      en: "Verified milestones and records"
+    milestonesIntro:
+      es: "Cada cifra e hito histórico de Artemis II está respaldado por los registros de vuelo y reportes científicos oficiales de NASA."
+      en: "Every figure and historical milestone of Artemis II is backed by official NASA flight logs and science reports."
+    milestones:
+      - id: "milestone-farthest-distance"
+        title:
+          es: "Mayor distancia humana desde la Tierra: 252.756 millas"
+          en: "Farthest human distance from Earth: 252,756 miles"
+        description:
+          es: >-
+            El 6 de abril de 2026 a la 1:56 p. m. EDT, Artemis II superó la marca de 248.655 millas alcanzada por Apolo 13 el 14 de abril de 1970. A las 7:02 p. m. EDT del mismo día alcanzó su distancia máxima de 252.756 millas de la Tierra (4.101 millas más allá de Apolo 13; la guía previa al vuelo estimaba 252.760 millas).
+          en: >-
+            On April 6, 2026, at 1:56 p.m. EDT, Artemis II surpassed the 248,655-mile record set by Apollo 13 on April 14, 1970. At 7:02 p.m. EDT that evening, the spacecraft reached its maximum distance of 252,756 miles from Earth (4,101 miles beyond Apollo 13; NASA's pre-flight FAQ estimated 252,760 miles).
+        facts:
+          - id: "fact-milestone-distance"
+            claim:
+              es: "Artemis II superó el récord de Apolo 13 (248.655 millas) a la 1:56 p. m. EDT del 6 de abril de 2026 y alcanzó una distancia máxima de 252.756 millas a las 7:02 p. m. EDT (252.760 millas en la estimación previa)."
+              en: "Artemis II broke Apollo 13's 248,655-mile distance record at 1:56 p.m. EDT on April 6, 2026, and reached a maximum distance from Earth of 252,756 miles at 7:02 p.m. EDT (252,760 miles in the pre-flight estimate)."
+            sources:
+              - title: "NASA Blog: Artemis II Flight Day 6 — Lunar Flyby Updates (April 6, 2026)"
+                url: "https://www.nasa.gov/blogs/missions/2026/04/06/artemis-ii-flight-day-6-lunar-flyby-updates/"
+                accessed: "2026-10-21"
+              - title: "NASA Gallery: Artemis II Splashdown and Recovery"
+                url: "https://www.nasa.gov/gallery/artemis-ii-splashdown/"
+                accessed: "2026-10-21"
+              - title: "NASA FAQ: NASA Answers Your Most Pressing Artemis II Questions"
+                url: "https://www.nasa.gov/missions/nasa-answers-your-most-pressing-artemis-ii-questions/"
+                accessed: "2026-10-21"
+      - id: "milestone-firsts-crew"
+        title:
+          es: "Primeros vuelos lunares del siglo XXI y nuevas primicias humanas"
+          en: "First 21st-century lunar flight and historic crew firsts"
+        description:
+          es: >-
+            Artemis II fue la primera misión tripulada a la vecindad lunar desde Apolo 17 en diciembre de 1972 y el primer vuelo con astronautas del cohete SLS y la nave Orion. Christina Koch fue la primera mujer, Victor Glover la primera persona negra y Jeremy Hansen el primer canadiense y no estadounidense en viajar alrededor de la Luna.
+          en: >-
+            Artemis II was the first crewed mission to the lunar vicinity since Apollo 17 in December 1972 and the first crewed flight of both the SLS rocket and the Orion spacecraft. Christina Koch became the first woman, Victor Glover the first Black person, and Jeremy Hansen the first Canadian and non-American to fly around the Moon.
+        facts:
+          - id: "fact-milestone-firsts"
+            claim:
+              es: "Artemis II marcó el primer viaje tripulado a la Luna desde Apolo 17 (diciembre de 1972) y llevó a la primera mujer (Christina Koch), la primera persona negra (Victor Glover) y el primer canadiense (Jeremy Hansen) alrededor de la Luna."
+              en: "Artemis II marked the first crewed lunar journey since Apollo 17 (December 1972) and carried the first woman (Christina Koch), the first Black person (Victor Glover), and the first Canadian (Jeremy Hansen) around the Moon."
+            sources:
+              - title: "NASA Mission Page: Artemis II"
+                url: "https://www.nasa.gov/mission/artemis-ii/"
+                accessed: "2026-10-21"
+              - title: "NASA Mission Page: Apollo 17"
+                url: "https://www.nasa.gov/mission/apollo-17/"
+                accessed: "2026-10-21"
+              - title: "NASA Curious Universe Podcast Transcript: Artemis II Crew Flies Around the Moon"
+                url: "https://www.nasa.gov/podcasts/curious-universe/artemis-ii-circles-moon/"
+                accessed: "2026-10-20"
+      - id: "milestone-science-and-eclipse"
+        title:
+          es: "54 minutos de totalidad solar y más de 800 GB de ciencia lunar"
+          en: "54 minutes of solar totality and over 800 GB of lunar science"
+        description:
+          es: >-
+            Durante el sobrevuelo de siete horas y el eclipse solar de casi 54 minutos, la tripulación registró cinco destellos confirmados de impacto de meteoroides en la cara nocturna de la Luna y recopiló más de 800 gigabytes de datos —incluidos más de 11.000 archivos de imagen y video y 8,5 horas de notas de voz— analizados por el equipo científico de Artemis II.
+          en: >-
+            Across the seven-hour flyby and a solar eclipse with nearly 54 minutes of totality, the crew observed five confirmed meteoroid impact flashes on the unlit lunar disk and collected more than 800 gigabytes of data—including over 11,000 image and video files and 8.5 hours of audio descriptions—analyzed by the Artemis II science team.
+        facts:
+          - id: "fact-milestone-science-volume"
+            claim:
+              es: "La tripulación recopiló más de 800 GB de datos científicos (más de 11.000 imágenes y videos y 8,5 horas de audio), presenció casi 54 minutos de totalidad durante el eclipse solar y documentó cinco destellos confirmados de impacto de meteoroides."
+              en: "The crew collected more than 800 GB of science data (over 11,000 images and videos and 8.5 hours of audio), witnessed nearly 54 minutes of solar eclipse totality, and documented five confirmed meteoroid impact flashes."
+            sources:
+              - title: "Artemis II Preliminary Lunar Science Report (updated October 7, 2026)"
+                url: "https://science.nasa.gov/feature/artemis-ii-preliminary-lunar-science-report/"
+                accessed: "2026-10-20"
+              - title: "NASA Image and Video Library: art002e009301"
+                url: "https://images.nasa.gov/details/art002e009301"
+                accessed: "2026-10-20"
+    facts:
+      - id: "mission-duration-and-trajectory"
+        claim:
+          es: "Artemis II duró 9 días, 1 hora y 32 minutos (del 1 al 10 de abril de 2026) y recorrió aproximadamente 694.481 millas (695.081 millas en la estimación previa al vuelo) en una trayectoria de retorno libre con un acercamiento mínimo a la Luna de 4.067 millas."
+          en: "Artemis II lasted 9 days, 1 hour, and 32 minutes (April 1 to April 10, 2026) and traveled approximately 694,481 miles (695,081 miles in the pre-flight estimate) on a free-return trajectory with a closest lunar approach of 4,067 miles."
+        sources:
+          - title: "NASA Gallery: Artemis II Splashdown and Recovery"
+            url: "https://www.nasa.gov/gallery/artemis-ii-splashdown/"
+            accessed: "2026-10-21"
+          - title: "NASA FAQ: NASA Answers Your Most Pressing Artemis II Questions"
+            url: "https://www.nasa.gov/missions/nasa-answers-your-most-pressing-artemis-ii-questions/"
+            accessed: "2026-10-21"
+          - title: "NASA Image and Video Library: art002e014251"
+            url: "https://images.nasa.gov/details/art002e014251"
+            accessed: "2026-10-20"
+
+  why-it-matters:
+    slug:
+      es: "por-que-importa"
+      en: "why-it-matters"
+    title:
+      es: "Por qué importa"
+      en: "Why it matters"
+    heroPhotoId: "art002e021278"
+    intro:
+      es: >-
+        Cuando Eugene Cernan, Ronald Evans y Harrison Schmitt regresaron a la Tierra a bordo de Apolo 17 el 19 de diciembre de 1972, se cerró la primera era de exploración humana más allá de la órbita terrestre baja. Pasaron más de cincuenta y tres años en los que ningún ser humano volvió a contemplar de cerca el relieve lunar ni a ver la Tierra reducirse hasta caber detrás del pulgar. Artemis II rompió ese silencio de medio siglo: no para repetir una carrera corta de banderas y huellas, sino para abrir una presencia científica y sostenida en el espacio profundo junto a socios internacionales.
+      en: >-
+        When Eugene Cernan, Ronald Evans, and Harrison Schmitt splashed down aboard Apollo 17 on December 19, 1972, the first era of human exploration beyond low Earth orbit came to a close. For more than fifty-three years, no human being saw the lunar highlands up close or watched Earth shrink into a crescent suspended in the dark. Artemis II ended that half-century pause—not to replay a brief sprint of flags and footprints, but to inaugurate a sustained, international scientific presence in deep space.
+    programTitle:
+      es: "El papel de Artemis II en el programa Artemis"
+      en: "Artemis II's role in the Artemis campaign"
+    programBody:
+      es: >-
+        Tras el vuelo sin tripulación de Artemis I en noviembre de 2022, Artemis II fue la prueba decisiva con astronautas del cohete Space Launch System (SLS), de la nave Orion y su Módulo de Servicio Europeo, y de los sistemas de tierra del Centro Espacial Kennedy. En diez días de misión demostró que el soporte vital ambiental, el blindaje contra la radiación, las comunicaciones ópticas y por radiofrecuencia de espacio profundo, el pilotaje manual y el escudo térmico a Mach 35 funcionan con una tripulación humana. Al mismo tiempo, el trabajo conjunto entre la cabina de Orion y la Sala de Evaluación Científica en Houston —apoyado en el Lunar Targeting Plan— puso a prueba en tiempo real los protocolos de observación geológica que guiarán a los futuros astronautas en la superficie.
+      en: >-
+        Following the uncrewed Artemis I test flight in November 2022, Artemis II served as the decisive crewed flight test of the Space Launch System (SLS) rocket, the Orion spacecraft with its European Service Module, and Exploration Ground Systems at Kennedy Space Center. Across ten mission days, it proved that environmental life support, radiation shelter procedures, deep-space radio and optical laser communications, manual piloting, and Orion's heat shield at Mach 35 perform reliably with astronauts aboard. At the same time, real-time collaboration between the crew in Orion and the Science Evaluation Room in Houston—guided by the Lunar Targeting Plan—validated the geological observation workflows that surface crews will rely on.
+    nextTitle:
+      es: "Lo que sigue: de la órbita terrestre al polo sur lunar y Marte"
+      en: "What comes next: from Earth orbit to the lunar South Pole and Mars"
+    nextBody:
+      es: >-
+        Con la arquitectura de Artemis actualizada por NASA en 2026 para acelerar el aprendizaje y la seguridad de vuelo, el camino hacia la superficie lunar avanza paso a paso. Artemis III, prevista para 2027, será una misión tripulada en órbita terrestre baja dedicada a probar en vuelo el encuentro, el acoplamiento y las operaciones conjuntas entre Orion y los módulos de aterrizaje humano comerciales desarrollados por SpaceX y Blue Origin, además de validar los nuevos trajes espaciales de actividad extravehicular. Esos ensayos preparan el terreno para Artemis IV a principios de 2028, que llevará astronautas a la superficie de la región del polo sur lunar, y para Artemis V a finales de 2028, con el objetivo de establecer una cadencia anual de misiones, levantar la infraestructura inicial en la Luna y preparar las primeras misiones humanas hacia Marte.
+      en: >-
+        Under the refined Artemis architecture announced by NASA in early 2026 to increase flight cadence and reduce technical risk, the path to the lunar surface proceeds deliberately. Artemis III, targeted for 2027, will fly a crewed demonstration in low Earth orbit to test rendezvous, docking, and integrated life-support operations between Orion and commercial human landers from SpaceX and Blue Origin, alongside checks of next-generation extravehicular spacesuits. Those milestones clear the way for Artemis IV in early 2028—which will land astronauts near the lunar South Pole—and Artemis V in late 2028, establishing an annual landing cadence, building surface infrastructure, and proving the deep-space operations needed for future human missions to Mars.
+    sourcesLabel:
+      es: "Fuentes oficiales consultadas"
+      en: "Official sources consulted"
+    facts:
+      - id: "why-apollo-17-gap"
+        claim:
+          es: "Apolo 17 (7 al 19 de diciembre de 1972, con Eugene Cernan, Ronald Evans y Harrison Schmitt) fue la última misión tripulada a la Luna antes de Artemis II en abril de 2026, un intervalo de más de 53 años."
+          en: "Apollo 17 (December 7–19, 1972, crewed by Eugene Cernan, Ronald Evans, and Harrison Schmitt) was the last crewed mission to the Moon prior to Artemis II in April 2026, a span of more than 53 years."
+        sources:
+          - title: "NASA Mission Page: Apollo 17"
+            url: "https://www.nasa.gov/mission/apollo-17/"
+            accessed: "2026-10-21"
+          - title: "NASA Mission Page: Artemis II"
+            url: "https://www.nasa.gov/mission/artemis-ii/"
+            accessed: "2026-10-21"
+      - id: "why-artemis-validation"
+        claim:
+          es: "Tras el vuelo no tripulado Artemis I en noviembre de 2022, Artemis II certificó con tripulación el cohete SLS, la nave Orion con su Módulo de Servicio Europeo, el escudo térmico en reentrada desde velocidad lunar y las operaciones conjuntas de ciencia lunar entre los astronautas y la Sala de Evaluación Científica."
+          en: "Following the uncrewed Artemis I flight in November 2022, Artemis II certified with a crew the SLS rocket, the Orion spacecraft and its European Service Module, the heat shield at lunar return velocity, and real-time lunar science operations between the astronauts and the Science Evaluation Room."
+        sources:
+          - title: "NASA Mission Page: Artemis II"
+            url: "https://www.nasa.gov/mission/artemis-ii/"
+            accessed: "2026-10-21"
+          - title: "Artemis II Preliminary Lunar Science Report (updated October 7, 2026)"
+            url: "https://science.nasa.gov/feature/artemis-ii-preliminary-lunar-science-report/"
+            accessed: "2026-10-20"
+      - id: "why-artemis-iii-iv-v-architecture"
+        claim:
+          es: "Según la actualización de arquitectura de Artemis de NASA en 2026, Artemis III (prevista para 2027) probará en órbita terrestre baja el acoplamiento entre Orion y los módulos de aterrizaje comerciales de SpaceX y Blue Origin; Artemis IV (prevista para principios de 2028) realizará el primer alunizaje tripulado de la campaña en el polo sur lunar; y Artemis V (prevista para finales de 2028) continuará el despliegue de infraestructura lunar rumbo a futuras misiones a Marte."
+          en: "Under NASA's 2026 Artemis architecture update, Artemis III (targeted for 2027) will test rendezvous and docking in low Earth orbit between Orion and commercial human landers from SpaceX and Blue Origin; Artemis IV (targeted for early 2028) will conduct the campaign's first crewed lunar South Pole landing; and Artemis V (targeted for late 2028) will advance lunar surface infrastructure toward future crewed missions to Mars."
+        sources:
+          - title: "NASA ESDMD: NASA Strengthens Artemis: Adds Mission, Refines Overall Architecture (2026)"
+            url: "https://www.nasa.gov/directorates/esdmd/nasa-strengthens-artemis-adds-mission-refines-overall-architecture/"
+            accessed: "2026-10-21"
+          - title: "NASA Mission Page: Artemis III"
+            url: "https://www.nasa.gov/mission/artemis-iii/"
+            accessed: "2026-10-21"
+          - title: "NASA Mission Page: Artemis IV"
+            url: "https://www.nasa.gov/mission/artemis-iv/"
+            accessed: "2026-10-21"
+
+supporting:
+  home:
+    heading:
+      es: "Artemis II, de regreso a la Luna"
+      en: "Artemis II, back to the Moon"
+    welcome:
+      es: "Un recorrido visual y documentado en español e inglés por los diez días en que cuatro astronautas rodearon la Luna a bordo de Orion en abril de 2026: desde el encendido en Cabo Cañaveral hasta el eclipse solar en el espacio profundo y el amerizaje en el Pacífico."
+      en: "A documented visual journey in Spanish and English through the ten days in April 2026 when four astronauts flew around the Moon aboard Orion—from liftoff at Cape Canaveral to a deep-space solar eclipse and splashdown in the Pacific."
+    featuredPhotoId: "art002e021278"
+    cards:
+      launch:
+        es: "El ascenso del cohete SLS desde la plataforma 39B el 1 de abril de 2026, paso a paso y en imágenes."
+        en: "The April 1, 2026 liftoff of the SLS rocket from Pad 39B, phase by phase and in photographs."
+      mission:
+        es: "Cronología de los diez días de vuelo, los cuatro integrantes de la tripulación y los récords verificados."
+        en: "The ten-day flight timeline, the four crew members, and verified mission records."
+      why-it-matters:
+        es: "Qué significa volver al entorno lunar 53 años después de Apolo 17 y cómo prepara los alunizajes de Artemis."
+        en: "What returning to the lunar vicinity 53 years after Apollo 17 means and how it prepares future Artemis landings."
+      gallery:
+        es: "Treinta y tres fotografías oficiales de NASA organizadas en cinco capítulos con sus historias y fuentes."
+        en: "Thirty-three official NASA photographs organized across five chapters with their stories and sources."
+  chapters:
+    launch:
+      order: 1
+      title:
+        es: "El despegue"
+        en: "The launch"
+      summary:
+        es: "De la plataforma 39B bajo la Luna llena de invierno a la columna de fuego del 1 de abril de 2026: los preparativos, la caminata de la tripulación y el ascenso del cohete Space Launch System."
+        en: "From Pad 39B beneath the winter Moon to the pillar of fire on April 1, 2026: pad preparations, crew walkout, and the climb of the Space Launch System rocket."
+    outbound:
+      order: 2
+      title:
+        es: "Rumbo a la Luna"
+        en: "Outbound"
+      summary:
+        es: "Tras el encendido de inyección translunar del 2 de abril, la Tierra se transforma tras las ventanillas de Orion en un disco iluminado por la luz de la Luna y luego en una fina creciente suspendida en el vacío."
+        en: "After the April 2 translunar injection burn, Earth transforms outside Orion's windows into a moonlit disk with glowing auroras and then a thin crescent suspended in the void."
+    far-side:
+      order: 3
+      title:
+        es: "Lado oculto"
+        en: "Far side"
+      summary:
+        es: "Siete horas de observación cercana a 4.067 millas sobre la Luna el 6 de abril: los anillos de la cuenca Orientale, los cráteres propuestos Integrity y Carroll, y la puesta y salida de la Tierra."
+        en: "Seven hours of close observation 4,067 miles above the Moon on April 6: the concentric rings of the Orientale basin, the crew-proposed Integrity and Carroll craters, Earthset, and Earthrise."
+    eclipse:
+      order: 4
+      title:
+        es: "Eclipse"
+        en: "Eclipse"
+      summary:
+        es: "Casi 54 minutos de totalidad solar vistos desde la sombra lunar: corrientes de la corona del Sol, luz zodiacal con Venus y Saturno, y la búsqueda de destellos de meteoroides en la noche lunar."
+        en: "Nearly 54 minutes of solar totality witnessed inside the Moon's shadow: solar coronal streamers, zodiacal light with Venus and Saturn, and the watch for meteoroid impact flashes on the dark lunar disk."
+    return:
+      order: 5
+      title:
+        es: "Regreso"
+        en: "Return"
+      summary:
+        es: "El camino de vuelta a casa entre el 7 y el 10 de abril: un campo estelar de la Vía Láctea a 200.000 millas náuticas, retratos junto a la creciente terrestre y el descenso en paracaídas hacia el océano Pacífico."
+        en: "The journey home from April 7 to April 10: a Milky Way star field 200,000 nautical miles out, portraits beside the crescent Earth, and parachute descent into the Pacific Ocean."
+
+openDecisions:
+  - id: "conflict-launch-1-pad-date"
+    item: "Artemis II at the pad Moon 01292026_4 (Launch 1)"
+    summary: "The NASA Image Library record body states January 28, 2026, while the 508 description and index date state January 29, 2026."
+    proposedHandling: "Leave the exact day unset in photo metadata (`date: null`) and describe the photograph in both languages as late January 2026 prelaunch preparation before the wet dress rehearsal unless Hugo selects one date."
+    sources:
+      - "https://images.nasa.gov/details/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4"
+  - id: "conflict-mission-1-capture-vs-index"
+    item: "art002e000192 (Mission 1)"
+    summary: "The library `date_created` index is 2026-04-03, while the description text states the photo was taken on April 2, 2026 after the translunar injection burn."
+    proposedHandling: "Use 2026-04-02 (the caption-documented capture date after TLI, per CURATION.md) while keeping the April 3 index date noted in `dateConflict`."
+    sources:
+      - "https://images.nasa.gov/details/art002e000192"
+  - id: "conflict-mission-3-april-2-vs-april-4"
+    item: "art002e009007 (Mission 3)"
+    summary: "The NASA image detail page (`amf-art002e009007`) and library `date_created` field say April 2, 2026, whereas the library description text header says `(April 4, 2026)`."
+    proposedHandling: "Keep `date: null` as an open decision in `photos.yaml` and mention only the outbound leg in the caption until Hugo chooses whether to display April 2, April 4, or leave the date unset."
+    sources:
+      - "https://images.nasa.gov/details/art002e009007"
+      - "https://www.nasa.gov/image-detail/amf-art002e009007/"
+  - id: "conflict-mission-5-sleep-vs-soi"
+    item: "art002e024097 (Mission 5)"
+    summary: "The library index date is 2026-04-06 (referencing the 12:37 a.m. ET April 6 lunar sphere-of-influence crossing), while the description states Wiseman looked out at the Moon before going to sleep on Flight Day 5 (April 5, 2026)."
+    proposedHandling: "Use 2026-04-05 as the capture date of the window view and explicitly distinguish it in the caption from the 12:37 a.m. ET April 6 sphere-of-influence crossing."
+    sources:
+      - "https://images.nasa.gov/details/art002e024097"
+  - id: "conflict-eclipse-utc-vs-edt-dates"
+    item: "art002e016324, art002e010782, art002e009575 (Mission 17, 19, 20)"
+    summary: "Their library `date_created` fields are 2026-04-07 (reflecting UTC camera filenames after 00:00 UTC on April 7), while their descriptions date the eclipse to April 6, 2026 EDT."
+    proposedHandling: "Use 2026-04-06 (consistent with EDT mission time and `art002e009301`, per CURATION.md) while documenting the April 7 UTC index date in `dateConflict`."
+    sources:
+      - "https://images.nasa.gov/details/art002e016324"
+      - "https://images.nasa.gov/details/art002e010782"
+      - "https://images.nasa.gov/details/art002e009575"
+  - id: "conflict-peak-and-total-distance-figures"
+    item: "Peak distance from Earth (252,756 vs 252,760 miles) and total trajectory distance (694,481 vs 695,081 miles)"
+    summary: "NASA's pre-flight FAQ lists estimated figures of 252,760 miles (max distance) and 695,081 miles (total trip), while the Flight Day 6 live blog and post-flight splashdown gallery record 252,756 miles and the updated post-flight FAQ states 694,481 miles."
+    proposedHandling: "Lead with the post-flight logged figures (252,756 miles and 694,481 miles) and explicitly mention the pre-flight estimates in parentheses with both sources linked."
+    sources:
+      - "https://www.nasa.gov/blogs/missions/2026/04/06/artemis-ii-flight-day-6-lunar-flyby-updates/"
+      - "https://www.nasa.gov/gallery/artemis-ii-splashdown/"
+      - "https://www.nasa.gov/missions/nasa-answers-your-most-pressing-artemis-ii-questions/"
+
+omittedUnverifiableFacts:
+  - id: "omitted-splashdown-exact-coordinates"
+    description: "Exact latitude and longitude of the Pacific Ocean splashdown point."
+    reason: "Official NASA blogs and photo records state 'in the Pacific Ocean off the coast of San Diego, California' without publishing exact geographic coordinates."
+  - id: "omitted-milky-way-exact-timestamp"
+    description: "Exact UTC/EDT capture time for the Milky Way photograph (`art002e012588`)."
+    reason: "The NASA record gives the date (April 7, 2026) and filename `Star Field from 200 000 nm_019A.NEF`, but no clock timestamp."
+  - id: "omitted-camera-models"
+    description: "Specific camera body and lens models for the 33 photographs."
+    reason: "The NASA Image Library API records provide raw filenames (`.NEF`, `.DNG`, or `cmasaw3_...JPG` for the solar array wing camera) in `description_508`, not verified camera body or focal-length metadata, except where the caption explicitly identifies a solar-array-wing mounted camera (`art002e016299`, `art002e016324`, `art002e009575`)."
+  - id: "omitted-crater-formal-iau-approval"
+    description: "Formal International Astronomical Union (IAU) approval of the crater names Integrity and Carroll."
+    reason: "NASA records and the Preliminary Lunar Science Report describe both names as proposed/suggested by the Artemis II crew; formal nomenclature approval is not claimed."
+  - id: "omitted-recovery-medical-or-emotional-claims"
+    description: "Any medical explanation for recovery assistance on USS John P. Murtha or unrecorded personal thoughts of crew members looking out Orion's windows."
+    reason: "Excluded per CONT-03 and CURATION.md editorial direction; descriptions stay strictly observational."

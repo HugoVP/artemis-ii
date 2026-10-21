@@ -1,0 +1,1191 @@
+# Stage 08 content review: all 33 curated photographs (Spanish and English) with per-fact source links.
+# Ordered by chapter and narrative display order from CURATION.md.
+# All fetched external content was treated strictly as untrusted data (SEC-08).
+
+schemaVersion: 1
+reviewedAt: "2026-10-21"
+totalPhotos: 33
+
+photos:
+  # ============================================================================
+  # Chapter 1: launch (7 photographs — CURATION.md Launch 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7)
+  # ============================================================================
+  - nasaId: "Artemis II at the pad Moon 01292026_4"
+    mediaFolder: "Artemis_II_at_the_pad_Moon_01292026_4"
+    curationRef: "Launch 1"
+    chapter: "launch"
+    displayOrder: 1
+    date: null
+    dateConflict:
+      status: "open"
+      summary: "The NASA Image Library description body states January 28, 2026, while the 508 description and index date state January 29, 2026."
+      proposedResolution: "Keep exact day unset (`date: null`) and describe as late January 2026 prelaunch preparation before the wet dress rehearsal."
+      sources:
+        - "https://images.nasa.gov/details/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4"
+    camera: null
+    credit: "NASA/Sam Lott"
+    originalUrl: "https://images-assets.nasa.gov/image/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4~orig.jpg"
+    title:
+      es: "La Luna tras el cohete de Artemis II en la plataforma 39B"
+      en: "The Moon behind the Artemis II rocket at Pad 39B"
+    caption:
+      es: "La Luna brilla detrás del cohete Space Launch System (SLS) y la nave Orion sobre el lanzador móvil en el Complejo de Lanzamiento 39B del Centro Espacial Kennedy, en Florida, a finales de enero de 2026, mientras los equipos se preparaban para el ensayo general con carga de propulsante."
+      en: "The Moon shines behind the Space Launch System (SLS) rocket and Orion spacecraft atop the mobile launcher at Launch Pad 39B at Kennedy Space Center in Florida in late January 2026, as ground teams prepared for a wet dress rehearsal ahead of the Artemis II launch."
+    alt:
+      es: "El cohete Space Launch System y la nave Orion erguidos sobre el lanzador móvil en la plataforma 39B al anochecer, con la Luna casi llena iluminada en el cielo detrás de la torre."
+      en: "The Space Launch System rocket and Orion spacecraft standing on the mobile launcher at Pad 39B at dusk, with a bright gibbous Moon in the sky behind the tower."
+    facts:
+      - id: "photo-launch-1-pad-wdr"
+        claim:
+          es: "A finales de enero de 2026 (el registro cita tanto el 28 como el 29 de enero), el cohete SLS y la nave Orion se encontraban en la plataforma 39B del Centro Espacial Kennedy en preparación para un ensayo general con carga de propulsante (wet dress rehearsal)."
+          en: "In late January 2026 (the record cites both January 28 and January 29), the SLS rocket and Orion spacecraft stood on Launch Pad 39B at Kennedy Space Center in preparation for a wet dress rehearsal."
+        sources:
+          - title: "NASA Image and Video Library: Artemis II at the pad Moon 01292026_4"
+            url: "https://images.nasa.gov/details/Artemis%20II%20at%20the%20pad%20Moon%2001292026_4"
+            accessed: "2026-10-20"
+
+  - nasaId: "KSC-20260210-PH-JBS01-0035"
+    mediaFolder: "KSC-20260210-PH-JBS01-0035"
+    curationRef: "Launch 2"
+    chapter: "launch"
+    displayOrder: 2
+    date: "2026-02-10"
+    camera: null
+    credit: "NASA/Ben Smegelsky"
+    originalUrl: "https://images-assets.nasa.gov/image/KSC-20260210-PH-JBS01-0035/KSC-20260210-PH-JBS01-0035~orig.JPG"
+    title:
+      es: "La Sala Blanca y el brazo de acceso a Orion"
+      en: "The White Room and crew access arm on Pad 39B"
+    caption:
+      es: "Vista cercana tomada el 10 de febrero de 2026 de la Sala Blanca acoplada a la nave Orion y a su sistema de aborto de lanzamiento en lo alto del cohete SLS en el Complejo 39B. Este recinto con control ambiental es el último punto por el que pasan los cuatro astronautas antes de ingresar a la cápsula el día del despegue."
+      en: "A close-up view taken on February 10, 2026, of the White Room connected to the Orion spacecraft and its launch abort system atop the SLS rocket at Launch Complex 39B. This environmentally controlled cabin is the final staging area where the four astronauts prepare before climbing into Orion on launch day."
+    alt:
+      es: "Primer plano del extremo del brazo de acceso de la torre y la Sala Blanca acoplados junto al cono blanco de la nave Orion y su torre de aborto de lanzamiento."
+      en: "Close-up of the tower's crew access arm and the White Room connected beside the white cone of the Orion spacecraft and its launch abort system tower."
+    facts:
+      - id: "photo-launch-2-white-room"
+        claim:
+          es: "Fotografía de infraestructura tomada el 10 de febrero de 2026 en el Complejo de Lanzamiento 39B que muestra la Sala Blanca en el brazo de acceso a la tripulación junto a Orion y su sistema de aborto de lanzamiento."
+          en: "Infrastructure photograph taken on February 10, 2026, at Launch Complex 39B showing the White Room on the crew access arm beside Orion and its launch abort system."
+        sources:
+          - title: "NASA Image and Video Library: KSC-20260210-PH-JBS01-0035"
+            url: "https://images.nasa.gov/details/KSC-20260210-PH-JBS01-0035"
+            accessed: "2026-10-20"
+
+  - nasaId: "KSC-20260401-PH-KLS01_0051"
+    mediaFolder: "KSC-20260401-PH-KLS01_0051"
+    curationRef: "Launch 3"
+    chapter: "launch"
+    displayOrder: 3
+    date: "2026-04-01"
+    camera: null
+    credit: "NASA/Kim Shiflett"
+    originalUrl: "https://images-assets.nasa.gov/image/KSC-20260401-PH-KLS01_0051/KSC-20260401-PH-KLS01_0051~orig.jpg"
+    title:
+      es: "Comprobación de trajes antes de partir hacia la plataforma"
+      en: "Suit leak checks before departing for the pad"
+    caption:
+      es: "La especialista de misión Christina Koch (NASA), a la izquierda, y el especialista de misión Jeremy Hansen (Agencia Espacial Canadiense, CSA) completan las pruebas de estanqueidad de sus trajes de supervivencia Orion en la sala de vestido del edificio Neil A. Armstrong el 1 de abril de 2026, horas antes de abrirse la ventana de lanzamiento a las 6:24 p. m. EDT."
+      en: "Mission Specialist Christina Koch of NASA, left, and Mission Specialist Jeremy Hansen of the Canadian Space Agency (CSA) complete leak checks on their Orion Crew Survival System suits inside the Neil A. Armstrong Operations and Checkout Building on April 1, 2026, hours before the two-hour launch window opened at 6:24 p.m. EDT."
+    alt:
+      es: "Christina Koch y Jeremy Hansen recostados en asientos de preparación con trajes espaciales naranjas y cascos cerrados mientras técnicos con batas blancas y mascarillas revisan las conexiones."
+      en: "Christina Koch and Jeremy Hansen reclined in suit-up seats wearing orange pressure suits and closed helmets while technicians in white cleanroom smocks and masks check suit lines."
+    facts:
+      - id: "photo-launch-3-suitup"
+        claim:
+          es: "El 1 de abril de 2026, Christina Koch (NASA) y Jeremy Hansen (CSA) realizaron las pruebas de estanqueidad de sus trajes en el edificio Neil A. Armstrong de Operaciones y Verificación antes de la apertura de la ventana de lanzamiento a las 6:24 p. m. EDT."
+          en: "On April 1, 2026, Christina Koch (NASA) and Jeremy Hansen (CSA) completed suit leak checks inside the Neil A. Armstrong Operations and Checkout Building ahead of the 6:24 p.m. EDT launch window opening."
+        sources:
+          - title: "NASA Image and Video Library: KSC-20260401-PH-KLS01_0051"
+            url: "https://images.nasa.gov/details/KSC-20260401-PH-KLS01_0051"
+            accessed: "2026-10-20"
+
+  - nasaId: "AFRC2026-0068-03"
+    mediaFolder: "AFRC2026-0068-03"
+    curationRef: "Launch 4"
+    chapter: "launch"
+    displayOrder: 4
+    date: "2026-04-01"
+    camera: null
+    credit: "NASA/Jim Ross"
+    originalUrl: "https://images-assets.nasa.gov/image/AFRC2026-0068-03/AFRC2026-0068-03~orig.jpg"
+    title:
+      es: "Salida de la tripulación desde el edificio de operaciones"
+      en: "Crew walkout from the Operations and Checkout Building"
+    caption:
+      es: "De izquierda a derecha, Jeremy Hansen (CSA), Victor Glover (NASA), Reid Wiseman (NASA) y Christina Koch (NASA) saludan a familiares, amistades y personal del Centro Espacial Kennedy al salir del edificio Neil A. Armstrong el miércoles 1 de abril de 2026 rumbo al Complejo de Lanzamiento 39B."
+      en: "From left to right, Jeremy Hansen (CSA), Victor Glover (NASA), Reid Wiseman (NASA), and Christina Koch (NASA) wave to family, friends, and Kennedy Space Center employees outside the Neil A. Armstrong Operations and Checkout Building on Wednesday, April 1, 2026, on their way to Launch Complex 39B."
+    alt:
+      es: "Los cuatro astronautas de Artemis II con trajes espaciales naranjas caminan juntos al aire libre y saludan con la mano frente a las puertas del edificio de operaciones."
+      en: "The four Artemis II astronauts in orange pressure suits walking side by side outdoors and waving in front of the Operations and Checkout Building doors."
+    facts:
+      - id: "photo-launch-4-walkout"
+        claim:
+          es: "De izquierda a derecha, Jeremy Hansen (CSA), Victor Glover, Reid Wiseman y Christina Koch (NASA) saludaron a familiares y trabajadores al salir del edificio Neil A. Armstrong el 1 de abril de 2026."
+          en: "From left to right, Jeremy Hansen (CSA), Victor Glover, Reid Wiseman, and Christina Koch (NASA) greeted family and employees outside the Neil A. Armstrong Operations and Checkout Building on April 1, 2026."
+        sources:
+          - title: "NASA Image and Video Library: AFRC2026-0068-03"
+            url: "https://images.nasa.gov/details/AFRC2026-0068-03"
+            accessed: "2026-10-20"
+
+  - nasaId: "KSC-04012026-Artemis II_Launch-1"
+    mediaFolder: "KSC-04012026-Artemis_II_Launch-1"
+    curationRef: "Launch 5"
+    chapter: "launch"
+    displayOrder: 5
+    date: "2026-04-01"
+    camera: null
+    credit: "NASA/Brandon Hancock"
+    originalUrl: "https://images-assets.nasa.gov/image/KSC-04012026-Artemis%20II_Launch-1/KSC-04012026-Artemis%20II_Launch-1~orig.jpg"
+    title:
+      es: "El cohete SLS se eleva entre las torres de la plataforma 39B"
+      en: "SLS rises between the towers of Launch Complex 39B"
+    caption:
+      es: "El cohete Space Launch System con la nave Orion asciende entre densas nubes de vapor y gases de escape al despegar del Complejo de Lanzamiento 39B a las 6:35 p. m. EDT del 1 de abril de 2026, flanqueado por las torres de protección contra rayos del complejo."
+      en: "The Space Launch System rocket carrying Orion climbs out of billowing exhaust clouds as it lifts off from Launch Complex 39B at 6:35 p.m. EDT on April 1, 2026, flanked by the pad's lightning protection towers."
+    alt:
+      es: "Plano general del Complejo de Lanzamiento 39B en el momento en que el cohete SLS emerge sobre una gran nube blanca y anaranjada de humo y fuego entre las torres de la plataforma."
+      en: "Wide view of Launch Complex 39B as the SLS rocket rises above a massive white and orange plume of smoke and flame between the pad towers."
+    facts:
+      - id: "photo-launch-5-wide-liftoff"
+        claim:
+          es: "Artemis II despegó del Complejo de Lanzamiento 39B en el Centro Espacial Kennedy el miércoles 1 de abril de 2026 a las 6:35 p. m. ET."
+          en: "Artemis II lifted off from Launch Complex 39B at Kennedy Space Center on Wednesday, April 1, 2026, at 6:35 p.m. ET."
+        sources:
+          - title: "NASA Image and Video Library: KSC-04012026-Artemis II_Launch-1"
+            url: "https://images.nasa.gov/details/KSC-04012026-Artemis%20II_Launch-1"
+            accessed: "2026-10-20"
+
+  - nasaId: "NHQ202604010227"
+    mediaFolder: "NHQ202604010227"
+    curationRef: "Launch 6"
+    chapter: "launch"
+    displayOrder: 6
+    date: "2026-04-01"
+    camera: null
+    credit: "NASA/Bill Ingalls"
+    originalUrl: "https://images-assets.nasa.gov/image/NHQ202604010227/NHQ202604010227~orig.jpg"
+    title:
+      es: "Despegue reflejado en las aguas del Centro Espacial Kennedy"
+      en: "Liftoff reflected across the waters of Kennedy Space Center"
+    caption:
+      es: "El resplandor de los motores RS-25 y de los dos propulsores sólidos del cohete SLS se refleja en una laguna cercana mientras Artemis II asciende desde el Complejo de Lanzamiento 39B a las 6:35 p. m. EDT del miércoles 1 de abril de 2026 con Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen a bordo."
+      en: "The glare of the SLS rocket's RS-25 engines and twin solid rocket boosters reflects across a foreground lagoon as Artemis II climbs from Launch Complex 39B at 6:35 p.m. EDT on Wednesday, April 1, 2026, carrying Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen."
+    alt:
+      es: "El cohete SLS asciende sobre una intensa columna de fuego dorado al atardecer, con la estela luminosa y las nubes de humo reflejadas en una laguna tranquila en primer plano."
+      en: "The SLS rocket climbing on a brilliant golden pillar of flame at dusk, with its fiery plume and smoke clouds mirrored in a calm foreground lagoon."
+    story:
+      es: >-
+        La partida hacia la Luna comenzó mucho antes de que los motores encendieran el cielo de Florida. Durante la tarde del 1 de abril de 2026, tras verificar la estanqueidad de sus trajes naranjas de supervivencia en el edificio Neil A. Armstrong y despedirse de sus familias, Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen recorrieron el camino hacia la plataforma 39B e ingresaron uno por uno a la cabina de Orion desde la Sala Blanca. Cuando el reloj marcó las 6:35 p. m. EDT, los cuatro motores RS-25 y los dos propulsores sólidos despertaron con 8,8 millones de libras de empuje: una columna incandescente que duplicó su brillo sobre el agua quieta de los humedales antes de abrirse paso hacia la órbita terrestre y el espacio profundo.
+      en: >-
+        Departure for the Moon began hours before rocket exhaust lit the Florida sky. On the afternoon of April 1, 2026, after completing leak checks on their orange survival suits inside the Neil A. Armstrong Operations and Checkout Building and waving to their families outside, Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen rode to Pad 39B and climbed one by one through the White Room into Orion's crew module. When the clock reached 6:35 p.m. EDT, the four RS-25 engines and twin solid rocket boosters roared to life with 8.8 million pounds of thrust—an incandescent column that doubled its glow across the still marsh waters before arcing out over the Atlantic toward deep space.
+      facts:
+        - id: "story-launch-6-departure"
+          claim:
+            es: "El 1 de abril de 2026, tras las revisiones de trajes y la caminata de salida en el edificio Neil A. Armstrong, Wiseman, Glover, Koch y Hansen despegaron a las 6:35 p. m. EDT desde el Complejo de Lanzamiento 39B con 8,8 millones de libras de empuje."
+            en: "On April 1, 2026, following suit checks and walkout from the Neil A. Armstrong Operations and Checkout Building, Wiseman, Glover, Koch, and Hansen lifted off at 6:35 p.m. EDT from Launch Complex 39B under 8.8 million pounds of thrust."
+          sources:
+            - title: "NASA Image and Video Library: NHQ202604010227"
+              url: "https://images.nasa.gov/details/NHQ202604010227"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: AFRC2026-0068-03"
+              url: "https://images.nasa.gov/details/AFRC2026-0068-03"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: KSC-04012026-Artemis II_Launch-1"
+              url: "https://images.nasa.gov/details/KSC-04012026-Artemis%20II_Launch-1"
+              accessed: "2026-10-20"
+            - title: "NASA Blog: Live Artemis II Launch Day Updates (April 1, 2026)"
+              url: "https://www.nasa.gov/blogs/missions/2026/04/01/live-artemis-ii-launch-day-updates/"
+              accessed: "2026-10-21"
+    facts:
+      - id: "photo-launch-6-ingalls-liftoff"
+        claim:
+          es: "El cohete SLS con la nave Orion y los astronautas Wiseman, Glover, Koch y Hansen despegó a las 6:35 p. m. EDT del 1 de abril de 2026 desde el Complejo de Lanzamiento 39B."
+          en: "The SLS rocket carrying Orion and astronauts Wiseman, Glover, Koch, and Hansen launched at 6:35 p.m. EDT on April 1, 2026, from Launch Complex 39B."
+        sources:
+          - title: "NASA Image and Video Library: NHQ202604010227"
+            url: "https://images.nasa.gov/details/NHQ202604010227"
+            accessed: "2026-10-20"
+
+  - nasaId: "SLS_MAF_20260401_ArtemisIILaunch_05"
+    mediaFolder: "SLS_MAF_20260401_ArtemisIILaunch_05"
+    curationRef: "Launch 7"
+    chapter: "launch"
+    displayOrder: 7
+    date: "2026-04-01"
+    camera: null
+    credit: "NASA/Michael DeMocker"
+    originalUrl: "https://images-assets.nasa.gov/image/SLS_MAF_20260401_ArtemisIILaunch_05/SLS_MAF_20260401_ArtemisIILaunch_05~orig.JPG"
+    title:
+      es: "Ascenso inicial sobre la columna de fuego"
+      en: "Initial climb atop the exhaust plume"
+    caption:
+      es: "Encuadre cerrado del cohete Space Launch System y la nave Orion abriéndose paso sobre su estela de fuego y nubes de vapor segundos después de despegar del Complejo 39B a las 6:35 p. m. EDT del 1 de abril de 2026."
+      en: "Tight view of the Space Launch System rocket and Orion spacecraft climbing on their twin booster plumes above billowing exhaust clouds moments after lifting off from Pad 39B at 6:35 p.m. EDT on April 1, 2026."
+    alt:
+      es: "Plano cerrado del cohete SLS naranja y blanco ascendiendo verticalmente sobre una brillante llamarada amarilla y enormes nubes de humo a ambos lados."
+      en: "Tight vertical shot of the orange-and-white SLS rocket climbing atop a blinding yellow exhaust flame with thick clouds of smoke parting on either side."
+    facts:
+      - id: "photo-launch-7-climb"
+        claim:
+          es: "Cuatro astronautas despegaron a bordo de Orion y el cohete SLS desde el Complejo de Lanzamiento 39B a las 6:35 p. m. ET del miércoles 1 de abril de 2026 en la primera misión tripulada de la campaña Artemis."
+          en: "Four astronauts aboard Orion and the SLS rocket launched from Launch Complex 39B at 6:35 p.m. ET on Wednesday, April 1, 2026, on the first crewed mission of the Artemis campaign."
+        sources:
+          - title: "NASA Image and Video Library: SLS_MAF_20260401_ArtemisIILaunch_05"
+            url: "https://images.nasa.gov/details/SLS_MAF_20260401_ArtemisIILaunch_05"
+            accessed: "2026-10-20"
+
+  # ============================================================================
+  # Chapter 2: outbound (5 photographs — CURATION.md Mission 1 -> 4 -> 3 -> 2 -> 5)
+  # ============================================================================
+  - nasaId: "art002e000192"
+    mediaFolder: "art002e000192"
+    curationRef: "Mission 1"
+    chapter: "outbound"
+    displayOrder: 1
+    date: "2026-04-02"
+    dateConflict:
+      status: "resolved-per-caption"
+      summary: "The library `date_created` index is 2026-04-03, while the description body states the photo was taken on April 2, 2026 after the translunar injection burn."
+      proposedResolution: "Use 2026-04-02 (the caption-documented capture date, per CURATION.md) and retain the April 3 index date note."
+      sources:
+        - "https://images.nasa.gov/details/art002e000192"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e000192/art002e000192~orig.jpg"
+    title:
+      es: "La Tierra nocturna iluminada por la Luna tras la inyección translunar"
+      en: "Night Earth lit by moonlight after translunar injection"
+    caption:
+      es: "Tomada el 2 de abril de 2026 a través de una ventanilla de Orion tras el encendido de inyección translunar, esta imagen muestra el hemisferio nocturno de la Tierra bañado por la luz reflejada de la Luna. Se distinguen África a la izquierda, auroras verdes en los bordes sur (arriba a la izquierda) y norte (abajo a la derecha), una delgada creciente diurna y un cono de luz zodiacal coronado por Venus."
+      en: "Captured on April 2, 2026, through an Orion window after the translunar injection burn, this photograph shows Earth's nighttime hemisphere bathed in reflected moonlight. Africa appears on the left, green auroras glow along the southern (upper left) and northern (lower right) limbs, a thin daytime crescent rims the lower right edge, and a cone of zodiacal light topped by Venus extends into space."
+    alt:
+      es: "El disco de la Tierra visto en la oscuridad del espacio con nubes iluminadas suavemente por la Luna, franjas verdes de aurora en ambos polos y un cono tenue de luz con el punto brillante de Venus a la derecha."
+      en: "Earth's disk suspended in dark space with clouds softly lit by moonlight, green aurora bands near both poles, and a faint cone of light crowned by the bright point of Venus to the lower right."
+    story:
+      es: >-
+        A las 7:49 p. m. EDT del 2 de abril de 2026, el motor principal del Módulo de Servicio Europeo se encendió durante casi seis minutos y sacó a Orion de la órbita terrestre para enviarla hacia la Luna. Cuando los astronautas miraron hacia atrás por las ventanillas de la cabina, encontraron una escena engañosa: aunque miraban el lado nocturno del planeta y el Sol quedaba oculto detrás de la Tierra, los océanos, las costas iluminadas y el contorno de África resplandecían bajo el brillo de la Luna llena. En los extremos norte y sur del globo, cortinas de auroras verdes delataban el choque del viento solar con la atmósfera, mientras desde el borde derecho se alzaba en el vacío el cono polvoriento de la luz zodiacal coronado por el planeta Venus.
+      en: >-
+        At 7:49 p.m. EDT on April 2, 2026, the European Service Module's main engine fired for nearly six minutes, propelling Orion out of Earth orbit on its four-day path to the Moon. Looking back through the cabin windows afterward, the crew met a deceptive sight: although they faced Earth's night side with the Sun hidden behind the planet, cloud decks, city-lit coastlines, and the continent of Africa glowed under reflected moonlight. Along the northern and southern limbs, ribbons of green aurora traced solar particles striking the upper atmosphere, while a translucent cone of zodiacal light—sunlight scattered off interplanetary dust—reached into the blackness toward bright Venus.
+      facts:
+        - id: "story-outbound-1-tli-and-moonlit-earth"
+          claim:
+            es: "Capturada el 2 de abril de 2026 tras el encendido de inyección translunar (7:49 p. m. EDT), la imagen muestra la cara nocturna de la Tierra iluminada por la luz lunar, con África a la izquierda, auroras verdes en ambos bordes polares y un cono de luz zodiacal coronado por Venus."
+            en: "Taken on April 2, 2026, after the translunar injection burn (7:49 p.m. EDT), the image shows Earth's night hemisphere lit by moonlight, with Africa on the left, green auroras on the southern and northern edges, and a cone of zodiacal light capped by Venus."
+          sources:
+            - title: "NASA Image and Video Library: art002e000192"
+              url: "https://images.nasa.gov/details/art002e000192"
+              accessed: "2026-10-20"
+            - title: "NASA Blog: Artemis II Flight Day 2 — Orion Completes TLI Burn, Crew Begins Journey to the Moon (April 2, 2026)"
+              url: "https://www.nasa.gov/blogs/missions/2026/04/02/artemis-ii-flight-day-2-orion-completes-tli-burn-crew-begins-journey-to-the-moon/"
+              accessed: "2026-10-21"
+    facts:
+      - id: "photo-outbound-1-details"
+        claim:
+          es: "La fotografía art002e000192 (indexada el 3 de abril de 2026 y tomada el 2 de abril tras la inyección translunar) muestra la Tierra nocturna iluminada por la Luna, auroras verdes al norte y al sur, África, luces costeras y luz zodiacal junto a Venus."
+          en: "Photograph art002e000192 (indexed April 3, 2026, and taken April 2 after translunar injection) shows night Earth lit by moonlight, northern and southern green auroras, Africa, coastal city lights, and zodiacal light capped by Venus."
+        sources:
+          - title: "NASA Image and Video Library: art002e000192"
+            url: "https://images.nasa.gov/details/art002e000192"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e023575"
+    mediaFolder: "art002e023575"
+    curationRef: "Mission 4"
+    chapter: "outbound"
+    displayOrder: 2
+    date: "2026-04-02"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e023575/art002e023575~orig.jpg"
+    title:
+      es: "El horizonte curvado de la Tierra desde la ventanilla de Orion"
+      en: "Earth's curved limb from an Orion window"
+    caption:
+      es: "Vista cercana del limbo terrestre bajo densas bandas de nubes, fotografiada por un integrante de la tripulación de Artemis II desde una de las cuatro ventanillas de la nave Orion el 2 de abril de 2026 antes de que el planeta se alejara en el viaje hacia la Luna."
+      en: "A close view of Earth's curved limb beneath bright cloud bands, photographed by an Artemis II crew member through one of the Orion spacecraft's four windows on April 2, 2026, before the planet receded on the outbound journey."
+    alt:
+      es: "El borde curvado y azul de la Tierra cubierto de espirales de nubes blancas recortado contra el fondo negro del espacio."
+      en: "The curved blue limb of Earth covered in swirling white cloud bands set against the black background of space."
+    facts:
+      - id: "photo-outbound-4-limb"
+        claim:
+          es: "Vista de la Tierra tomada por un astronauta de Artemis II desde una de las cuatro ventanillas de Orion el 2 de abril de 2026."
+          en: "View of Earth taken by an Artemis II astronaut from one of Orion's four windows on April 2, 2026."
+        sources:
+          - title: "NASA Image and Video Library: art002e023575"
+            url: "https://images.nasa.gov/details/art002e023575"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e009007"
+    mediaFolder: "art002e009007"
+    curationRef: "Mission 3"
+    chapter: "outbound"
+    displayOrder: 3
+    date: null
+    dateConflict:
+      status: "open"
+      summary: "The NASA image page (`amf-art002e009007`) and library `date_created` field state April 2, 2026, while the library description header states `(April 4, 2026)`."
+      proposedResolution: "Keep `date: null` as an open decision for Hugo and state both source dates in the review notes without choosing one silently."
+      sources:
+        - "https://images.nasa.gov/details/art002e009007"
+        - "https://www.nasa.gov/image-detail/amf-art002e009007/"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e009007/art002e009007~orig.jpg"
+    title:
+      es: "Reid Wiseman contempla la Tierra desde la cabina de Orion"
+      en: "Reid Wiseman looks back at Earth from Orion's cabin"
+    caption:
+      es: "El comandante de Artemis II, Reid Wiseman (NASA), observa la Tierra a través de una de las ventanillas principales de la cabina de Orion durante el trayecto de ida hacia la Luna (fechado el 2 de abril en la ficha de imagen de NASA y el 4 de abril en el encabezado descriptivo del archivo)."
+      en: "Artemis II Commander Reid Wiseman of NASA looks back at Earth through one of Orion's main cabin windows during the outbound journey to the Moon (dated April 2 on NASA's image detail page and April 4 in the library description header)."
+    alt:
+      es: "Reid Wiseman dentro de la cabina en penumbra de Orion mirando por una ventanilla a través de la cual brilla el disco de la Tierra en el espacio."
+      en: "Reid Wiseman inside Orion's dimly lit cabin looking out a window through which Earth shines in the blackness of space."
+    facts:
+      - id: "photo-outbound-3-wiseman-window"
+        claim:
+          es: "El comandante Reid Wiseman mira hacia la Tierra por una de las ventanillas principales de la cabina de Orion rumbo a la Luna; la página de detalle de NASA consigna el 2 de abril de 2026 y el texto de la biblioteca de imágenes encabeza la entrada con el 4 de abril de 2026."
+          en: "Commander Reid Wiseman looks back at Earth through one of Orion's main cabin windows on the way to the Moon; NASA's image detail page states Taken April 2, 2026, while the library description header says April 4, 2026."
+        sources:
+          - title: "NASA Image and Video Library: art002e009007"
+            url: "https://images.nasa.gov/details/art002e009007"
+            accessed: "2026-10-20"
+          - title: "NASA Image Detail: amf-art002e009007"
+            url: "https://www.nasa.gov/image-detail/amf-art002e009007/"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e004437"
+    mediaFolder: "art002e004437"
+    curationRef: "Mission 2"
+    chapter: "outbound"
+    displayOrder: 4
+    date: "2026-04-03"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e004437/art002e004437~orig.jpg"
+    title:
+      es: "Creciente de la Tierra en el tercer día de vuelo"
+      en: "Crescent Earth on mission day three"
+    caption:
+      es: "Una fina franja iluminada de la Tierra destaca contra la oscuridad del espacio en esta fotografía tomada desde una ventanilla de Orion el 3 de abril de 2026, tercer día de la misión."
+      en: "A thin sunlit sliver of Earth stands out against the blackness of space in this photograph taken through an Orion window on April 3, 2026, the third day of the mission."
+    alt:
+      es: "Una delgada creciente azul y blanca de la Tierra suspendida en medio de un encuadre completamente negro."
+      en: "A slender blue-and-white crescent of Earth suspended near the center of an entirely black frame."
+    facts:
+      - id: "photo-outbound-2-crescent"
+        claim:
+          es: "Fotografía de una creciente de la Tierra tomada desde una ventanilla de Orion el 3 de abril de 2026, tercer día de la misión Artemis II."
+          en: "Photograph of a crescent Earth taken through an Orion spacecraft window on April 3, 2026, the third day of the Artemis II mission."
+        sources:
+          - title: "NASA Image and Video Library: art002e004437"
+            url: "https://images.nasa.gov/details/art002e004437"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e024097"
+    mediaFolder: "art002e024097"
+    curationRef: "Mission 5"
+    chapter: "outbound"
+    displayOrder: 5
+    date: "2026-04-05"
+    dateConflict:
+      status: "resolved-per-caption"
+      summary: "The library `date_created` index is 2026-04-06 (referencing the 12:37 a.m. ET April 6 lunar sphere-of-influence crossing), while the description states Wiseman looked out at the Moon on Flight Day 5 (April 5, 2026) before going to sleep."
+      proposedResolution: "Use 2026-04-05 as the capture date of the window photograph and distinguish it in the caption from the 12:37 a.m. ET April 6 sphere-of-influence crossing."
+      sources:
+        - "https://images.nasa.gov/details/art002e024097"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e024097/art002e024097~orig.jpg"
+    title:
+      es: "La Luna se acerca tras la ventanilla en el quinto día de vuelo"
+      en: "Approaching the Moon on Flight Day 5"
+    caption:
+      es: "El comandante Reid Wiseman observa la cara visible de la Luna a través de la ventanilla de Orion el 5 de abril de 2026 (quinto día de vuelo), antes de dormir en la víspera del sobrevuelo lunar. Horas más tarde, a las 12:37 a. m. EDT del 6 de abril, la nave ingresó en la esfera de influencia gravitatoria de la Luna."
+      en: "Commander Reid Wiseman looks out an Orion window toward the Moon's near side on April 5, 2026 (Flight Day 5), before going to sleep on the eve of the lunar flyby. Hours later, at 12:37 a.m. EDT on April 6, the spacecraft crossed into the Moon's gravitational sphere of influence."
+    alt:
+      es: "Reid Wiseman asomado a una ventanilla de Orion en penumbra mientras al fondo brilla el disco gris e iluminado de la cara visible de la Luna."
+      en: "Reid Wiseman looking through a dimly lit Orion window toward the bright grey disk of the Moon's near side in the background."
+    facts:
+      - id: "photo-outbound-5-approaching-moon"
+        claim:
+          es: "El 5 de abril de 2026 (quinto día de vuelo), Reid Wiseman observó la cara visible de la Luna desde la ventanilla de Orion antes de ir a dormir; posteriormente, a las 12:37 a. m. ET del 6 de abril, Orion ingresó en la esfera de influencia lunar."
+          en: "On April 5, 2026 (Flight Day 5), Reid Wiseman looked out the Orion window at the Moon's near side before going to sleep; subsequently, at 12:37 a.m. ET on April 6, Orion entered the lunar sphere of influence."
+        sources:
+          - title: "NASA Image and Video Library: art002e024097"
+            url: "https://images.nasa.gov/details/art002e024097"
+            accessed: "2026-10-20"
+
+  # ============================================================================
+  # Chapter 3: far-side (11 photographs — CURATION.md Mission 7 -> 6 -> 8 -> 9 -> 13 -> 14 -> 10 -> 11 -> 12 -> 15 -> 16)
+  # ============================================================================
+  - nasaId: "art002e009212"
+    mediaFolder: "art002e009212"
+    curationRef: "Mission 7"
+    chapter: "far-side"
+    displayOrder: 1
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e009212/art002e009212~orig.jpg"
+    title:
+      es: "La cuenca Orientale entre la cara visible y el lado oculto"
+      en: "The Orientale basin straddling the near and far sides"
+    caption:
+      es: "Vista del disco lunar iluminado el 6 de abril de 2026 que reúne dos geografías: a la derecha se distinguen las llanuras oscuras de lava antigua de la cara visible desde la Tierra; en el centro-izquierda se abre completa la cuenca de impacto Orientale, de casi 600 millas de diámetro; y a su izquierda se extiende el terreno escarpado del lado oculto."
+      en: "A fully illuminated view of the Moon taken on April 6, 2026, spanning both hemispheres: on the right lie the dark ancient lava plains of the Earth-facing near side; just west of them sits the nearly 600-mile-wide Orientale impact basin in full view; and to its left stretches the cratered terrain of the far side."
+    alt:
+      es: "El disco completo e iluminado de la Luna contra el espacio negro, con manchas oscuras de mares volcánicos a la derecha, los anillos concéntricos de la cuenca Orientale en el centro-izquierda y tierras altas llenas de cráteres a la izquierda."
+      en: "The fully illuminated lunar disk against black space, showing dark volcanic maria on the right, the bullseye rings of the Orientale basin in the center-left, and heavily cratered highlands on the left."
+    facts:
+      - id: "photo-farside-7-orientale-disk"
+        claim:
+          es: "En esta imagen del 6 de abril de 2026, la cara visible de la Luna aparece a la derecha con sus oscuras llanuras de lava antigua, la cuenca Orientale (de casi 600 millas de ancho) se sitúa en la frontera entre ambos hemisferios, y todo el terreno a la izquierda de Orientale pertenece al lado oculto."
+          en: "In this April 6, 2026 image, the Moon's near side appears on the right with its dark ancient lava flows, the nearly 600-mile-wide Orientale basin straddles the boundary between hemispheres, and the terrain to the left of Orientale belongs to the far side."
+        sources:
+          - title: "NASA Image and Video Library: art002e009212"
+            url: "https://images.nasa.gov/details/art002e009212"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e012090"
+    mediaFolder: "art002e012090"
+    curationRef: "Mission 6"
+    chapter: "far-side"
+    displayOrder: 2
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e012090/art002e012090~orig.jpg"
+    title:
+      es: "Los anillos concéntricos de la cuenca Orientale"
+      en: "The concentric rings of the Orientale basin"
+    caption:
+      es: "Fotografía detallada obtenida por la tripulación de Artemis II el 6 de abril de 2026 durante el primer turno de observación del sobrevuelo lunar, en la que se aprecian las cordilleras anulares y el piso oscuro de lava de la cuenca Orientale, una de las estructuras de impacto grandes más jóvenes y mejor conservadas de la Luna."
+      en: "Detailed photograph captured by the Artemis II crew on April 6, 2026, during the first shift of the lunar flyby observation period, showing the concentric mountain rings and dark basalt floor of the Orientale basin, one of the Moon's youngest and best-preserved large impact structures."
+    alt:
+      es: "Vista oblicua de la superficie lunar dominada por los anillos montañosos concéntricos y las manchas oscuras de lava solidificada del interior de la cuenca Orientale."
+      en: "Oblique view of the lunar surface dominated by the concentric mountain rings and dark patches of solidified lava inside the Orientale basin."
+    story:
+      es: >-
+        Desde la Tierra, la cuenca Orientale apenas se asoma de perfil en el borde occidental de la Luna. Desde la ventanilla de Orion el 6 de abril de 2026, en cambio, se abrió de frente como una diana geológica de casi 600 millas de diámetro y unos 3.700 millones de años de antigüedad. Sus cordilleras concéntricas —cuyo arco suroeste fue apodado informalmente «el beso» por los observadores de la era Apolo— conservan la huella del colosal impacto que excavó la corteza lunar y lanzó cadenas de cráteres secundarios a través de la vecina y más antigua cuenca Hertzsprung, hasta perderse junto a la línea quebrada del terminador donde los bordes de los cráteres emergían como islas en la noche.
+      en: >-
+        From Earth, the Orientale basin barely peeks around the Moon's western limb in foreshortened profile. Seen from Orion's windows on April 6, 2026, it opened head-on as a nearly 600-mile-wide, 3.7-billion-year-old geological bullseye. Its nested mountain rings—whose curving southwestern arc Apollo-era observers informally nicknamed "the kiss"—preserve the shockwave of a colossal impact that excavated the lunar crust and hurled chains of secondary craters across the neighboring, even older Hertzsprung basin, stretching toward the jagged day-night terminator where sunlit crater rims stood like islands in the dark.
+      facts:
+        - id: "story-farside-6-orientale-geology"
+          claim:
+            es: "La cuenca Orientale mide casi 600 millas de ancho y tiene unos 3.700 millones de años; sus cadenas de cráteres secundarios atraviesan la cuenca Hertzsprung (más antigua) hacia el terminador, y el arco suroeste de su anillo exterior recibió en la era Apolo el apodo informal de «el beso»."
+            en: "The Orientale basin is nearly 600 miles wide and about 3.7 billion years old; its secondary crater chains scar the older Hertzsprung basin toward the terminator, and the southwestern arc of its outer ring was informally nicknamed 'the kiss' by Apollo-era observers."
+          sources:
+            - title: "NASA Image and Video Library: art002e012090"
+              url: "https://images.nasa.gov/details/art002e012090"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: art002e009212"
+              url: "https://images.nasa.gov/details/art002e009212"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: art002e010208"
+              url: "https://images.nasa.gov/details/art002e010208"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: art002e012273"
+              url: "https://images.nasa.gov/details/art002e012273"
+              accessed: "2026-10-20"
+    facts:
+      - id: "photo-farside-6-orientale-rings"
+        claim:
+          es: "La tripulación de Artemis II fotografió los anillos de la cuenca Orientale —una de las grandes cuencas de impacto más jóvenes y mejor conservadas de la Luna— durante el primer turno del periodo de observación del 6 de abril de 2026."
+          en: "The Artemis II crew photographed the rings of the Orientale basin—one of the Moon's youngest and best-preserved large impact craters—during the first shift of the April 6, 2026 lunar flyby observation period."
+        sources:
+          - title: "NASA Image and Video Library: art002e012090"
+            url: "https://images.nasa.gov/details/art002e012090"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e010208"
+    mediaFolder: "art002e010208"
+    curationRef: "Mission 8"
+    chapter: "far-side"
+    displayOrder: 3
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e010208/art002e010208~orig.jpg"
+    title:
+      es: "El terminador lunar y las cadenas de cráteres sobre Hertzsprung"
+      en: "The lunar terminator and crater chains across Hertzsprung"
+    caption:
+      es: "Al sobrevolar el terminador —la frontera entre el día y la noche lunar, descrita por los astronautas como «cualquier cosa menos una línea recta»— el 6 de abril de 2026, los bordes de los cráteres destacan como islas iluminadas en la oscuridad. Las cadenas de cráteres expulsadas por la cuenca Orientale, de 3.700 millones de años, surcan el piso de la cuenca Hertzsprung en el centro de la imagen, demostrando que Hertzsprung es aún más antigua."
+      en: "Flying over the terminator—the boundary between lunar day and night, which the astronauts described as 'anything but a straight line'—on April 6, 2026, crater rims stand out like sunlit islands in the night. Chains of secondary craters ejected from the 3.7-billion-year-old Orientale basin cut across the flatter Hertzsprung basin at center, proving that Hertzsprung is older still."
+    alt:
+      es: "Superficie lunar iluminada con luz rasante junto a la frontera nocturna, donde largas hileras de cráteres cruzan una llanura circular y las crestas brillan sobre la sombra."
+      en: "Lunar terrain in low-angle sunlight along the night boundary, with long chains of craters crossing a broad basin and high rims catching light against the shadow."
+    facts:
+      - id: "photo-farside-8-terminator-hertzsprung"
+        claim:
+          es: "Fotografía del 6 de abril de 2026 del terminador lunar, descrito por la tripulación como «cualquier cosa menos una línea recta», donde cadenas de cráteres procedentes de la cuenca Orientale (de 3.700 millones de años) marcan el interior de la más antigua cuenca Hertzsprung."
+          en: "April 6, 2026 photograph of the lunar terminator, described by the crew as 'anything but a straight line,' where crater chains from the 3.7-billion-year-old Orientale basin scar the older Hertzsprung basin."
+        sources:
+          - title: "NASA Image and Video Library: art002e010208"
+            url: "https://images.nasa.gov/details/art002e010208"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e012273"
+    mediaFolder: "art002e012273"
+    curationRef: "Mission 9"
+    chapter: "far-side"
+    displayOrder: 4
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e012273/art002e012273~orig.jpg"
+    title:
+      es: "El arco montañoso suroeste de la cuenca Orientale"
+      en: "The southwestern mountain ring of the Orientale basin"
+    caption:
+      es: "Esta vista del sector suroeste de la cuenca Orientale, tomada el 6 de abril de 2026, resalta el arco montañoso que delimita su anillo exterior. Por su silueta curvada, los observadores de la época del programa Apolo dieron a esta formación el apodo informal de «el beso»."
+      en: "This April 6, 2026 view of the southwestern portion of the Orientale basin highlights the sweeping mountain arc of its outer ring. Because of its curved shape, Apollo-era observers gave this formation the informal nickname 'the kiss.'"
+    alt:
+      es: "Un prominente arco curvado de montañas lunares que rodea el borde suroeste de la cuenca Orientale sobre un terreno gris lleno de cráteres."
+      en: "A prominent curved arc of lunar mountains tracing the southwestern boundary of the Orientale basin across grey cratered terrain."
+    facts:
+      - id: "photo-farside-9-outer-ring-kiss"
+        claim:
+          es: "La imagen del 6 de abril de 2026 muestra el anillo montañoso del suroeste de la cuenca Orientale, apodado informalmente «el beso» por los observadores de la era Apolo."
+          en: "The April 6, 2026 image shows the southwestern annular mountain ring of the Orientale basin, informally nicknamed 'the kiss' by Apollo-era observers."
+        sources:
+          - title: "NASA Image and Video Library: art002e012273"
+            url: "https://images.nasa.gov/details/art002e012273"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e012153"
+    mediaFolder: "art002e012153"
+    curationRef: "Mission 13"
+    chapter: "far-side"
+    displayOrder: 5
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e012153/art002e012153~orig.jpg"
+    title:
+      es: "El cráter propuesto con el nombre de Carroll"
+      en: "The crater proposed as Carroll"
+    caption:
+      es: "El pequeño punto brillante en el centro de esta imagen del 6 de abril de 2026 es un cráter de unas 3,5 millas (5,6 kilómetros) de diámetro situado en el extremo occidental de la cara visible, junto a la cuenca Orientale, para el cual la tripulación de Artemis II propuso el nombre de Carroll en recuerdo de la difunta esposa del comandante Reid Wiseman."
+      en: "The small bright spot at the center of this April 6, 2026 photograph is a crater about 3.5 miles (5.6 kilometers) in diameter on the western edge of the lunar near side near the Orientale basin, which the Artemis II crew proposed naming Carroll in remembrance of Commander Reid Wiseman's late wife."
+    alt:
+      es: "Vista cercana del terreno lunar rugoso con un pequeño cráter circular de bordes muy brillantes en el centro del encuadre."
+      en: "Close view of rugged lunar terrain featuring a small circular crater with bright rim ejecta at the center of the frame."
+    story:
+      es: >-
+        En la posición de las diez en punto respecto de la cuenca Orientale, sobre el borde occidental de la cara visible de la Luna, destacan dos pequeños cráteres que la tripulación de Artemis II fotografió durante su turno de observación del 6 de abril de 2026. Los cuatro astronautas propusieron llamarlos Integrity —como llamaron a su nave Orion— y Carroll, en memoria de la difunta esposa del comandante Reid Wiseman. Con unas 3,5 millas (5,6 kilómetros) de diámetro, el cráter propuesto como Carroll se encuentra justo dentro del hemisferio orientado hacia la Tierra, de modo que puede localizarse desde nuestro planeta con telescopios potentes.
+      en: >-
+        Near the ten o'clock position of the Orientale basin, along the western edge of the Moon's near side, lie two small craters that the Artemis II crew photographed during their April 6, 2026 observation shift. The four astronauts proposed naming them Integrity—sharing the name they gave their Orion spacecraft—and Carroll, in remembrance of Commander Reid Wiseman's late wife. Measuring about 3.5 miles (5.6 kilometers) across, the crew-proposed Carroll crater sits just inside the Earth-facing hemisphere, where it can be spotted from Earth through powerful telescopes.
+      facts:
+        - id: "story-farside-13-proposed-craters"
+          claim:
+            es: "La tripulación de Artemis II propuso los nombres Integrity (como su nave Orion) y Carroll (en recuerdo de la difunta esposa de Reid Wiseman) para dos pequeños cráteres situados en la posición de las 10 en punto de la cuenca Orientale; el cráter propuesto como Carroll mide unas 3,5 millas (5,6 km) de diámetro, está en el borde occidental de la cara visible y es observable desde la Tierra con telescopios potentes."
+            en: "The Artemis II crew proposed the names Integrity (after their Orion spacecraft) and Carroll (in remembrance of Reid Wiseman's late wife) for two small craters at the 10 o'clock position of the Orientale basin; the proposed Carroll crater is about 3.5 miles (5.6 km) across on the western edge of the near side and is visible from Earth with powerful telescopes."
+          sources:
+            - title: "NASA Image and Video Library: art002e012153"
+              url: "https://images.nasa.gov/details/art002e012153"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: art002e009279"
+              url: "https://images.nasa.gov/details/art002e009279"
+              accessed: "2026-10-20"
+            - title: "NASA Curious Universe Podcast Transcript: Artemis II Crew Flies Around the Moon"
+              url: "https://www.nasa.gov/podcasts/curious-universe/artemis-ii-circles-moon/"
+              accessed: "2026-10-20"
+    facts:
+      - id: "photo-farside-13-carroll-details"
+        claim:
+          es: "El cráter propuesto por la tripulación como Carroll (en memoria de la difunta esposa del comandante Reid Wiseman) mide unas 3,5 millas (5,6 km) de diámetro y se ubica en el borde occidental de la cara visible de la Luna."
+          en: "The crater proposed by the crew as Carroll (after Commander Reid Wiseman's late wife) is about 3.5 miles (5.6 km) in diameter and lies on the western edge of the lunar near side."
+        sources:
+          - title: "NASA Image and Video Library: art002e012153"
+            url: "https://images.nasa.gov/details/art002e012153"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e009279"
+    mediaFolder: "art002e009279"
+    curationRef: "Mission 14"
+    chapter: "far-side"
+    displayOrder: 6
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e009279/art002e009279~orig.jpg"
+    title:
+      es: "Contexto de los cráteres propuestos Integrity y Carroll junto a Orientale"
+      en: "Wider setting of the proposed Integrity and Carroll craters by Orientale"
+    caption:
+      es: "Capturada a las 3:41 p. m. EDT del 6 de abril de 2026 durante el periodo de observación lunar, esta imagen muestra el contexto geológico de los anillos de la cuenca Orientale junto a los dos cráteres menores —situados hacia la posición de las diez en punto respecto de la cuenca— para los que la tripulación propuso los nombres Integrity y Carroll."
+      en: "Captured at 3:41 p.m. EDT on April 6, 2026, during the lunar observation period, this wider view places the concentric rings of the Orientale basin alongside the two smaller craters—near the basin's ten o'clock position—that the crew proposed naming Integrity and Carroll."
+    alt:
+      es: "Plano amplio de los anillos concéntricos y el piso oscuro de la cuenca Orientale con dos pequeños cráteres brillantes visibles hacia el sector superior izquierdo."
+      en: "Wide view of the concentric rings and dark floor of the Orientale basin with two small bright craters visible toward the upper-left sector."
+    facts:
+      - id: "photo-farside-14-context-time"
+        claim:
+          es: "Imagen capturada a las 3:41 p. m. EDT del 6 de abril de 2026 que muestra los anillos de la cuenca Orientale y, en la posición de las 10 en punto, los dos pequeños cráteres cuyos nombres propuestos por la tripulación son Integrity y Carroll."
+          en: "Image captured at 3:41 p.m. EDT on April 6, 2026, showing the rings of the Orientale basin and, at the 10 o'clock position, the two smaller craters that the crew suggested naming Integrity and Carroll."
+        sources:
+          - title: "NASA Image and Video Library: art002e009279"
+            url: "https://images.nasa.gov/details/art002e009279"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e009284"
+    mediaFolder: "art002e009284"
+    curationRef: "Mission 10"
+    chapter: "far-side"
+    displayOrder: 7
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e009284/art002e009284~orig.jpg"
+    title:
+      es: "La Tierra en creciente sobre el limbo lunar antes de ocultarse"
+      en: "Crescent Earth above the lunar limb before Earthset"
+    caption:
+      es: "Fotografiada el 6 de abril de 2026, treinta y seis minutos antes de la puesta de la Tierra, nuestra casa aparece como una pequeña creciente iluminada desde la derecha en el espacio negro, aún separada del limbo lunar. En el tercio inferior del disco lunar se distinguen la cuenca Orientale, sus cadenas de cráteres secundarios y los cráteres propuestos Integrity y Carroll."
+      en: "Photographed on April 6, 2026, thirty-six minutes before Earthset, our home planet appears as a small crescent lit from the right in black space, still separated from the Moon's curved limb. Covering the lower third of the lunar surface in frame are the Orientale basin, its secondary crater chains, and both crew-proposed craters, Integrity and Carroll."
+    alt:
+      es: "El gran horizonte curvado e iluminado de la Luna en primer plano con la cuenca Orientale abajo, y una diminuta creciente de la Tierra suspendida arriba en el espacio negro."
+      en: "The large illuminated curve of the Moon in the foreground with the Orientale basin below, and a tiny crescent Earth floating high above the lunar limb in black space."
+    facts:
+      - id: "photo-farside-10-before-earthset"
+        claim:
+          es: "Esta fotografía del 6 de abril de 2026 fue tomada 36 minutos antes de la puesta de la Tierra; muestra a la Tierra en fase creciente separada del limbo lunar y, en el tercio inferior de la Luna, la cuenca Orientale junto a los cráteres propuestos Integrity y Carroll."
+          en: "This April 6, 2026 photograph was taken 36 minutes before Earthset; it shows a crescent Earth separated from the lunar limb and, in the lower third of the imaged Moon, the Orientale basin along with the proposed Integrity and Carroll craters."
+        sources:
+          - title: "NASA Image and Video Library: art002e009284"
+            url: "https://images.nasa.gov/details/art002e009284"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e021278"
+    mediaFolder: "art002e021278"
+    curationRef: "Mission 11"
+    chapter: "far-side"
+    displayOrder: 8
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e021278/art002e021278~orig.jpg"
+    title:
+      es: "Puesta de la Tierra tras el horizonte de la Luna"
+      en: "Earthset behind the lunar horizon"
+    caption:
+      es: "La Tierra se oculta tras el horizonte gris de la Luna el 6 de abril de 2026 mientras Orion pasa detrás del lado oculto durante el sobrevuelo de siete horas, en una imagen que el registro de NASA compara con la histórica salida de la Tierra fotografiada por Apolo 8 en 1968."
+      en: "Earth sinks behind the Moon's grey horizon on April 6, 2026, as Orion passes behind the lunar far side during the seven-hour flyby, in a frame that NASA's record compares to the iconic Earthrise photographed by the Apollo 8 crew in 1968."
+    alt:
+      es: "La mitad de la creciente azul y blanca de la Tierra asomando por encima del horizonte gris y lleno de cráteres de la Luna bajo un cielo negro."
+      en: "Half of Earth's blue-and-white crescent peeking above the grey, cratered horizon of the Moon against a black sky."
+    story:
+      es: >-
+        Treinta y seis minutos antes de la puesta de la Tierra el 6 de abril de 2026, el planeta aún flotaba como una uña azul y blanca por encima del limbo lunar. A las 6:41 p. m. EDT, a medida que la trayectoria de Orion se curvaba hacia el lado oculto, la tripulación vio cómo nuestro mundo se hundía lentamente tras las montañas grises de la Luna: una puesta de la Tierra que el archivo de NASA vincula con el recuerdo visual de la salida de la Tierra captada por Apolo 8 en 1968. Tres minutos después, a las 6:44 p. m. EDT, la Luna bloqueó las señales de radio con la Tierra durante 41 minutos. Hacia el final de ese paso por detrás del lado oculto, a las 7:22 p. m. EDT —tres minutos antes de restablecerse el contacto por radio a las 7:25 p. m. EDT—, una cámara exterior instalada en un panel solar de Orion registró el instante inverso: la delgada silueta de la Tierra asomando de nuevo junto al borde oscuro de la Luna.
+      en: >-
+        Thirty-six minutes before Earthset on April 6, 2026, our planet still hung like a blue-and-white fingernail above the lunar limb. At 6:41 p.m. EDT, as Orion's trajectory curved toward the far side, the crew watched home slip behind the Moon's grey highlands—an Earthset that NASA's catalog links to the visual legacy of the 1968 Apollo 8 Earthrise. Three minutes later, at 6:44 p.m. EDT, the Moon blocked radio signals with Earth for a planned 41-minute communications blackout. Near the end of that pass behind the Moon, at 7:22 p.m. EDT—three minutes before radio contact was reacquired at 7:25 p.m. EDT—an exterior camera mounted on one of Orion's solar array wings recorded the reverse moment: a delicate sliver of Earth rising once more beside the lunar edge.
+      facts:
+        - id: "story-farside-11-earthset-earthrise-sequence"
+          claim:
+            es: "El 6 de abril de 2026, la tripulación fotografió la Tierra 36 minutos antes de ocultarse (art002e009284) y luego la puesta de la Tierra a las 6:41 p. m. EDT al pasar hacia el lado oculto (art002e021278, comparada en el registro de NASA con la foto de Apolo 8 de 1968); Orion voló en silencio de radio de las 6:44 a las 7:25 p. m. EDT, y a las 7:22 p. m. ET una cámara en un panel solar de Orion captó la salida de la Tierra (art002e016299) antes de recuperarse la señal."
+            en: "On April 6, 2026, the crew photographed Earth 36 minutes before setting (art002e009284) and then Earthset at 6:41 p.m. EDT as Orion curved behind the far side (art002e021278, which NASA's record compares to the 1968 Apollo 8 Earthrise); Orion flew in radio blackout from 6:44 to 7:25 p.m. EDT, and at 7:22 p.m. ET a solar-array-wing camera captured Earthrise (art002e016299) shortly before signal reacquisition."
+          sources:
+            - title: "NASA Image and Video Library: art002e009284"
+              url: "https://images.nasa.gov/details/art002e009284"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: art002e021278"
+              url: "https://images.nasa.gov/details/art002e021278"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: art002e016299"
+              url: "https://images.nasa.gov/details/art002e016299"
+              accessed: "2026-10-20"
+            - title: "NASA Blog: Artemis II Flight Day 6 — Lunar Flyby Updates (April 6, 2026)"
+              url: "https://www.nasa.gov/blogs/missions/2026/04/06/artemis-ii-flight-day-6-lunar-flyby-updates/"
+              accessed: "2026-10-21"
+    facts:
+      - id: "photo-farside-11-earthset-apollo8"
+        claim:
+          es: "La tripulación de Artemis II capturó esta imagen de la puesta de la Tierra el 6 de abril de 2026 durante el sobrevuelo de siete horas al pasar detrás del lado oculto; el registro de NASA señala su paralelismo con la fotografía de la salida de la Tierra de Apolo 8 en 1968."
+          en: "The Artemis II crew captured this Earthset image on April 6, 2026, during the seven-hour lunar flyby as Orion passed behind the far side; NASA's record notes its echo of the 1968 Apollo 8 Earthrise photograph."
+        sources:
+          - title: "NASA Image and Video Library: art002e021278"
+            url: "https://images.nasa.gov/details/art002e021278"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e016299"
+    mediaFolder: "art002e016299"
+    curationRef: "Mission 12"
+    chapter: "far-side"
+    displayOrder: 9
+    date: "2026-04-06"
+    camera: "Orion solar array wing camera"
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e016299/art002e016299~orig.jpg"
+    title:
+      es: "Salida de la Tierra captada por la cámara de un panel solar de Orion"
+      en: "Earthrise captured by an Orion solar array wing camera"
+    caption:
+      es: "A las 7:22 p. m. EDT del 6 de abril de 2026, una cámara exterior montada en una de las alas de paneles solares de Orion captó la salida de la Tierra al concluir el paso por detrás del lado oculto. La Tierra asoma como una fina línea luminosa a la derecha de la estructura de la nave, con el borde tenue de la Luna en la esquina inferior derecha."
+      en: "At 7:22 p.m. EDT on April 6, 2026, an exterior camera mounted on one of Orion's solar array wings captured Earthrise as the spacecraft emerged from behind the Moon's far side. Earth appears as a delicate sliver beside the spacecraft structure, with the dimly lit edge of the Moon in the lower-right corner."
+    alt:
+      es: "Vista desde una cámara exterior de Orion donde la estructura de la nave ocupa la izquierda y una pequeña creciente de la Tierra emerge junto al borde oscuro de la Luna en la esquina inferior derecha."
+      en: "Exterior camera view with part of the Orion spacecraft on the left and a tiny sliver of Earth emerging beside the dimly visible edge of the Moon near the lower-right corner."
+    facts:
+      - id: "photo-farside-12-saw-earthrise"
+        claim:
+          es: "Imagen de la salida de la Tierra tomada a las 7:22 p. m. ET del 6 de abril de 2026 por una cámara montada en una de las alas de paneles solares de Orion."
+          en: "Earthrise image captured at 7:22 p.m. ET on April 6, 2026, by a camera mounted on one of Orion's solar array wings."
+        sources:
+          - title: "NASA Image and Video Library: art002e016299"
+            url: "https://images.nasa.gov/details/art002e016299"
+            accessed: "2026-10-20"
+          - title: "NASA Image Detail: amf-art002e016299"
+            url: "https://www.nasa.gov/image-detail/amf-art002e016299/"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e009296"
+    mediaFolder: "art002e009296"
+    curationRef: "Mission 15"
+    chapter: "far-side"
+    displayOrder: 10
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e009296/art002e009296~orig.jpg"
+    title:
+      es: "Autorretrato de los cuatro astronautas durante la observación lunar"
+      en: "Crew selfie inside Orion during the lunar observation period"
+    caption:
+      es: "A mitad del periodo de observación lunar del 6 de abril de 2026, los cuatro integrantes de Artemis II —Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen— hacen una breve pausa en el interior de Orion para tomarse una fotografía conjunta."
+      en: "Midway through their lunar observation period on April 6, 2026, all four Artemis II crew members—Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen—pause inside the Orion cabin for a group selfie."
+    alt:
+      es: "Los cuatro astronautas de Artemis II sonriendo juntos en ingravidez dentro de la cabina de la nave Orion."
+      en: "The four Artemis II astronauts smiling together in microgravity inside the cabin of the Orion spacecraft."
+    facts:
+      - id: "photo-farside-15-selfie"
+        claim:
+          es: "El 6 de abril de 2026, a mitad del periodo de observación lunar, Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen se tomaron un autorretrato grupal dentro de Orion."
+          en: "On April 6, 2026, midway through the lunar observation period, Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen took a group selfie inside Orion."
+        sources:
+          - title: "NASA Image and Video Library: art002e009296"
+            url: "https://images.nasa.gov/details/art002e009296"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e014251"
+    mediaFolder: "art002e014251"
+    curationRef: "Mission 16"
+    chapter: "far-side"
+    displayOrder: 11
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e014251/art002e014251~orig.jpg"
+    title:
+      es: "Jeremy Hansen fotografiando la Luna desde la cabina en penumbra"
+      en: "Jeremy Hansen photographing the Moon from the darkened cabin"
+    caption:
+      es: "El especialista de misión Jeremy Hansen (CSA) toma fotografías por una ventanilla de Orion el 6 de abril de 2026 con las luces de cabina apagadas para evitar reflejos en el cristal. Junto a la ventanilla brilla una tableta con el Lunar Targeting Plan, el programa desarrollado por el equipo científico de Artemis II para guiar las siete horas de observación a una distancia mínima de 4.067 millas de la Luna."
+      en: "Mission Specialist Jeremy Hansen of the Canadian Space Agency (CSA) takes photographs through an Orion window on April 6, 2026, with cabin lights dimmed to prevent reflections on the glass. Beside the window glows a tablet running the Lunar Targeting Plan, custom software built by the Artemis II lunar science team to guide the seven hours of observations within 4,067 miles of the Moon."
+    alt:
+      es: "Interior oscuro de la cabina de Orion donde la silueta de un astronauta apunta una cámara hacia una ventanilla, iluminado por el brillo de una pantalla portátil cercana."
+      en: "Dark interior of the Orion cabin where the silhouette of an astronaut aims a camera through a window, lit by the glow of a nearby tablet screen."
+    story:
+      es: >-
+        Para fotografiar con nitidez el relieve lunar desde una cabina espacial hay que trabajar a oscuras: cualquier luz interior se reflejaría en el triple acristalamiento de las ventanillas de Orion. Durante unas siete horas el 6 de abril de 2026, mientras la nave pasaba hasta a 4.067 millas de la superficie, Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen se turnaron frente a los cristales siguiendo el Lunar Targeting Plan, una aplicación creada por el equipo de observaciones lunares de Artemis II que sincronizaba cada objetivo geológico con los especialistas reunidos en la Sala de Evaluación Científica en Houston.
+      en: >-
+        Photographing crisp lunar detail from inside a spacecraft requires working in the dark: any cabin illumination would reflect off Orion's multi-pane windows. For roughly seven hours on April 6, 2026, as the spacecraft swept within 4,067 miles of the lunar surface, Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen rotated through window shifts guided by the Lunar Targeting Plan—custom software built by the Artemis II crew lunar observations team that coordinated every target with geologists in the Science Evaluation Room in Houston.
+      facts:
+        - id: "story-farside-16-science-operations"
+          claim:
+            es: "Durante unas siete horas el 6 de abril de 2026, con un acercamiento mínimo de 4.067 millas a la superficie lunar, Jeremy Hansen (CSA) y sus compañeros se turnaron en las ventanillas de Orion guiados por la aplicación Lunar Targeting Plan en coordinación con el equipo de ciencia lunar en la Tierra."
+            en: "Over roughly seven hours on April 6, 2026, reaching within 4,067 miles of the lunar surface, Jeremy Hansen (CSA) and his crewmates took turns at Orion's windows guided by the custom Lunar Targeting Plan application in coordination with the lunar science team on Earth."
+          sources:
+            - title: "NASA Image and Video Library: art002e014251"
+              url: "https://images.nasa.gov/details/art002e014251"
+              accessed: "2026-10-20"
+            - title: "Artemis II Preliminary Lunar Science Report (updated October 7, 2026)"
+              url: "https://science.nasa.gov/feature/artemis-ii-preliminary-lunar-science-report/"
+              accessed: "2026-10-20"
+    facts:
+      - id: "photo-farside-16-hansen-ltp"
+        claim:
+          es: "La imagen del 6 de abril de 2026 muestra al astronauta de la CSA Jeremy Hansen tomando fotografías desde la ventanilla de Orion durante las siete horas de observación lunar (a un mínimo de 4.067 millas de la Luna) junto a un dispositivo con el software Lunar Targeting Plan."
+          en: "The April 6, 2026 image shows CSA astronaut Jeremy Hansen taking photographs through the Orion window during the seven-hour lunar flyby observation period (within 4,067 miles of the Moon) beside a device running the Lunar Targeting Plan software."
+        sources:
+          - title: "NASA Image and Video Library: art002e014251"
+            url: "https://images.nasa.gov/details/art002e014251"
+            accessed: "2026-10-20"
+          - title: "Artemis II Preliminary Lunar Science Report (updated October 7, 2026)"
+            url: "https://science.nasa.gov/feature/artemis-ii-preliminary-lunar-science-report/"
+            accessed: "2026-10-20"
+
+  # ============================================================================
+  # Chapter 4: eclipse (4 photographs — CURATION.md Mission 19 -> 18 -> 17 -> 20)
+  # ============================================================================
+  - nasaId: "art002e010782"
+    mediaFolder: "art002e010782"
+    curationRef: "Mission 19"
+    chapter: "eclipse"
+    displayOrder: 1
+    date: "2026-04-06"
+    dateConflict:
+      status: "resolved-per-caption"
+      summary: "The library `date_created` index is 2026-04-07 (UTC camera timestamp), while the description identifies the eclipse on April 6, 2026."
+      proposedResolution: "Use 2026-04-06 (the described EDT event date, per CURATION.md) while noting the April 7 UTC index date."
+      sources:
+        - "https://images.nasa.gov/details/art002e010782"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e010782/art002e010782~orig.jpg"
+    title:
+      es: "Comienzo del eclipse solar y corrientes de la corona tras las montañas lunares"
+      en: "Eclipse onset and solar coronal streamers behind lunar mountains"
+    caption:
+      es: "Al comenzar el eclipse solar total el 6 de abril de 2026 al término del periodo de observación cercana, el Sol se oculta tras el borde nocturno de la Luna. Los rayos luminosos que se proyectan hacia abajo desde el disco lunar corresponden a corrientes de la corona solar —la capa externa de la atmósfera del Sol—, mientras el perfil dentado del horizonte revela montañas lunares a contraluz."
+      en: "As the total solar eclipse begins on April 6, 2026, at the close of Orion's lunar observation period, the Sun sets behind the dark wedge of the Moon. The bright rays streaming outward toward the bottom of the lunar disk are solar coronal streamers—part of the Sun's outer atmosphere—while the jagged limb reveals backlit lunar mountains on the horizon."
+    alt:
+      es: "El borde oscuro y dentado de la Luna recortado a contraluz sobre un resplandor intenso del que parten haces rectos de luz de la corona solar hacia la parte inferior."
+      en: "The dark, jagged edge of the Moon silhouetted against a bright glare with straight rays of solar coronal streamers extending downward."
+    facts:
+      - id: "photo-eclipse-19-coronal-streamers"
+        claim:
+          es: "Capturada el 6 de abril de 2026 (indexada el 7 de abril en UTC), esta imagen del inicio del eclipse solar muestra corrientes brillantes de la corona solar proyectándose desde detrás del disco lunar y el perfil irregular de montañas lunares a contraluz."
+          en: "Captured on April 6, 2026 (indexed April 7 in UTC), this image of the onset of the total solar eclipse shows bright rays of the Sun's corona streaming outward behind the Moon and the jagged topography of backlit lunar mountains."
+        sources:
+          - title: "NASA Image and Video Library: art002e010782"
+            url: "https://images.nasa.gov/details/art002e010782"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e009301"
+    mediaFolder: "art002e009301"
+    curationRef: "Mission 18"
+    chapter: "eclipse"
+    displayOrder: 2
+    date: "2026-04-06"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e009301/art002e009301~orig.jpg"
+    title:
+      es: "Totalidad del eclipse solar vista desde Orion"
+      en: "Total solar eclipse seen from Orion"
+    caption:
+      es: "Fotografiada por la tripulación el 6 de abril de 2026, la Luna oculta por completo al Sol durante un eclipse que alcanzó casi 54 minutos de totalidad desde la perspectiva de Orion. Alrededor del disco lunar brilla un halo cuya combinación de corona solar y luz zodiacal es objeto de estudio científico, mientras el reflejo de la Tierra ilumina tenuemente la superficie lunar y permite distinguir estrellas de fondo."
+      en: "Photographed by the crew on April 6, 2026, the Moon completely blocks the Sun during an eclipse that produced nearly 54 minutes of totality from Orion's vantage point. A bright halo surrounds the dark lunar disk—investigated by scientists as a combination of solar corona and zodiacal light—while faint Earthshine illuminates the lunar surface and background stars become visible."
+    alt:
+      es: "El disco oscuro de la Luna en el centro del encuadre rodeado por un halo luminoso blanco en medio de un cielo estrellado."
+      en: "The dark circular disk of the Moon centered in the frame, surrounded by a glowing white halo against a starry black sky."
+    story:
+      es: >-
+        Visto desde la Tierra, un eclipse solar total dura apenas unos minutos porque el Sol y la Luna aparentan casi el mismo tamaño en el cielo. El 6 de abril de 2026, en cambio, la tripulación de Artemis II se encontraba tan cerca de la Luna que su disco oscuro superaba ampliamente al del Sol, regalándoles casi 54 minutos de totalidad entre las 8:35 y las 9:32 p. m. EDT. Mientras las fotografías del inicio del eclipse mostraban con claridad las corrientes de la corona solar tras las montañas del limbo, las tomas de totalidad de gran campo revelaron un resplandor más amplio acompañado por los planetas Venus y Saturno; el informe científico preliminar del 7 de octubre de 2026 distingue en ese brillo tanto estructuras coronales como el cono de luz zodiacal producido por el polvo interplanetario.
+      en: >-
+        Seen from Earth, a total solar eclipse lasts only a few minutes because the Moon and Sun appear nearly the same size in our sky. On April 6, 2026, however, the Artemis II crew flew close enough to the Moon that its disk loomed far larger than the Sun, creating nearly 54 minutes of totality between 8:35 and 9:32 p.m. EDT. While close-in frames at eclipse onset clearly resolved streamers of the Sun's outer corona above backlit mountains, wider totality images revealed a broader luminous halo flanked by the planets Venus and Saturn; the October 7, 2026 preliminary lunar science report distinguishes both coronal structures and zodiacal light—sunlight scattered by interplanetary dust—within these observations.
+      facts:
+        - id: "story-eclipse-18-totality-and-light"
+          claim:
+            es: "El eclipse solar del 6 de abril de 2026 ofreció casi 54 minutos de totalidad desde Orion (entre las 8:35 y las 9:32 p. m. EDT); los registros y el informe preliminar del 7 de octubre de 2026 distinguen las corrientes de la corona solar (visibles en art002e010782) de la luz zodiacal y el halo amplio donde también aparecen Venus y Saturno (art002e009301, art002e016324)."
+            en: "The April 6, 2026 solar eclipse produced nearly 54 minutes of totality from Orion (between 8:35 and 9:32 p.m. EDT); the photo records and the October 7, 2026 preliminary science report distinguish solar coronal streamers (seen in art002e010782) from zodiacal light and the broad halo accompanied by Venus and Saturn (art002e009301, art002e016324)."
+          sources:
+            - title: "NASA Image and Video Library: art002e009301"
+              url: "https://images.nasa.gov/details/art002e009301"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: art002e016324"
+              url: "https://images.nasa.gov/details/art002e016324"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: art002e010782"
+              url: "https://images.nasa.gov/details/art002e010782"
+              accessed: "2026-10-20"
+            - title: "Artemis II Preliminary Lunar Science Report (updated October 7, 2026)"
+              url: "https://science.nasa.gov/feature/artemis-ii-preliminary-lunar-science-report/"
+              accessed: "2026-10-20"
+            - title: "NASA Blog: Artemis II Flight Day 6 — Lunar Flyby Updates (April 6, 2026)"
+              url: "https://www.nasa.gov/blogs/missions/2026/04/06/artemis-ii-flight-day-6-lunar-flyby-updates/"
+              accessed: "2026-10-21"
+    facts:
+      - id: "photo-eclipse-18-totality-details"
+        claim:
+          es: "La imagen art002e009301 del 6 de abril de 2026 muestra la Luna eclipsando por completo al Sol durante casi 54 minutos de totalidad, con un halo luminoso (investigado como corona solar, luz zodiacal o ambos), estrellas visibles y el brillo tenue de la luz reflejada por la Tierra sobre la Luna."
+          en: "Image art002e009301 from April 6, 2026, shows the Moon fully eclipsing the Sun during nearly 54 minutes of totality, with a glowing halo (investigated as corona, zodiacal light, or both), background stars, and faint Earthshine on the lunar surface."
+        sources:
+          - title: "NASA Image and Video Library: art002e009301"
+            url: "https://images.nasa.gov/details/art002e009301"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e016324"
+    mediaFolder: "art002e016324"
+    curationRef: "Mission 17"
+    chapter: "eclipse"
+    displayOrder: 3
+    date: "2026-04-06"
+    dateConflict:
+      status: "resolved-per-caption"
+      summary: "The library `date_created` index is 2026-04-07 (from UTC camera filename `cmasaw3_20260407005654.JPG`), while the description dates the eclipse to April 6, 2026."
+      proposedResolution: "Use 2026-04-06 (the described EDT event date, per CURATION.md) while noting the April 7 UTC index date."
+      sources:
+        - "https://images.nasa.gov/details/art002e016324"
+    camera: "Orion solar array wing camera"
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e016324/art002e016324~orig.jpg"
+    title:
+      es: "El eclipse junto a Venus y Saturno desde el panel solar de Orion"
+      en: "The eclipse flanked by Venus and Saturn from Orion's solar array"
+    caption:
+      es: "Una cámara situada en una de las alas de paneles solares de Orion captó esta vista del eclipse el 6 de abril de 2026, con la estructura de la nave en primer plano y la Luna ocultando al Sol durante casi una hora. En el resplandor que rodea al disco lunar se distinguen el planeta Venus a la izquierda y Saturno a la derecha."
+      en: "A camera mounted on one of Orion's solar array wings captured this view of the eclipse on April 6, 2026, with the spacecraft in the foreground and the Moon hiding the Sun for nearly an hour. Flanking the glow around the lunar disk are the planet Venus on the left and Saturn on the right."
+    alt:
+      es: "Vista exterior con el cuerpo de la nave Orion y un panel solar en primer plano, y al fondo el disco negro de la Luna rodeado de un resplandor blanco con dos puntos luminosos a los lados."
+      en: "Exterior view with the Orion spacecraft body and a solar array wing in the foreground, and the black lunar disk surrounded by a white glow with two bright planetary points on either side."
+    facts:
+      - id: "photo-eclipse-17-venus-saturn"
+        claim:
+          es: "Tomada el 6 de abril de 2026 (indexada el 7 de abril en UTC) desde una cámara en un ala de panel solar de Orion, la imagen muestra el eclipse solar con Venus a la izquierda y Saturno a la derecha de la Luna."
+          en: "Captured on April 6, 2026 (indexed April 7 in UTC) from a camera on one of Orion's solar array wings, the image shows the solar eclipse with Venus on the left and Saturn on the right of the Moon."
+        sources:
+          - title: "NASA Image and Video Library: art002e016324"
+            url: "https://images.nasa.gov/details/art002e016324"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e009575"
+    mediaFolder: "art002e009575"
+    curationRef: "Mission 20"
+    chapter: "eclipse"
+    displayOrder: 4
+    date: "2026-04-06"
+    dateConflict:
+      status: "resolved-per-caption"
+      summary: "The library `date_created` index is 2026-04-07 (from UTC camera filename `cmasaw3_20260407012240_013.JPG`), while the description dates the eclipse to April 6, 2026."
+      proposedResolution: "Use 2026-04-06 (the described EDT event date, per CURATION.md) while noting the April 7 UTC index date."
+      sources:
+        - "https://images.nasa.gov/details/art002e009575"
+    camera: "Orion solar array wing camera"
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e009575/art002e009575~orig.jpg"
+    title:
+      es: "Amanecer solar tras el borde de la Luna para Orion"
+      en: "Sunlight reappearing at the lunar limb for Orion"
+    caption:
+      es: "El Sol vuelve a asomar por el borde izquierdo de la Luna el 6 de abril de 2026, poniendo fin al eclipse solar total con la nave Orion en primer plano. Esta fotografía muestra el regreso de la luz solar y las condiciones de observación, no un destello de impacto individual."
+      en: "The Sun rises at the left edge of the Moon on April 6, 2026, ending the total solar eclipse with the Orion spacecraft in the foreground. This frame illustrates the return of sunlight and the eclipse viewing geometry, not an individual impact flash."
+    alt:
+      es: "La nave Orion y un panel solar en primer plano frente al disco oscuro de la Luna, en cuyo borde izquierdo estalla el destello brillante del Sol al reaparecer."
+      en: "The Orion spacecraft and a solar array wing in the foreground facing the dark lunar disk, with a brilliant burst of sunlight emerging at the Moon's left edge."
+    story:
+      es: >-
+        Mientras el Sol permaneció oculto detrás de la Luna el 6 de abril de 2026, el hemisferio lunar situado frente a Orion quedó sumergido en la oscuridad, creando una oportunidad excepcional para buscar destellos de impacto: chispazos breves de luz producidos cuando meteoroides que viajan a miles de millas por hora chocan contra el suelo lunar. En su comunicación por radio con la Tierra a las 9:00 p. m. EDT, recogida en el pie de foto original de esta imagen, la tripulación informó haber visto seis destellos; tras revisar las grabaciones y notas de voz, el informe preliminar de ciencia lunar actualizado el 7 de octubre de 2026 confirmó cinco destellos puntuales observados a unas 46.000 millas de distancia.
+      en: >-
+        While the Sun hid behind the Moon on April 6, 2026, the lunar hemisphere facing Orion lay in darkness, offering a rare chance to watch for meteoroid impact flashes—brief pinpricks of light created when meteoroids traveling thousands of miles per hour strike the lunar surface. Calling down to Earth at 9:00 p.m. EDT, as recorded in this photograph's initial caption, the crew reported seeing six flashes; after cross-checking the mission recordings and voice logs, the preliminary lunar science report updated on October 7, 2026, confirmed five impact flashes observed from roughly 46,000 miles away.
+      facts:
+        - id: "story-eclipse-20-impact-flashes-update"
+          claim:
+            es: "Durante el eclipse del 6 de abril de 2026, la tripulación comunicó inicialmente a las 9:00 p. m. ET haber visto seis destellos de impacto de meteoroides (según el registro de art002e009575); el informe preliminar de ciencia lunar actualizado el 7 de octubre de 2026 confirma cinco destellos observados a unas 46.000 millas de la Luna."
+            en: "During the April 6, 2026 eclipse, the crew initially reported at 9:00 p.m. ET seeing six meteoroid impact flashes (per the art002e009575 record); the preliminary lunar science report updated October 7, 2026, confirms five impact flashes observed from roughly 46,000 miles away."
+          sources:
+            - title: "NASA Image and Video Library: art002e009575"
+              url: "https://images.nasa.gov/details/art002e009575"
+              accessed: "2026-10-20"
+            - title: "Artemis II Preliminary Lunar Science Report (updated October 7, 2026)"
+              url: "https://science.nasa.gov/feature/artemis-ii-preliminary-lunar-science-report/"
+              accessed: "2026-10-20"
+    facts:
+      - id: "photo-eclipse-20-sunrise"
+        claim:
+          es: "La fotografía art002e009575 (tomada el 6 de abril de 2026 e indexada el 7 de abril en UTC) muestra al Sol reapareciendo en el borde izquierdo de la Luna con Orion en primer plano al concluir el eclipse solar total."
+          en: "Photograph art002e009575 (taken April 6, 2026, and indexed April 7 in UTC) shows the Sun reappearing at the left edge of the Moon with Orion in the foreground at the end of the total solar eclipse."
+        sources:
+          - title: "NASA Image and Video Library: art002e009575"
+            url: "https://images.nasa.gov/details/art002e009575"
+            accessed: "2026-10-20"
+
+  # ============================================================================
+  # Chapter 5: return (6 photographs — CURATION.md Mission 26 -> 21 -> 22 -> 23 -> 24 -> 25)
+  # ============================================================================
+  - nasaId: "art002e012588"
+    mediaFolder: "art002e012588"
+    curationRef: "Mission 26"
+    chapter: "return"
+    displayOrder: 1
+    date: "2026-04-07"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e012588/art002e012588~orig.jpg"
+    title:
+      es: "Campo estelar de la Vía Láctea en el viaje de regreso"
+      en: "Milky Way star field on the journey home"
+    caption:
+      es: "En el inicio del trayecto de regreso a la Tierra el 7 de abril de 2026 (a unas 200.000 millas náuticas según el nombre de archivo del registro), la tripulación de Artemis II fotografió esta franja de estrellas y nubes de polvo de nuestra galaxia, la Vía Láctea, vista desde el interior de uno de sus brazos espirales."
+      en: "Early on the return leg toward Earth on April 7, 2026 (from roughly 200,000 nautical miles according to the record's image filename), the Artemis II crew photographed this dense band of stars and dust clouds along our Milky Way galaxy, seen from our vantage point inside one of its spiral arms."
+    alt:
+      es: "Una densa banda diagonal de miles de estrellas y nubes oscuras de polvo interestelar de la Vía Láctea atravesando el fondo negro del espacio."
+      en: "A dense diagonal band of thousands of stars and dark interstellar dust lanes of the Milky Way crossing the black background of space."
+    facts:
+      - id: "photo-return-26-milky-way"
+        claim:
+          es: "Fotografía de un campo estelar de la Vía Láctea tomada por la tripulación de Artemis II el 7 de abril de 2026 (con nombre de archivo `Star Field from 200 000 nm_019A.NEF`) e incluida en la galería oficial de regreso a la Tierra de NASA."
+          en: "Photograph of a Milky Way star field captured by the Artemis II crew on April 7, 2026 (with record filename `Star Field from 200 000 nm_019A.NEF`) and included in NASA's official Return to Earth gallery."
+        sources:
+          - title: "NASA Image and Video Library: art002e012588"
+            url: "https://images.nasa.gov/details/art002e012588"
+            accessed: "2026-10-20"
+          - title: "NASA Gallery: Return to Earth"
+            url: "https://www.nasa.gov/gallery/return-to-earth/"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e025219"
+    mediaFolder: "art002e025219"
+    curationRef: "Mission 21"
+    chapter: "return"
+    displayOrder: 2
+    date: "2026-04-09"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e025219/art002e025219~orig.jpg"
+    title:
+      es: "Victor Glover con la creciente de la Tierra tras la ventanilla"
+      en: "Victor Glover with the crescent Earth behind him"
+    caption:
+      es: "El piloto de Artemis II, Victor Glover (NASA), posa en el interior de la nave Orion el 9 de abril de 2026 mientras la creciente iluminada de la Tierra brilla a través de la ventanilla a sus espaldas en la recta final del viaje de regreso."
+      en: "Artemis II Pilot Victor Glover of NASA is pictured inside the Orion spacecraft on April 9, 2026, with the sunlit crescent of Earth shining through the window behind him on the final leg home."
+    alt:
+      es: "Victor Glover sonriendo en primer plano dentro de la cabina de Orion con la creciente brillante de la Tierra visible en la ventanilla detrás de él."
+      en: "Victor Glover smiling in the foreground inside Orion's cabin with the bright crescent of Earth visible through the window behind him."
+    facts:
+      - id: "photo-return-21-glover"
+        claim:
+          es: "El astronauta de NASA Victor Glover aparece dentro de Orion con la creciente de la Tierra en la ventanilla detrás de él el 9 de abril de 2026, durante el regreso del sobrevuelo lunar."
+          en: "NASA astronaut Victor Glover is pictured inside Orion with the crescent Earth in the window behind him on April 9, 2026, during the return from the lunar flyby."
+        sources:
+          - title: "NASA Image and Video Library: art002e025219"
+            url: "https://images.nasa.gov/details/art002e025219"
+            accessed: "2026-10-20"
+
+  - nasaId: "art002e041711"
+    mediaFolder: "art002e041711"
+    curationRef: "Mission 22"
+    chapter: "return"
+    displayOrder: 3
+    date: "2026-04-08"
+    camera: null
+    credit: "NASA"
+    originalUrl: "https://images-assets.nasa.gov/image/art002e041711/art002e041711~orig.jpg"
+    title:
+      es: "Christina Koch junto a la creciente terrestre en el regreso"
+      en: "Christina Koch beside the crescent Earth on the return leg"
+    caption:
+      es: "La especialista de misión Christina Koch (NASA) sonríe dentro de la cabina de Orion el 8 de abril de 2026 con la creciente de la Tierra iluminada tras la ventanilla, de regreso a casa después del sobrevuelo lunar."
+      en: "Mission Specialist Christina Koch of NASA smiles inside the Orion cabin on April 8, 2026, with the crescent Earth glowing through the window behind her on the journey back from the Moon."
+    alt:
+      es: "Christina Koch sonriendo dentro de la cabina de Orion con una delgada creciente de la Tierra brillando en el centro de la ventanilla detrás de su cabeza."
+      en: "Christina Koch smiling inside Orion's cabin with a slender crescent Earth shining in the window behind her."
+    facts:
+      - id: "photo-return-22-koch"
+        claim:
+          es: "La astronauta de NASA Christina Koch fue fotografiada dentro de Orion con la creciente de la Tierra tras la ventanilla el 8 de abril de 2026, durante el trayecto de regreso a la Tierra."
+          en: "NASA astronaut Christina Koch was photographed inside Orion with the crescent Earth through the window behind her on April 8, 2026, on the way back to Earth."
+        sources:
+          - title: "NASA Image and Video Library: art002e041711"
+            url: "https://images.nasa.gov/details/art002e041711"
+            accessed: "2026-10-20"
+
+  - nasaId: "KSC-20260410-PH-JNV01_0001"
+    mediaFolder: "KSC-20260410-PH-JNV01_0001"
+    curationRef: "Mission 23"
+    chapter: "return"
+    displayOrder: 4
+    date: "2026-04-10"
+    camera: null
+    credit: "NASA/Josh Valcarcel"
+    originalUrl: "https://images-assets.nasa.gov/image/KSC-20260410-PH-JNV01_0001/KSC-20260410-PH-JNV01_0001~orig.jpg"
+    title:
+      es: "Orion desciende bajo sus tres paracaídas principales sobre el Pacífico"
+      en: "Orion descends under its three main parachutes over the Pacific"
+    caption:
+      es: "El módulo de tripulación de Orion desciende suspendido de sus tres paracaídas principales sobre el océano Pacífico, frente a la costa de San Diego, California, el viernes 10 de abril de 2026, momentos antes de tocar el agua al término de los diez días de la misión Artemis II."
+      en: "The Orion crew module descends under its three main parachutes toward the Pacific Ocean near San Diego, California, on Friday, April 10, 2026, moments before splashdown at the conclusion of the ten-day Artemis II test flight."
+    alt:
+      es: "La cápsula Orion colgando de tres grandes paracaídas naranjas y blancos completamente abiertos en un cielo claro sobre el océano."
+      en: "The Orion capsule suspended beneath three large orange-and-white main parachutes fully deployed in a clear sky above the ocean."
+    story:
+      es: >-
+        Después de fotografiar la Vía Láctea a 200.000 millas náuticas y ver crecer día tras día la creciente azul de la Tierra por las ventanillas, el viaje de diez días de Artemis II llegó a su prueba final en la tarde del viernes 10 de abril de 2026. Tras separarse del módulo de servicio y atravesar la atmósfera a unas 35 veces la velocidad del sonido con su escudo térmico a cerca de 3.000 °F, la cápsula Integrity desplegó sus paracaídas de frenado y luego sus tres grandes paracaídas principales sobre el cielo de California. A las 8:07 p. m. EDT (5:07 p. m. PDT) amerizó frente a San Diego, donde las lanchas del equipo de aterrizaje y recuperación de NASA y el personal de la Marina de EE. UU. aseguraron la nave e izaron a Reid Wiseman, Victor Glover, Christina Koch y Jeremy Hansen hacia el buque anfibio USS John P. Murtha.
+      en: >-
+        After photographing the Milky Way 200,000 nautical miles out and watching Earth's blue crescent grow larger day by day in the cabin windows, Artemis II's ten-day journey reached its final test on the afternoon of Friday, April 10, 2026. Having separated from its service module and streaked through the atmosphere at roughly 35 times the speed of sound with heat-shield temperatures near 3,000 °F, the Integrity crew module deployed its drogues and three main parachutes over the California sky. At 8:07 p.m. EDT (5:07 p.m. PDT) the capsule splashed down off San Diego, where NASA's Landing and Recovery team and U.S. Navy personnel approached by raft to secure the spacecraft and bring Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen aboard the amphibious transport dock USS John P. Murtha.
+      facts:
+        - id: "story-return-23-splashdown-recovery"
+          claim:
+            es: "El viernes 10 de abril de 2026, tras reentrar a ~Mach 35 y ~3.000 °F, Orion descendió bajo tres paracaídas principales y amerizó en el océano Pacífico cerca de San Diego a las 5:07 p. m. PDT (8:07 p. m. EDT); el equipo de recuperación de NASA y personal de la Marina de EE. UU. asistieron a Wiseman, Glover, Koch y Hansen y los trasladaron al buque USS John P. Murtha."
+            en: "On Friday, April 10, 2026, following re-entry at ~Mach 35 and ~3,000 °F, Orion descended under three main parachutes and splashed down in the Pacific Ocean near San Diego at 5:07 p.m. PDT (8:07 p.m. EDT); NASA's Landing and Recovery team and U.S. Navy personnel assisted Wiseman, Glover, Koch, and Hansen and brought them aboard USS John P. Murtha."
+          sources:
+            - title: "NASA Image and Video Library: KSC-20260410-PH-JNV01_0001"
+              url: "https://images.nasa.gov/details/KSC-20260410-PH-JNV01_0001"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: KSC-20260411-KED01-0332"
+              url: "https://images.nasa.gov/details/KSC-20260411-KED01-0332"
+              accessed: "2026-10-20"
+            - title: "NASA Image and Video Library: NHQ202604100056"
+              url: "https://images.nasa.gov/details/NHQ202604100056"
+              accessed: "2026-10-20"
+            - title: "NASA Blog: Artemis II Flight Day 10 — Re-entry Live Updates (April 10, 2026)"
+              url: "https://www.nasa.gov/blogs/missions/2026/04/10/artemis-ii-flight-day-10-re-entry-live-updates/"
+              accessed: "2026-10-21"
+    facts:
+      - id: "photo-return-23-parachutes"
+        claim:
+          es: "Los paracaídas de la nave Orion se desplegaron antes del amerizaje en el océano Pacífico cerca de San Diego, California, el viernes 10 de abril de 2026."
+          en: "Parachutes secured to the Orion spacecraft deployed before splashdown in the Pacific Ocean near San Diego, California, on Friday, April 10, 2026."
+        sources:
+          - title: "NASA Image and Video Library: KSC-20260410-PH-JNV01_0001"
+            url: "https://images.nasa.gov/details/KSC-20260410-PH-JNV01_0001"
+            accessed: "2026-10-20"
+
+  - nasaId: "KSC-20260411-KED01-0332"
+    mediaFolder: "KSC-20260411-KED01-0332"
+    curationRef: "Mission 24"
+    chapter: "return"
+    displayOrder: 5
+    date: "2026-04-10"
+    camera: null
+    credit: "NASA/Kevin Davis"
+    originalUrl: "https://images-assets.nasa.gov/image/KSC-20260411-KED01-0332/KSC-20260411-KED01-0332~orig.jpg"
+    title:
+      es: "Operaciones de recuperación junto a Orion en el Pacífico"
+      en: "Recovery team approaches Orion in the Pacific after splashdown"
+    caption:
+      es: "Integrantes del equipo de aterrizaje y recuperación de NASA y personal de la Marina de EE. UU. se aproximan en una lancha inflable a la cápsula Orion —coronada por sus bolsas naranjas de enderezamiento— tras el amerizaje en el océano Pacífico frente a San Diego a las 5:07 p. m. PDT (8:07 p. m. EDT) del viernes 10 de abril de 2026."
+      en: "Members of NASA's Landing and Recovery team and U.S. Navy personnel aboard an inflatable raft approach the Orion capsule—topped by its orange uprighting bags—following splashdown in the Pacific Ocean near San Diego at 5:07 p.m. PDT (8:07 p.m. EDT) on Friday, April 10, 2026."
+    alt:
+      es: "La cápsula cónica Orion flotando en el mar con cinco globos naranjas inflados en la parte superior mientras un equipo de recuperación en una lancha negra se acerca por el agua."
+      en: "The cone-shaped Orion capsule floating upright on the ocean with orange uprighting bags inflated on top while a recovery crew in a black inflatable raft approaches across the water."
+    facts:
+      - id: "photo-return-24-water-recovery"
+        claim:
+          es: "Tras el amerizaje de Orion en el océano Pacífico cerca de San Diego a las 5:07 p. m. PDT (8:07 p. m. EDT) del viernes 10 de abril de 2026, el equipo de aterrizaje y recuperación de NASA y personal de la Marina de EE. UU. se acercaron en una balsa inflable para asistir en la salida de los cuatro astronautas."
+          en: "Following Orion's splashdown in the Pacific Ocean near San Diego at 5:07 p.m. PDT (8:07 p.m. EDT) on Friday, April 10, 2026, NASA's Landing and Recovery team and U.S. Navy personnel approached in an inflatable raft to help the four astronauts out of the spacecraft."
+        sources:
+          - title: "NASA Image and Video Library: KSC-20260411-KED01-0332"
+            url: "https://images.nasa.gov/details/KSC-20260411-KED01-0332"
+            accessed: "2026-10-20"
+
+  - nasaId: "NHQ202604100056"
+    mediaFolder: "NHQ202604100056"
+    curationRef: "Mission 25"
+    chapter: "return"
+    displayOrder: 6
+    date: "2026-04-10"
+    camera: null
+    credit: "NASA/Bill Ingalls"
+    originalUrl: "https://images-assets.nasa.gov/image/NHQ202604100056/NHQ202604100056~orig.jpg"
+    title:
+      es: "Llegada a la cubierta del USS John P. Murtha tras la recuperación"
+      en: "Arrival aboard USS John P. Murtha after recovery"
+    caption:
+      es: "El comandante de Artemis II, Reid Wiseman, recibe apoyo del personal de recuperación al salir de la cubierta de vuelo del buque USS John P. Murtha el viernes 10 de abril de 2026, después de que los equipos de NASA y de las fuerzas armadas de EE. UU. extrajeran a los cuatro astronautas tras el amerizaje en el Pacífico."
+      en: "Artemis II Commander Reid Wiseman is assisted off the flight deck after arriving aboard USS John P. Murtha on Friday, April 10, 2026, following extraction of all four crew members from Orion by NASA and U.S. military recovery teams in the Pacific Ocean."
+    alt:
+      es: "Reid Wiseman caminando por el pasillo del buque USS John P. Murtha acompañado a ambos lados por personal del equipo de recuperación."
+      en: "Reid Wiseman walking from the flight deck passageway aboard USS John P. Murtha assisted on either side by recovery personnel."
+    facts:
+      - id: "photo-return-25-murtha-arrival"
+        claim:
+          es: "El viernes 10 de abril de 2026, tras ser extraídos de Orion después del amerizaje en el océano Pacífico frente a la costa de California, Reid Wiseman y sus compañeros Victor Glover, Christina Koch y Jeremy Hansen llegaron a bordo del buque USS John P. Murtha con la asistencia de los equipos de NASA y de las fuerzas armadas de EE. UU."
+          en: "On Friday, April 10, 2026, after being extracted from Orion following splashdown in the Pacific Ocean off California, Reid Wiseman and fellow crewmates Victor Glover, Christina Koch, and Jeremy Hansen arrived aboard USS John P. Murtha assisted by NASA and U.S. military recovery teams."
+        sources:
+          - title: "NASA Image and Video Library: NHQ202604100056"
+            url: "https://images.nasa.gov/details/NHQ202604100056"
+            accessed: "2026-10-20"

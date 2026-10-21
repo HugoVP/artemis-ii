@@ -46,8 +46,8 @@
   provider: github
   key_secret: AGENT_KEY_COPILOT    # fine-grained PAT with only the "Copilot Requests" permission, see docs/agents/copilot.md
   runner: copilot-cli
-  # model: <explicit id>           # Hugo picks it from `/model` in his own Copilot CLI; runs stop until it is set
-  # family: <vendor of that model> # set together with the model
+  model: claude-sonnet-4.5         # selected by Hugo 2026-10-20
+  family: anthropic                # vendor of the selected model
   capabilities: [git, node, browser, web, figma-read]   # Figma read through the gateway; to verify on its first figma-read stage
   status: pending                  # becomes active after the model is set and the Copilot smoke passes
   roles: [lead, review]

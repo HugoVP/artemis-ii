@@ -7,7 +7,7 @@ Antigravity's IDE, Gemini CLI (replaced by Antigravity CLI on 2026-06-18 for unp
 ## Implementation
 
 - The `agent-runner` image downloads Antigravity CLI 1.4.3 from its exact build URL in Google's public bucket, checks the sha512 published in Google's manifest for that build, and installs it root-owned and read-only as `agy`. It does not run Google's install script, which always follows the latest version.
-- `scripts/antigravity-runner.ts`, baked into `/opt/artemis/`, writes `settings.json` with `modelProvider: "gemini"` and an explicit `permission.allow` list in a throwaway home, checks the CLI version, and runs `agy --print` with the registry's model:
+- `scripts/antigravity-runner.ts`, baked into `/opt/artemis/`, writes `settings.json` with `modelProvider: "gemini"` and an explicit `permissions.allow` list in a throwaway home, checks the CLI version, and runs `agy --print` with the registry's model:
   - **build:** `--mode accept-edits`, with `npm`, `npx`, `node`, read-only `git`, `ls` and `mkdir` approved;
   - **review:** `--mode plan`, with only read-only `git`; the launcher saves the printed answer as `.agent/review.md`.
 - The transcript is never printed. A failure shows only the exit code, the status and code of an `AGY_ERROR` line, or one redacted `Error:` line.
@@ -52,6 +52,6 @@ Verified on 2026-10-20 with the real binary and a dummy key: the launcher's sett
 
 Still to verify on the first real run:
 
-- `command(npm)` in `permission.allow` approves `npm` with any arguments, so the fixture's `npm test` runs.
+- `command(npm)` in `permissions.allow` approves `npm` with any arguments, so the fixture's `npm test` runs.
 - The model slug is accepted, the run completes without asking anything, and the review mode prints a complete review.
 - Duration and cost per run.

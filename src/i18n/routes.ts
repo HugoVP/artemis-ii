@@ -35,8 +35,8 @@ export function chapterPath(lang: Lang, chapter: ChapterId): string {
   return `${sectionPath(lang, 'gallery')}${chapterSlugs[chapter][lang]}/`;
 }
 
-export function photoPath(lang: Lang, chapter: ChapterId, nasaId: string): string {
-  return `${chapterPath(lang, chapter)}${nasaId}/`;
+export function photoPath(lang: Lang, chapter: ChapterId, pathKey: string): string {
+  return `${chapterPath(lang, chapter)}${pathKey}/`;
 }
 
 /** Equivalent page in the other language, for a path such as `/es/mision/`. */

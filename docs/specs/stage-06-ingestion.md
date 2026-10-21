@@ -1,6 +1,6 @@
 # Stage 06: Ingestion
 
-- **Status:** draft (approved when Stage 05 is merged)
+- **Status:** approved (merged with Stage 05)
 - **Requirements covered:** `MEDIA-01`, `MEDIA-02`, `MEDIA-03`, `MEDIA-04`, `MEDIA-05`, `CONT-02`, `SEC-08`, `QA-01`
 - **Depends on:** Stage 05 (approved `CURATION.md` with 26 mission and 7 launch candidates, exact NASA IDs, verified original URLs and byte sizes) and Stage 03 (`scripts/pages-media.ts`, `scripts/package-media.ts`, smoke checks and the media manifest contract)
 

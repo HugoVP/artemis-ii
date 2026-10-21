@@ -17,8 +17,8 @@ export async function getRoutes(lang: Lang): Promise<{ path: string | undefined;
       props: { kind: 'chapter', chapter } as RouteProps,
     })),
     ...photos.map((p) => ({
-      path: `${rel(sectionPath(lang, 'gallery'))}/${chapterSlugs[p.data.chapter][lang]}/${p.data.nasaId}`,
-      props: { kind: 'photo', chapter: p.data.chapter, photoId: p.data.nasaId } as RouteProps,
+      path: `${rel(sectionPath(lang, 'gallery'))}/${chapterSlugs[p.data.chapter][lang]}/${p.data.pathKey}`,
+      props: { kind: 'photo', chapter: p.data.chapter, photoId: p.data.pathKey } as RouteProps,
     })),
   ];
 }

@@ -1,0 +1,22 @@
+{
+  "nasaId": "art002e012273",
+  "pathKey": "art002e012273",
+  "chapter": "far-side",
+  "title": {
+    "es": "Foto 9 (título pendiente)",
+    "en": "Photo 9 (title pending)"
+  },
+  "alt": {
+    "es": "Marcador de posición: el texto alternativo llega en la etapa de contenido.",
+    "en": "Placeholder: alt text arrives in the content stage."
+  },
+  "caption": {
+    "es": "Pie de foto pendiente de redacción y revisión.",
+    "en": "Caption pending drafting and review."
+  },
+  "originalUrl": "https://images-assets.nasa.gov/image/art002e012273/art002e012273~orig.jpg",
+  "hash": "236c310a06d91a30",
+  "sourceIds": [
+    "nasa-art002e012273"
+  ]
+}

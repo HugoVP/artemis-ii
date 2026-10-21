@@ -1,4 +1,5 @@
 // No credentials. Package the build and generated media as a single Pages deployment.
+import { createHash } from 'node:crypto';
 import { cp, lstat, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -14,6 +15,10 @@ export async function packageMedia(mediaRoot: string, siteRoot: string): Promise
       if (!info.isFile()) throw new Error(`Missing media file: ${path}`);
       if (photo.original.kind === 'local' && path === photo.original.path && info.size !== photo.original.sizeBytes) {
         throw new Error(`Original size mismatch: ${path}`);
+      }
+      if (photo.original.kind === 'local' && path === photo.original.path &&
+          createHash('sha256').update(await readFile(file)).digest('hex') !== photo.original.sha256) {
+        throw new Error(`Original checksum mismatch: ${path}`);
       }
     }
   }

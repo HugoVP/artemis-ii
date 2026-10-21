@@ -1,19 +1,43 @@
-// Stage 03 contract; Stage 06 supplies ingestion, byte verification and image generation.
+// Stage 03 contract, amended in Stage 06 for exact NASA IDs and safe path keys.
 import { lstat, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export const MAX_FILE_BYTES = 26_214_400;
 export const MAX_FILES = 20_000;
 export type OriginalDownload =
-  | { kind: 'local'; path: string; sourceUrl: string; sizeBytes: number }
+  | { kind: 'local'; path: string; sourceUrl: string; sizeBytes: number; sha256: string }
   | { kind: 'nasa'; sourceUrl: string; sizeBytes: number };
 export interface MediaPhoto {
+  /** Exact NASA ID, byte for byte (it may contain spaces). */
   nasaId: string;
+  /** Safe directory name derived from the ID; equals the ID when the ID is already safe. */
+  pathKey: string;
   hash: string;
   variants: string[];
   original: OriginalDownload;
 }
 export interface MediaManifest { photos: MediaPhoto[] }
+
+const SAFE_KEY = /^[A-Za-z0-9_-]+$/;
+const SHA256 = /^[a-f0-9]{64}$/;
+
+/** Deterministic safe path key: each run of characters outside [A-Za-z0-9_-] becomes "_". */
+export function pathKeyFor(nasaId: string): string {
+  if (!/^[\x21-\x7e]+(?: [\x21-\x7e]+)*$/.test(nasaId)) throw new Error('Invalid NASA ID');
+  const key = nasaId.replace(/[^A-Za-z0-9_-]+/g, '_');
+  if (!SAFE_KEY.test(key) || /^_+$/.test(key)) throw new Error('NASA ID has no safe path key');
+  return key;
+}
+/** Fails when two IDs share a path key. */
+export function assertNoKeyCollisions(ids: readonly string[]): void {
+  const seen = new Map<string, string>();
+  for (const id of ids) {
+    const key = pathKeyFor(id);
+    const other = seen.get(key);
+    if (other !== undefined) throw new Error(`Path key collision: "${other}" and "${id}" both map to ${key}`);
+    seen.set(key, id);
+  }
+}
 
 function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Expected an object');
@@ -28,11 +52,11 @@ function nasaUrl(value: unknown): string {
   }
   return url.href;
 }
-export function selectOriginal(sourceUrl: string, sizeBytes: number, path: string): OriginalDownload {
+export function selectOriginal(sourceUrl: string, sizeBytes: number, path: string, sha256 = ''): OriginalDownload {
   const source = nasaUrl(sourceUrl);
   if (!Number.isSafeInteger(sizeBytes) || sizeBytes <= 0) throw new Error('Invalid original byte size');
   return sizeBytes <= MAX_FILE_BYTES
-    ? { kind: 'local', sourceUrl: source, sizeBytes, path }
+    ? { kind: 'local', sourceUrl: source, sizeBytes, path, sha256 }
     : { kind: 'nasa', sourceUrl: source, sizeBytes };
 }
 
@@ -40,14 +64,17 @@ export function parseManifest(value: unknown): MediaManifest {
   const input = record(value);
   if (!Array.isArray(input.photos)) throw new Error('Manifest needs photos');
   const ids = new Set<string>();
+  const keys = new Set<string>();
   const photos = input.photos.map((entry: unknown): MediaPhoto => {
     const photo = record(entry);
-    if (typeof photo.nasaId !== 'string' || !/^[A-Za-z0-9_-]+$/.test(photo.nasaId) || ids.has(photo.nasaId)) {
-      throw new Error('Invalid or duplicate NASA ID');
-    }
+    if (typeof photo.nasaId !== 'string' || ids.has(photo.nasaId)) throw new Error('Invalid or duplicate NASA ID');
+    const pathKey = pathKeyFor(photo.nasaId);
+    if (photo.pathKey !== pathKey) throw new Error('Path key does not match the NASA ID');
+    if (keys.has(pathKey)) throw new Error('Duplicate media path key');
     ids.add(photo.nasaId);
+    keys.add(pathKey);
     if (typeof photo.hash !== 'string' || !/^[a-f0-9]{12,64}$/.test(photo.hash)) throw new Error('Invalid media hash');
-    const prefix = `photos/${photo.nasaId}/${photo.hash}/`;
+    const prefix = `photos/${pathKey}/${photo.hash}/`;
     const path = (value: unknown): string => {
       if (typeof value !== 'string' || !value.startsWith(prefix) ||
           !/^[A-Za-z0-9_-]+\.[A-Za-z0-9]+$/.test(value.slice(prefix.length))) throw new Error('Invalid hashed media path');
@@ -58,11 +85,13 @@ export function parseManifest(value: unknown): MediaManifest {
     const original = record(photo.original);
     if (typeof original.sizeBytes !== 'number') throw new Error('Missing original byte size');
     const selected = selectOriginal(nasaUrl(original.sourceUrl), original.sizeBytes,
-      original.kind === 'local' ? path(original.path) : '');
+      original.kind === 'local' ? path(original.path) : '',
+      original.kind === 'local' ? String(original.sha256 ?? '') : '');
+    if (selected.kind === 'local' && !SHA256.test(selected.sha256)) throw new Error('Local original needs a SHA-256 checksum');
     if (selected.kind !== original.kind || (selected.kind === 'nasa' && 'path' in original)) {
       throw new Error('Original download kind does not match its byte size');
     }
-    return { nasaId: photo.nasaId, hash: photo.hash, variants, original: selected };
+    return { nasaId: photo.nasaId, pathKey, hash: photo.hash, variants, original: selected };
   });
   return { photos };
 }
